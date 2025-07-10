@@ -377,8 +377,5 @@ macro_rules! define_precise_number {
                 self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
         }
-
-
     };
 } // -- macro
-
