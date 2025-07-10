@@ -1,9 +1,6 @@
-
-
-
 #[cfg(test)]
 mod tests {
-    use {super::*, proptest::prelude::*};
+    use {proptest::prelude::*};
     use crate::define_precise_number;
     use crate::uint::U256;
 
@@ -364,8 +361,6 @@ mod tests {
             assert!(a.ceiling().is_none(), "will overflow");
         }
     }
-
-
 
     proptest! {
         #[test]
