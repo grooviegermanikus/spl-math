@@ -3,6 +3,7 @@
 
 use crate::uint::U256;
 
+#[macro_export]
 macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
@@ -382,6 +383,7 @@ macro_rules! define_precise_number {
 
     };
 } // -- macro
+<<<<<<< Updated upstream:src/precise_number.rs
 
 const ONE_CONST: U256 = U256([1000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000 / 2, 0, 0, 0]);
@@ -756,3 +758,5 @@ mod tests {
         }
     }
 }
+=======
+>>>>>>> Stashed changes:src/precise_number/pn_impl.rs
