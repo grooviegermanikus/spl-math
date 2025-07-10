@@ -704,13 +704,15 @@ mod tests {
 
     #[test]
     fn test_ceiling() {
-        let whole_number = PreciseNumber::new(2).unwrap();
+        // 1.999999999999
         let mut decimal_number = PreciseNumber::new(2).unwrap();
         decimal_number.value -= InnerUint::from(1);
         let ceiling = decimal_number.ceiling().unwrap();
         let ceiling_again = ceiling.ceiling().unwrap();
-        assert_eq!(whole_number.value, ceiling.value);
-        assert_eq!(whole_number.value, ceiling_again.value);
+
+        let expected_fp2: InnerUint = PreciseNumber::new(2).unwrap().value;
+        assert_eq!(ceiling.value, expected_fp2);
+        assert_eq!(ceiling_again.value, expected_fp2);
     }
 
     proptest! {
