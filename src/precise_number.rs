@@ -715,6 +715,29 @@ mod tests {
         assert_eq!(ceiling_again.value, expected_fp2);
     }
 
+    #[test]
+    fn test_ceiling_all() {
+        for value in 0..=246 {
+            let a = TestPreciseNumber8 {
+                value
+            };
+
+            let ceil_expected = (value as f64 / 10.0).ceil() as u8;
+            let ceiling = a.ceiling().unwrap();
+
+            assert_eq!(ceiling.value, ceil_expected * 10);
+        }
+
+        for value in 247..=255 {
+            let a = TestPreciseNumber8 {
+                value
+            };
+            assert!(a.ceiling().is_none(), "will overflow");
+        }
+    }
+
+
+
     proptest! {
         #[test]
         fn test_square_root(a in 0..u128::MAX) {
