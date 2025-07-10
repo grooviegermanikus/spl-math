@@ -64,14 +64,14 @@ macro_rules! define_precise_number {
                 Self::FP_ONE + Self::FP_ONE
             }
 
-            /// Create a precise number from an imprecise u128, should always succeed
+            /// Create a precise number from an imprecise outer type, should always succeed
             pub fn new(int_val: $TOuter) -> Option<Self> {
                 let int_value: $FPInner = int_val.into();
                 let value: $FPInner = int_value.checked_mul(Self::FP_ONE)?;
                 Some(Self { value })
             }
 
-            /// Convert a precise number back to u128
+            /// Convert a precise number back to outer type
             pub fn to_imprecise(&self) -> Option<$TOuter> {
                 self.value
                     .checked_add(Self::ROUNDING_CORRECTION)?
@@ -378,6 +378,8 @@ macro_rules! define_precise_number {
                 self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
         }
+
+
     };
 } // -- macro
 
@@ -422,6 +424,14 @@ mod tests {
             .unwrap();
         let expected = PreciseNumber { value: expected };
         assert!(root.almost_eq(&expected, precision));
+    }
+
+    #[test]
+    fn test_u256_max_outer_to_precise() {
+        let a = PreciseNumber::new(u128::MAX).unwrap();
+        assert_eq!(a.to_imprecise().unwrap(), u128::MAX);
+        let a_plus_1 = a.checked_add(&PreciseNumber::one()).unwrap();
+        assert!(a_plus_1.to_imprecise().is_none());
     }
 
     #[test]
