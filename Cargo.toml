@@ -8,6 +8,7 @@ license = "Apache-2.0"
 edition = "2021"
 
 [dependencies]
+mollusk-svm = "0.4.0"
 num-traits = "0.2"
 uint = "0.10"
 
