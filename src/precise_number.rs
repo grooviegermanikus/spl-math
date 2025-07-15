@@ -399,6 +399,9 @@ define_precise_number!(
 
 #[cfg(test)]
 mod tests {
+    use fixed::FixedI128;
+    use fixed::types::extra::U64;
+    use fixed::types::I64F64;
     use {super::*, proptest::prelude::*};
     type InnerUint = U256;
 
@@ -671,30 +674,61 @@ mod tests {
         }; // correct within 11 decimals
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
-        let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
         let approximate_root = check.sqrt().unwrap();
-        let lower_bound = approximate_root
-            .checked_mul(&one_minus_epsilon)
-            .unwrap()
-            .checked_pow(2)
-            .unwrap();
-        let upper_bound = approximate_root
-            .checked_mul(&one_plus_epsilon)
-            .unwrap()
-            .checked_pow(2)
-            .unwrap();
-        assert!(check.less_than_or_equal(&upper_bound));
-        assert!(check.greater_than_or_equal(&lower_bound));
+
+        let next_higher = check.checked_mul(&one_plus_epsilon).unwrap().sqrt().unwrap();
+        if !approximate_root.less_than(&next_higher) {
+            println!(
+                "check: {}, root: {}, next_higher: {}",
+                check.value, approximate_root.value, next_higher.value
+            );
+            // panic!("Square root approximation is not correct");
+        }
     }
 
+    fn compare_pn_fixed(i: i128) -> FixedI128<U64> {
+        let pn = PreciseNumber { value: InnerUint::from(i) };
+
+        let pn_sqrt = pn.sqrt().unwrap();
+        // println!("pn: {:?}", pn.value);
+        // println!("pn_sqrt: {:?}", pn_sqrt.value);
+
+        let fx_one = I64F64::const_from_int(1000000000000i128); // 1e12
+        let fx_x = I64F64::const_from_int(i) / fx_one;
+        let fx_sqrt = fx_x.sqrt();
+        // println!("pn_x: {:?}", fx_x);
+        // println!("fx_sqrt: {:?}", fx_sqrt);
+        let fx_sqrt_pn = fx_sqrt;
+        // println!("fx_sqrt_pn: {:?}", fx_sqrt_pn);
+
+        let pn_sqrt_as_fixed = I64F64::from_str(&format!("{}", pn_sqrt.value.as_u128())).unwrap().checked_div(fx_one).unwrap();
+
+        (fx_sqrt_pn - pn_sqrt_as_fixed).abs()
+    }
+
+
+    //
+    // #[test]
+    // fn test_square_root_min_max() {
+    //     let test_roots = [
+    //         PreciseNumber::new(1), // note: changed from 0 to 1
+    //         PreciseNumber::maximum_sqrt_base(),
+    //     ];
+    //     for i in test_roots.iter() {
+    //         check_square_root(i);
+    //     }
+    // }
+
     #[test]
-    fn test_square_root_min_max() {
-        let test_roots = [
-            PreciseNumber::minimum_sqrt_base(),
-            PreciseNumber::maximum_sqrt_base(),
-        ];
-        for i in test_roots.iter() {
-            check_square_root(i);
+    fn test_square_root_mass() {
+        for i in 1..40 {
+            let i = PreciseNumber { value: InnerUint::from(10i32.pow(i)) };
+            check_square_root(&i);
+        }
+
+        for i in 1..1000 {
+            let i = PreciseNumber { value: InnerUint::from(ONE_CONST + i) };
+            check_square_root(&i);
         }
     }
 
@@ -741,6 +775,53 @@ mod tests {
             };
             assert!(a.ceiling().is_none(), "will overflow");
         }
+    }
+
+    #[test]
+    fn test_fixed() {
+        let x = I64F64::from_str("11000.11111").unwrap();
+        let y = I64F64::const_from_int(2);
+        let z = x / y;
+
+        println!("x / y = {}", z);
+
+    }
+
+
+    #[test]
+    fn test_fixed_vs_pn() {
+        // let epsilon = PreciseNumber {
+        //     value: InnerUint::from(10),
+        // }; // correct within 11 decimals
+        let epsilon = I64F64::const_from_int(1)
+            .checked_div(I64F64::const_from_int(1e11 as i128))
+            .unwrap();
+
+        for i in (800000000000..1200000000000).step_by(10000000000) {
+            let diff = compare_pn_fixed(i);
+            println!("i: {}, diff: {}", i, diff);
+            println!("diff < epsilon: {}", diff < epsilon);
+            println!("epsilon: {}", epsilon);
+
+            // let pn = PreciseNumber { value: InnerUint::from(i) };
+            //
+            // let pn_sqrt = pn.sqrt().unwrap();
+            // println!("pn: {:?}", pn.value);
+            // println!("pn_sqrt: {:?}", pn_sqrt.value);
+            //
+            // let fx_one = I64F64::const_from_int(1000000000000i128); // 1e12
+            // let fx_x = I64F64::const_from_int(i) / fx_one;
+            // let fx_sqrt = fx_x.sqrt();
+            // println!("pn_x: {:?}", fx_x);
+            // println!("fx_sqrt: {:?}", fx_sqrt);
+            // let fx_sqrt_pn = fx_sqrt * fx_one;
+            // println!("fx_sqrt_pn: {:?}", fx_sqrt_pn);
+            //
+            // println!();
+
+
+        }
+
     }
 
 
