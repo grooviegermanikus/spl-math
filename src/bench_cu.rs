@@ -15,6 +15,8 @@ fn cu_bench() {
 
     let program_id = solana_pubkey::Pubkey::new_unique();
 
+    // build counter.so from litesvm/crates/litesvm/test_programs/target/sbpf-solana-solana/release/counter.so
+    // cargo-build-sbf
     let mollusk = Mollusk::new(&program_id, "counter");
 
 
