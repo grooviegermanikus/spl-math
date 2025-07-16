@@ -1,0 +1,24 @@
+[package]
+name = "counter"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+no-entrypoint = []
+cpi = ["no-entrypoint"]
+default = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+borsh = "0.9.3"
+solana-account-info = "2.2"
+solana-clock = "2.2"
+solana-msg = "2.2"
+solana-program-entrypoint = "2.2"
+solana-program-error = { version = "2.2", features = ["borsh"] }
+solana-pubkey = "2.2"
+solana-sysvar = { version = "2.2", features = ["bincode"] }
