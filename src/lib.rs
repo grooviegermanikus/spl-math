@@ -5,7 +5,6 @@ extern crate core;
 pub mod approximations;
 pub mod checked_ceil_div;
 pub mod uint;
-pub mod bench_cu;
 
 // map precise number implementation
 mod precise_number;
