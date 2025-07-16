@@ -37,7 +37,7 @@ fn cu_bench() {
     MolluskComputeUnitBencher::new(mollusk)
         .bench(("bench0", &instruction, &accounts))
         .must_pass(false)
-        .out_dir("../target/benches")
+        .out_dir("./results/cu_benches")
         .execute();
 
 
