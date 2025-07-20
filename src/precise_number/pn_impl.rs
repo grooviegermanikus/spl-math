@@ -318,7 +318,7 @@ macro_rules! define_precise_number {
             /// have not been established.
             fn newtonian_root_approximation(
                 &self,
-                root: &Self, // ==2
+                root: &Self,
                 mut guess: Self,
                 iterations: u32,
             ) -> Option<Self> {
@@ -351,14 +351,12 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
+            // optimized version for root==2
             fn newtonian_root_approximation2(
                 &self,
                 mut guess: Self,
                 iterations: u32,
             ) -> Option<Self> {
-                let one = Self::one();
-                let two = one.checked_add(&one).unwrap();
-
                 let zero = Self::zero();
                 if *self == zero {
                     return Some(zero);
@@ -366,6 +364,8 @@ macro_rules! define_precise_number {
                 let mut last_guess = guess.clone();
                 for _ in 0..iterations {
                     // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
+                    // .. with n=2
+                    // x_k+1 = (x_k + A / x_k) / 2
                     let second_term = self.checked_div(&guess)?;
                     guess = guess.checked_add(&second_term)?.checked_div2();
                     // note: reference algo uses "<="
@@ -406,11 +406,7 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
-                // FIXME
-                let old = self.newtonian_root_approximation(&two, guess.clone(), Self::MAX_APPROXIMATION_ITERATIONS);
-                let new = self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS);
-                assert_eq!(old, new, "Newtonian approximation failed to converge");
-                new
+                self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
         }
     };
