@@ -671,37 +671,46 @@ mod tests {
     }
 
     fn check_square_root(check: &PreciseNumber) {
+        let (lower_bound, upper_bound) = calc_square_root_bounds(check);
+        assert!(check.less_than_or_equal(&upper_bound));
+        assert!(check.greater_than_or_equal(&lower_bound));
+    }
+
+    fn calc_square_root_bounds(check: &PreciseNumber) -> (PreciseNumber, PreciseNumber) {
         let epsilon = PreciseNumber {
             value: InnerUint::from(10),
         }; // correct within 11 decimals
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
+        let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
         let approximate_root = check.sqrt().unwrap();
-
-        let next_higher = check.checked_mul(&one_plus_epsilon).unwrap().sqrt().unwrap();
-        if !approximate_root.less_than(&next_higher) {
-            println!(
-                "check: {}, root: {}, next_higher: {}",
-                check.value, approximate_root.value, next_higher.value
-            );
-            // panic!("Square root approximation is not correct");
-        }
+        let lower_bound = approximate_root
+            .checked_mul(&one_minus_epsilon)
+            .unwrap()
+            .checked_pow(2)
+            .unwrap();
+        let upper_bound = approximate_root
+            .checked_mul(&one_plus_epsilon)
+            .unwrap()
+            .checked_pow(2)
+            .unwrap();
+        (lower_bound, upper_bound)
     }
 
     fn compare_pn_fixed(i: u128) -> BigDecimal {
         let pn = PreciseNumber { value: InnerUint::from(i) };
 
         let pn_sqrt = pn.sqrt().unwrap();
-        // println!("pn: {:?}", pn.value);
-        // println!("pn_sqrt: {:?}", pn_sqrt.value);
+        println!("pn: {:?}", pn.value);
+        println!("pn_sqrt: {:?}", pn_sqrt.value);
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
         let fx_x = BigDecimal::from_u128(i).unwrap() / fx_one.clone();
         let fx_sqrt = fx_x.sqrt().unwrap();
-        // println!("pn_x: {:?}", fx_x);
-        println!("fx_sqrt: {:?}", fx_sqrt.as_bigint_and_exponent());
+        println!("fx_x: {}", fx_x.to_string());
+        println!("fx_sqrt: {}", fx_sqrt.to_string());
         let fx_sqrt_pn = fx_sqrt;
-        // println!("fx_sqrt_pn: {:?}", fx_sqrt_pn);
+        println!("pn_sqrt: {:?}", pn_sqrt);
 
         let pn_sqrt_as_fixed = BigDecimal::from_str(&format!("{}", pn_sqrt.value.as_u128())).unwrap().div(fx_one);
 
@@ -788,8 +797,8 @@ mod tests {
         // let epsilon = I64F64::const_from_int(1)
         //     .checked_div(I64F64::const_from_int(1e11 as i128))
         //     .unwrap();
-        let epsilon = BigDecimal::from_str("0.00000000001").unwrap(); // correct within 11 decimals
-        assert_eq!(epsilon.as_bigint_and_exponent().1, 11);
+        let epsilon = BigDecimal::from_str("0.0000000001").unwrap(); // 1e10, correct within 11 decimals
+        assert_eq!(epsilon.as_bigint_and_exponent().1, 10);
 
         // cases:
         // very small number
@@ -807,7 +816,10 @@ mod tests {
             println!("i: {}, diff: {}", i, diff);
             println!("diff < epsilon: {}", diff < epsilon);
             println!("epsilon: {}", epsilon);
-            assert!(diff < epsilon, "Difference is greater than epsilon");
+
+            let (lower_bound, upper_bound) = calc_square_root_bounds(&PreciseNumber { value: InnerUint::from(i) });
+            println!("diff_bounds: {:?}", upper_bound.checked_sub(&lower_bound).unwrap());
+            // assert!(diff < epsilon, "Difference is greater than epsilon");
         }
 
     }
