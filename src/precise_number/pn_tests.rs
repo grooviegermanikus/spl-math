@@ -331,6 +331,41 @@ mod tests {
         }
     }
 
+
+    // returns 10**(-digits) in InnerUint
+    // for testing only, neither fast not beautiful
+    fn precision(digits: u8) -> InnerUint {
+        let one_tenth = PreciseNumber {
+            value: ONE_CONST / 10u128,
+        };
+        one_tenth.checked_pow(digits as u32).unwrap().value
+    }
+
+    // adopted from token-bonding-curve -> 
+    #[test]
+    fn test_square_root_precision() {
+        // number below 1 (with uneven number of bits) 1.23456789e-9
+        let number = PreciseNumber::new(123456789)
+            .checked_div(&(PreciseNumber::new(10u128.pow(17))))
+            .unwrap();
+        // sqrt is 3.51364182864446216-5
+        let expected_sqrt = PreciseNumber::new(351364182864446216)
+            .checked_div(&(PreciseNumber::new(10u128.pow(22))))
+            .unwrap();
+        assert!(
+            number
+                .sqrt()
+                .unwrap()
+                // precise to first 9 decimals
+                .almost_eq(&expected_sqrt, precision(9)),
+            "sqrt {:?} not equal to expected {:?}",
+            number.sqrt().unwrap(),
+            expected_sqrt,
+        );
+    }
+
+
+    
     proptest! {
         #[test]
         fn test_square_root(a in 0..u128::MAX) {
