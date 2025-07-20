@@ -402,6 +402,7 @@ mod tests {
     use std::ops::Div;
     use std::str::FromStr;
     use bigdecimal_rs::BigDecimal;
+    use itertools::{chain, concat};
     use num_traits::FromPrimitive;
     use {super::*, proptest::prelude::*};
     type InnerUint = U256;
@@ -687,7 +688,7 @@ mod tests {
         }
     }
 
-    fn compare_pn_fixed(i: i128) -> BigDecimal {
+    fn compare_pn_fixed(i: u128) -> BigDecimal {
         let pn = PreciseNumber { value: InnerUint::from(i) };
 
         let pn_sqrt = pn.sqrt().unwrap();
@@ -695,10 +696,10 @@ mod tests {
         // println!("pn_sqrt: {:?}", pn_sqrt.value);
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
-        let fx_x = BigDecimal::from_i128(i).unwrap() / fx_one.clone();
+        let fx_x = BigDecimal::from_u128(i).unwrap() / fx_one.clone();
         let fx_sqrt = fx_x.sqrt().unwrap();
         // println!("pn_x: {:?}", fx_x);
-        // println!("fx_sqrt: {:?}", fx_sqrt);
+        println!("fx_sqrt: {:?}", fx_sqrt.as_bigint_and_exponent());
         let fx_sqrt_pn = fx_sqrt;
         // println!("fx_sqrt_pn: {:?}", fx_sqrt_pn);
 
@@ -778,6 +779,7 @@ mod tests {
         }
     }
 
+    // BigDecimal will adjust the scale dynamically to MAX_SCALE=100
     #[test]
     fn test_fixed_vs_pn() {
         // let epsilon = PreciseNumber {
@@ -789,31 +791,23 @@ mod tests {
         let epsilon = BigDecimal::from_str("0.00000000001").unwrap(); // correct within 11 decimals
         assert_eq!(epsilon.as_bigint_and_exponent().1, 11);
 
-        
-        for i in (800000000000..1200000000000).step_by(10000000000) {
+        // cases:
+        // very small number
+        // 1e-2 .. 1e2
+        // very large number
+
+        let small_values = (1_000..2_000).step_by(100).into_iter();
+        let around2 = (800_000_000_000..1_200_000_000_000).step_by(10_000_000_000).into_iter();
+        let large_values = ((u128::MAX - 1_000_000)..u128::MAX).step_by(1_000).into_iter();
+
+
+        // i is in scaled by 1e12
+        for i in small_values.chain(around2).chain(large_values) {
             let diff = compare_pn_fixed(i);
             println!("i: {}, diff: {}", i, diff);
             println!("diff < epsilon: {}", diff < epsilon);
             println!("epsilon: {}", epsilon);
             assert!(diff < epsilon, "Difference is greater than epsilon");
-
-            // let pn = PreciseNumber { value: InnerUint::from(i) };
-            //
-            // let pn_sqrt = pn.sqrt().unwrap();
-            // println!("pn: {:?}", pn.value);
-            // println!("pn_sqrt: {:?}", pn_sqrt.value);
-            //
-            // let fx_one = I64F64::const_from_int(1000000000000i128); // 1e12
-            // let fx_x = I64F64::const_from_int(i) / fx_one;
-            // let fx_sqrt = fx_x.sqrt();
-            // println!("pn_x: {:?}", fx_x);
-            // println!("fx_sqrt: {:?}", fx_sqrt);
-            // let fx_sqrt_pn = fx_sqrt * fx_one;
-            // println!("fx_sqrt_pn: {:?}", fx_sqrt_pn);
-            //
-            // println!();
-
-
         }
 
     }
