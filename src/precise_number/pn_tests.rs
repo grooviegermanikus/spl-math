@@ -435,5 +435,17 @@ mod tests {
             let a = PreciseNumber { value: InnerUint::from(a) };
             check_square_root(&a);
         }
+
+         #[test]
+        fn test_newton(a in 0..u128::MAX) {
+            let a = PreciseNumber { value: InnerUint::from(a) };
+            let two = PreciseNumber::new(2);
+            let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
+            let generic_version = a.newtonian_root_approximation(&two, guess.clone(), 100);
+            let root2_version = a.newtonian_root_approximation2(guess, 100);
+
+            assert_eq!(root2_version, generic_version);
+
+        }
     }
 }
