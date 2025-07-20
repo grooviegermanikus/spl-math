@@ -399,9 +399,10 @@ define_precise_number!(
 
 #[cfg(test)]
 mod tests {
-    use fixed::FixedI128;
-    use fixed::types::extra::U64;
-    use fixed::types::I64F64;
+    use std::ops::Div;
+    use std::str::FromStr;
+    use bigdecimal_rs::BigDecimal;
+    use num_traits::FromPrimitive;
     use {super::*, proptest::prelude::*};
     type InnerUint = U256;
 
@@ -686,22 +687,22 @@ mod tests {
         }
     }
 
-    fn compare_pn_fixed(i: i128) -> FixedI128<U64> {
+    fn compare_pn_fixed(i: i128) -> BigDecimal {
         let pn = PreciseNumber { value: InnerUint::from(i) };
 
         let pn_sqrt = pn.sqrt().unwrap();
         // println!("pn: {:?}", pn.value);
         // println!("pn_sqrt: {:?}", pn_sqrt.value);
 
-        let fx_one = I64F64::const_from_int(1000000000000i128); // 1e12
-        let fx_x = I64F64::const_from_int(i) / fx_one;
-        let fx_sqrt = fx_x.sqrt();
+        let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
+        let fx_x = BigDecimal::from_i128(i).unwrap() / fx_one.clone();
+        let fx_sqrt = fx_x.sqrt().unwrap();
         // println!("pn_x: {:?}", fx_x);
         // println!("fx_sqrt: {:?}", fx_sqrt);
         let fx_sqrt_pn = fx_sqrt;
         // println!("fx_sqrt_pn: {:?}", fx_sqrt_pn);
 
-        let pn_sqrt_as_fixed = I64F64::from_str(&format!("{}", pn_sqrt.value.as_u128())).unwrap().checked_div(fx_one).unwrap();
+        let pn_sqrt_as_fixed = BigDecimal::from_str(&format!("{}", pn_sqrt.value.as_u128())).unwrap().div(fx_one);
 
         (fx_sqrt_pn - pn_sqrt_as_fixed).abs()
     }
@@ -778,30 +779,23 @@ mod tests {
     }
 
     #[test]
-    fn test_fixed() {
-        let x = I64F64::from_str("11000.11111").unwrap();
-        let y = I64F64::const_from_int(2);
-        let z = x / y;
-
-        println!("x / y = {}", z);
-
-    }
-
-
-    #[test]
     fn test_fixed_vs_pn() {
         // let epsilon = PreciseNumber {
         //     value: InnerUint::from(10),
         // }; // correct within 11 decimals
-        let epsilon = I64F64::const_from_int(1)
-            .checked_div(I64F64::const_from_int(1e11 as i128))
-            .unwrap();
+        // let epsilon = I64F64::const_from_int(1)
+        //     .checked_div(I64F64::const_from_int(1e11 as i128))
+        //     .unwrap();
+        let epsilon = BigDecimal::from_str("0.00000000001").unwrap(); // correct within 11 decimals
+        assert_eq!(epsilon.as_bigint_and_exponent().1, 11);
 
+        
         for i in (800000000000..1200000000000).step_by(10000000000) {
             let diff = compare_pn_fixed(i);
             println!("i: {}, diff: {}", i, diff);
             println!("diff < epsilon: {}", diff < epsilon);
             println!("epsilon: {}", epsilon);
+            assert!(diff < epsilon, "Difference is greater than epsilon");
 
             // let pn = PreciseNumber { value: InnerUint::from(i) };
             //
