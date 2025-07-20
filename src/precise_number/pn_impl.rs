@@ -145,7 +145,7 @@ macro_rules! define_precise_number {
                 }
             }
 
-            fn checked_div2(&self) -> Self {
+            fn div2(&self) -> Self {
                 use std::ops::Shr;
                 let value = self.value.shr(1);
                 Self { value }
@@ -357,22 +357,21 @@ macro_rules! define_precise_number {
                 mut guess: Self,
                 iterations: u32,
             ) -> Option<Self> {
+                let a = self;
                 let zero = Self::zero();
-                if *self == zero {
+                if *a == zero {
                     return Some(zero);
                 }
-                let mut last_guess = guess.clone();
                 for _ in 0..iterations {
                     // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
                     // .. with n=2
                     // x_k+1 = (x_k + A / x_k) / 2
-                    let second_term = self.checked_div(&guess)?;
-                    guess = guess.checked_add(&second_term)?.checked_div2();
+                    let next_guess = guess.checked_add(&a.checked_div(&guess)?)?.div2();
                     // note: reference algo uses "<="
-                    if last_guess.almost_eq(&guess, Self::PRECISION) {
+                    if guess.almost_eq(&next_guess, Self::PRECISION) {
                         break;
                     } else {
-                        last_guess = guess.clone();
+                        guess = next_guess;
                     }
                 }
                 Some(guess)
