@@ -80,7 +80,7 @@ macro_rules! define_precise_number {
             /// Checks that two PreciseNumbers are equal within some tolerance
             pub fn almost_eq(&self, rhs: &Self, precision: $FPInner) -> bool {
                 let (difference, _) = self.unsigned_sub(rhs);
-                difference.value < precision
+                difference.value <= precision
             }
 
             /// Checks that a number is less than another
@@ -369,6 +369,7 @@ macro_rules! define_precise_number {
                     let next_guess = guess.checked_add(&a.checked_div(&guess)?)?.div2();
                     // note: reference algo uses "<="
                     if guess.almost_eq(&next_guess, Self::PRECISION) {
+                        guess = next_guess;
                         break;
                     } else {
                         guess = next_guess;
