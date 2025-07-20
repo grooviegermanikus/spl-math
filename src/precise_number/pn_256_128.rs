@@ -44,4 +44,10 @@ mod tests {
     fn test_u256_maximum_sqrt_base_constant() {
         assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u128::MAX).value);
     }
+    
+    #[test]
+    fn test_u256_precision_constant() {
+        assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
+    }
+    
 }
