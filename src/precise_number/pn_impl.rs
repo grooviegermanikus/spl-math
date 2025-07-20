@@ -145,6 +145,12 @@ macro_rules! define_precise_number {
                 }
             }
 
+            fn checked_div2(&self) -> Self {
+                use std::ops::Shr;
+                let value = self.value.shr(1);
+                Self { value }
+            }
+
             /// Performs a multiplication on two precise numbers
             pub fn checked_mul(&self, rhs: &Self) -> Option<Self> {
                 match self.value.checked_mul(rhs.value) {
@@ -307,12 +313,12 @@ macro_rules! define_precise_number {
             }
 
             /// Approximate the nth root of a number using Newton's method
-            /// https://en.wikipedia.org/wiki/Newton%27s_method
+            /// Adoption of python example in https://en.wikipedia.org/wiki/Newton%27s_method#Code
             /// NOTE: this function is private because its accurate range and precision
             /// have not been established.
             fn newtonian_root_approximation(
                 &self,
-                root: &Self,
+                root: &Self, // ==2
                 mut guess: Self,
                 iterations: u32,
             ) -> Option<Self> {
@@ -336,6 +342,33 @@ macro_rules! define_precise_number {
                         None => Self::zero(),
                     };
                     guess = first_term.checked_add(&second_term)?.checked_div(root)?;
+                    if last_guess.almost_eq(&guess, Self::PRECISION) {
+                        break;
+                    } else {
+                        last_guess = guess.clone();
+                    }
+                }
+                Some(guess)
+            }
+
+            fn newtonian_root_approximation2(
+                &self,
+                mut guess: Self,
+                iterations: u32,
+            ) -> Option<Self> {
+                let one = Self::one();
+                let two = one.checked_add(&one).unwrap();
+
+                let zero = Self::zero();
+                if *self == zero {
+                    return Some(zero);
+                }
+                let mut last_guess = guess.clone();
+                for _ in 0..iterations {
+                    // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
+                    let second_term = self.checked_div(&guess)?;
+                    guess = guess.checked_add(&second_term)?.checked_div2();
+                    // note: reference algo uses "<="
                     if last_guess.almost_eq(&guess, Self::PRECISION) {
                         break;
                     } else {
@@ -373,7 +406,11 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
-                self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                // FIXME
+                let old = self.newtonian_root_approximation(&two, guess.clone(), Self::MAX_APPROXIMATION_ITERATIONS);
+                let new = self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS);
+                assert_eq!(old, new, "Newtonian approximation failed to converge");
+                new
             }
         }
     };
