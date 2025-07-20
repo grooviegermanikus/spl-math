@@ -430,6 +430,8 @@ mod tests {
 
 
     proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000_000))] // Increase to 1000 samples
+
         #[test]
         fn test_square_root(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
