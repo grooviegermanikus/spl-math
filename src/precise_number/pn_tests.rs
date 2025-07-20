@@ -335,13 +335,23 @@ mod tests {
     // returns 10**(-digits) in InnerUint
     // for testing only, neither fast not beautiful
     fn precision(digits: u8) -> InnerUint {
-        let one_tenth = PreciseNumber {
-            value: ONE_CONST / 10u128,
-        };
-        one_tenth.checked_pow(digits as u32).unwrap().value
+        let ten = InnerUint::from(10);
+        let mut result = ONE_CONST;
+        for i in 0..digits {
+            result = result.checked_div(ten).unwrap();
+        }
+        assert!(!result.is_zero(), "precision underflow");
+        result
+    }
+    
+    #[test]
+    fn test_precision() {
+        // 10^-9
+        let precision_9 = precision(9);
+        assert_eq!(precision_9, InnerUint::from(1000));
     }
 
-    // adopted from token-bonding-curve -> 
+    // adopted from token-bonding-curve ->
     #[test]
     fn test_square_root_precision() {
         // number below 1 (with uneven number of bits) 1.23456789e-9
@@ -365,7 +375,7 @@ mod tests {
     }
 
 
-    
+
     proptest! {
         #[test]
         fn test_square_root(a in 0..u128::MAX) {
