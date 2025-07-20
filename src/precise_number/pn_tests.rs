@@ -337,7 +337,7 @@ mod tests {
     fn precision(digits: u8) -> InnerUint {
         let ten = InnerUint::from(10);
         let mut result = ONE_CONST;
-        for i in 0..digits {
+        for _ in 0..digits {
             result = result.checked_div(ten).unwrap();
         }
         assert!(!result.is_zero(), "precision underflow");
@@ -351,7 +351,7 @@ mod tests {
         assert_eq!(precision_9, InnerUint::from(1000));
     }
 
-    // adopted from token-bonding-curve ->
+    // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_square_root_precision() {
         // number below 1 (with uneven number of bits) 1.23456789e-9
@@ -372,6 +372,59 @@ mod tests {
             number.sqrt().unwrap(),
             expected_sqrt,
         );
+
+        // exactly max_bits 18446744073709551615e-18 (this is 64 bits of 1, then divided by ONE)
+        let number = PreciseNumber::new(18446744073709551615)
+            .checked_div(&(PreciseNumber::new(10u128.pow(18))))
+            .unwrap();
+        // assert_eq!(number.value.bits(), 64);
+        assert_eq!(number.value.bits(), 45);
+        // sqrt is 4.29496729599999999988
+        let expected_sqrt = PreciseNumber::new(4294967295999999999)
+            .checked_div(&(PreciseNumber::new(10u128.pow(18))))
+            .unwrap();
+        assert!(
+            number
+                .sqrt()
+                .unwrap()
+                // precise to first 9 decimals
+                .almost_eq(&expected_sqrt, precision(9)),
+            "sqrt {:?} not equal to expected {:?}",
+            number.sqrt().unwrap(),
+            expected_sqrt,
+        );
+
+        // 1 exactly
+        let number = PreciseNumber::new(1);
+        // sqrt is 1
+        let expected_sqrt = PreciseNumber::new(1);
+        assert!(
+            number
+                .sqrt()
+                .unwrap()
+                // precise to first 12 decimals
+                .almost_eq(&expected_sqrt, precision(12)),
+            "sqrt {:?} not equal to expected {:?}",
+            number.sqrt().unwrap(),
+            expected_sqrt,
+        );
+
+        // TODO decide what to do
+        // small perfect square (4e-12), should_round_up=false
+        // let number = PreciseNumber::new(4)
+        //     .checked_div(&(PreciseNumber::new(10u128.pow(12))))
+        //     .unwrap();
+        // // 2e-6, shouldn't do any rounding
+        // let expected_sqrt = PreciseNumber::new(2)
+        //     .checked_div(&(PreciseNumber::new(10u128.pow(6))))
+        //     .unwrap();
+        // assert!(
+        //     number.sqrt().unwrap().eq(&expected_sqrt),
+        //     "sqrt {:?} not equal to expected {:?}",
+        //     number.sqrt().unwrap(),
+        //     expected_sqrt,
+        // );
+
     }
 
 
