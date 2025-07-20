@@ -1,8 +1,15 @@
 #[cfg(test)]
 mod tests {
+    use anchor_lang::prelude::{AccountInfo, AccountMeta};
+    use anchor_lang::solana_program::entrypoint::ProgramResult;
+    use anchor_lang::solana_program::instruction::{get_stack_height, Instruction};
     use crate::define_precise_number;
     use crate::uint::U256;
     use proptest::prelude::*;
+    use solana_program_test::{processor, ProgramTest};
+    use solana_pubkey::Pubkey;
+    use solana_signer::Signer;
+    use solana_transaction::Transaction;
 
     type InnerUint = U256;
 
@@ -338,4 +345,49 @@ mod tests {
             check_square_root(&a);
         }
     }
+
+    fn invoked_stack_height(
+        _program_id: &Pubkey,
+        _accounts: &[AccountInfo],
+        _input: &[u8],
+    ) -> ProgramResult {
+        let stack_height = get_stack_height();
+        assert_eq!(stack_height, 2);
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_solana_program() {
+
+        let invoker_stack_height_program_id = Pubkey::new_unique();
+
+        let mut test = ProgramTest::new("spl_math_bench", invoker_stack_height_program_id, processor!(invoked_stack_height));
+
+        // intentionally set to as tight as possible, to catch potential problems early
+        test.set_compute_max_units(800_000);
+
+        let context = test.start_with_context().await;
+
+        let instructions = vec![Instruction::new_with_bytes(
+            invoker_stack_height_program_id,
+            &[],
+            vec![AccountMeta::new_readonly(
+                invoker_stack_height_program_id,
+                false,
+            )],
+        )];
+        let transaction = Transaction::new_signed_with_payer(
+            &instructions,
+            Some(&context.payer.pubkey()),
+            &[&context.payer],
+            context.last_blockhash,
+        );
+        
+        context
+            .banks_client
+            .process_transaction(transaction)
+            .await
+            .unwrap();
+    }
+
 }
