@@ -53,7 +53,7 @@ pub(crate) fn bench_unsigned_sub(c: &mut Criterion) {
 
     let mut testdata_iter = testdata.into_iter().cycle();
 
-    c.bench_function("bench_sub", |b| {
+    c.bench_function("bench_unsigned_sub", |b| {
         b.iter(|| {
             let i = testdata_iter.next()?;
             let a = PreciseNumber { value: U256::from(1_000_000_000_000u64.sub(i as u64)) };
