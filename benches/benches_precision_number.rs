@@ -4,6 +4,7 @@ mod pn;
 
 criterion_group!(
     benches_basic_math,
+    pn::basic_math::bench_to_imprecise,
     pn::basic_math::bench_add,
     pn::basic_math::bench_sub,
     pn::basic_math::bench_unsigned_sub,
