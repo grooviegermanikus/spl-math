@@ -44,6 +44,27 @@ pub(crate) fn bench_sub(c: &mut Criterion) {
     });
 }
 
+
+pub(crate) fn bench_unsigned_sub(c: &mut Criterion) {
+    const SAMPLES: u64 = 1_000_000;
+
+    let testdata = (0..SAMPLES)
+        .map(|i| i).collect_vec();
+
+    let mut testdata_iter = testdata.into_iter().cycle();
+
+    c.bench_function("bench_sub", |b| {
+        b.iter(|| {
+            let i = testdata_iter.next()?;
+            let a = PreciseNumber { value: U256::from(1_000_000_000_000u64.sub(i as u64)) };
+            let b = PreciseNumber { value: U256::from(i as u64) };
+            let (abs, _sign) = a.unsigned_sub(&b);
+
+            Some(abs)
+        });
+    });
+}
+
 pub(crate) fn bench_ceiling(c: &mut Criterion) {
     const SAMPLES: u64 = 1_000_000;
 
