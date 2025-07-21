@@ -18,7 +18,13 @@ criterion_group!(
     pn::pow::bench_pow,
 );
 
+criterion_group!(
+    benches_sqrt,
+    pn::sqrt::bench_sqrt,
+);
+
 criterion_main!(
     benches_basic_math,
     benches_pow,
+    benches_sqrt,
 );
