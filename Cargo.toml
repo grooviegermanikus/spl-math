@@ -7,13 +7,18 @@ repository = "https://github.com/solana-labs/solana-program-library"
 license = "Apache-2.0"
 edition = "2021"
 
+[[bench]]
+name = "bench_sqrt"
+harness = false
+
 [dependencies]
 num-traits = "0.2"
 uint = "0.10"
 
 [dev-dependencies]
-proptest = "1.6.0"
+proptest = { version = "1.6.0", features = ["timeout"] }
 libm = "0.2.11"
+criterion = "0.6.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

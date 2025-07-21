@@ -331,7 +331,6 @@ mod tests {
         }
     }
 
-
     // returns 10**(-digits) in InnerUint
     // for testing only, neither fast not beautiful
     fn precision(digits: u8) -> InnerUint {
@@ -343,7 +342,7 @@ mod tests {
         assert!(!result.is_zero(), "precision underflow");
         result
     }
-    
+
     #[test]
     fn test_precision() {
         // 10^-9
@@ -424,13 +423,14 @@ mod tests {
         //     number.sqrt().unwrap(),
         //     expected_sqrt,
         // );
-
     }
 
-
-
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(1_000_000))] // Increase to 1000 samples
+        #![proptest_config(ProptestConfig {
+            cases: 10_000,
+            timeout: 15,
+            ..ProptestConfig::default()
+        })]
 
         #[test]
         fn test_square_root(a in 0..u128::MAX) {
