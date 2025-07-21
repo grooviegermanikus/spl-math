@@ -4,6 +4,30 @@ use itertools::Itertools;
 use spl_math::PreciseNumber;
 use spl_math::uint::U256;
 
+
+pub(crate) fn bench_to_imprecise(c: &mut Criterion) {
+    const SAMPLES: u64 = 1_000_000;
+
+    let testdata = (0..SAMPLES)
+        .map(|i| {
+            let one = PreciseNumber::new(2);
+            one.checked_mul(&PreciseNumber { value: U256::from(i * 1_000_000) }).unwrap()
+
+        }).collect_vec();
+
+    let mut testdata_iter = testdata.into_iter().cycle();
+
+    c.bench_function("bench_to_imprecise", |b| {
+        b.iter(|| {
+            let a = testdata_iter.next()?;
+            let result = a.to_imprecise().unwrap();
+            Some(result)
+        });
+    });
+}
+
+
+
 pub(crate) fn bench_add(c: &mut Criterion) {
     const SAMPLES: u64 = 1_000_000;
 
