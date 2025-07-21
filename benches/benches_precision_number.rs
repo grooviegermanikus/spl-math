@@ -12,4 +12,12 @@ criterion_group!(
     pn::basic_math::bench_div,
 );
 
-criterion_main!(benches_basic_math);
+criterion_group!(
+    benches_pow,
+    pn::pow::bench_pow,
+);
+
+criterion_main!(
+    benches_basic_math,
+    benches_pow,
+);
