@@ -331,7 +331,6 @@ mod tests {
         }
     }
 
-
     // returns 10**(-digits) in InnerUint
     // for testing only, neither fast not beautiful
     fn precision(digits: u8) -> InnerUint {
@@ -343,7 +342,7 @@ mod tests {
         assert!(!result.is_zero(), "precision underflow");
         result
     }
-    
+
     #[test]
     fn test_precision() {
         // 10^-9
@@ -424,16 +423,31 @@ mod tests {
         //     number.sqrt().unwrap(),
         //     expected_sqrt,
         // );
-
     }
 
-
-
     proptest! {
+        #![proptest_config(ProptestConfig {
+            cases: 10_000,
+            timeout: 15,
+            ..ProptestConfig::default()
+        })]
+
         #[test]
         fn test_square_root(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
             check_square_root(&a);
+        }
+
+         #[test]
+        fn test_newton(a in 0..u128::MAX) {
+            let a = PreciseNumber { value: InnerUint::from(a) };
+            let two = PreciseNumber::new(2);
+            let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
+            let generic_version = a.newtonian_root_approximation(&two, guess.clone(), 100);
+            let root2_version = a.newtonian_root_approximation2(guess, 100);
+
+            assert_eq!(root2_version, generic_version);
+
         }
     }
 }
