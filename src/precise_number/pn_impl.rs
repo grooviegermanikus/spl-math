@@ -377,7 +377,7 @@ macro_rules! define_precise_number {
                 }
                 Some(guess)
             }
-            
+
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
             fn minimum_sqrt_base() -> Self {
@@ -407,6 +407,7 @@ macro_rules! define_precise_number {
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
                 self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                // self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
         }
     };
