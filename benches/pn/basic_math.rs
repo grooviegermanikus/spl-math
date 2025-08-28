@@ -2,9 +2,10 @@ use std::ops::Sub;
 use std::str::FromStr;
 use bigdecimal_rs::BigDecimal;
 use criterion::Criterion;
+use fixed::types::{U96F32};
 use itertools::Itertools;
-use spl_math::PreciseNumber;
-use spl_math::uint::U256;
+use spl_math_evolved::precise_number::PreciseNumber;
+use spl_math_evolved::uint::U256;
 
 
 pub(crate) fn bench_to_imprecise(c: &mut Criterion) {
@@ -12,7 +13,7 @@ pub(crate) fn bench_to_imprecise(c: &mut Criterion) {
 
     let testdata = (0..SAMPLES)
         .map(|i| {
-            let one = PreciseNumber::new(2);
+            let one = PreciseNumber::new(2).unwrap();
             one.checked_mul(&PreciseNumber { value: U256::from(i * 1_000_000) }).unwrap()
 
         }).collect_vec();
@@ -95,7 +96,7 @@ pub(crate) fn bench_ceiling(c: &mut Criterion) {
     const SAMPLES: u64 = 10_000;
 
     let testdata = (1..=SAMPLES)
-        .map(|i| PreciseNumber::new(1)
+        .map(|i| PreciseNumber::new(1).unwrap()
             .checked_add(&PreciseNumber {
                 value: U256::from(i as u64)
             }).unwrap()).collect_vec();
@@ -118,11 +119,11 @@ pub(crate) fn bench_mul(c: &mut Criterion) {
 
     let testdata = (1..=SAMPLES)
         .map(|i| (
-            PreciseNumber::new(100)
+            PreciseNumber::new(100).unwrap()
                 .checked_add(&PreciseNumber {
                     value: U256::from(i as u64)
                 }).unwrap(),
-            PreciseNumber::new(200)
+            PreciseNumber::new(200).unwrap()
                 .checked_add(&PreciseNumber {
                     value: U256::from(i * 3)
                 }).unwrap(),
@@ -161,14 +162,14 @@ pub(crate) fn bench_div(c: &mut Criterion) {
     });
 }
 
-// TODO consolidate
-pub(crate) fn bench_div_bigdecimal(c: &mut Criterion) {
+// compare with crate "bigdecimal-rs"
+pub(crate) fn bench_div_bigdecimal_lib(c: &mut Criterion) {
     const SAMPLES: u64 = 10_000;
 
+    let fx_one = BigDecimal::from_str("1e12").unwrap();
     let testdata = (1..=SAMPLES)
         .map(create_divisor_dividend)
         .map(|(a, b)| {
-            let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
             let a = BigDecimal::from_str(&format!("{}", a.value)).unwrap() / &fx_one;
             let b = BigDecimal::from_str(&format!("{}", b.value)).unwrap() / &fx_one;
             (a, b)
@@ -188,13 +189,39 @@ pub(crate) fn bench_div_bigdecimal(c: &mut Criterion) {
     });
 }
 
+// compare with crate "fixed"
+pub(crate) fn bench_div_fixed_lib(c: &mut Criterion) {
+    const SAMPLES: u64 = 10_000;
+
+    let testdata = (1..=SAMPLES)
+        .map(create_divisor_dividend)
+        .map(|(a, b)| {
+            let a = U96F32::from(a.to_imprecise().unwrap() as u64);
+            let b = U96F32::from(b.to_imprecise().unwrap() as u64);
+            (a, b)
+        }
+        )
+        .collect_vec();
+
+    let mut testdata_iter = testdata.into_iter().cycle();
+
+    c.bench_function("bench_div_fixed", |b| {
+        b.iter(|| {
+            let (a, b) = testdata_iter.next()?;
+            let result = a / b;
+
+            Some(result)
+        });
+    });
+}
+
 fn create_divisor_dividend(i: u64) -> (PreciseNumber, PreciseNumber) {
     (
-        PreciseNumber::new(if i % 2 == 0 { 100 } else { u128::MAX / 1_000_000 })
+        PreciseNumber::new(if i % 2 == 0 { 100 } else { u128::MAX / 1_000_000 }).unwrap()
             .checked_add(&PreciseNumber {
                 value: U256::from(i as u64)
             }).unwrap(),
-        PreciseNumber::new(200)
+        PreciseNumber::new(200).unwrap()
             .checked_add(&PreciseNumber {
                 value: U256::from(i * 3)
             }).unwrap(),

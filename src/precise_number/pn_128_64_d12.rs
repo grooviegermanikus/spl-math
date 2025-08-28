@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn test_u128_max_outer_to_precise() {
-        let a = PreciseNumber::new(u64::MAX);
+        let a = PreciseNumber::new(u64::MAX).unwrap();
         assert_eq!(a.to_imprecise().unwrap(), u64::MAX);
         let a_plus_1 = a.checked_add(&PreciseNumber::one()).unwrap();
         assert!(a_plus_1.to_imprecise().is_none());
@@ -41,6 +41,6 @@ mod tests {
 
     #[test]
     fn test_u128_maximum_sqrt_base_constant() {
-        assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u64::MAX).value);
+        assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u64::MAX).unwrap().value);
     }
 }

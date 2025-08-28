@@ -11,7 +11,8 @@ criterion_group!(
     pn::basic_math::bench_ceiling,
     pn::basic_math::bench_mul,
     pn::basic_math::bench_div,
-    pn::basic_math::bench_div_bigdecimal,
+    pn::basic_math::bench_div_bigdecimal_lib,
+    pn::basic_math::bench_div_fixed_lib,
 );
 
 criterion_group!(

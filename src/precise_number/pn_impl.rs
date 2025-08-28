@@ -64,10 +64,10 @@ macro_rules! define_precise_number {
             }
 
             /// Create a precise number from an imprecise outer type, should always succeed
-            pub fn new(int_val: $TOuter) -> Self {
+            pub fn new(int_val: $TOuter) -> Option<Self> {
                 let int_value: $FPInner = int_val.into();
                 let value: $FPInner = int_value.checked_mul(Self::FP_ONE).unwrap();
-                Self { value }
+                Some(Self { value })
             }
             /// Convert a precise number back to outer type
             pub fn to_imprecise(&self) -> Option<$TOuter> {
