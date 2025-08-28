@@ -1,3 +1,5 @@
+/// Decimal fix-point number with 12 decimal places backed by u128
+///
 use crate::define_precise_number;
 
 const ONE_CONST: u128 = 1_000_000_000;

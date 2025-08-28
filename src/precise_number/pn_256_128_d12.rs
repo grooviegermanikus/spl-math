@@ -1,3 +1,6 @@
+/// Decimal fix-point number with 12 decimal places backed by U256
+/// backward-compatible with spl-math's PreciseNumber (12 decimal places)
+
 use crate::define_precise_number;
 use crate::uint::U256;
 
