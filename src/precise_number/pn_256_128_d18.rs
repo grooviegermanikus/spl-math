@@ -1,3 +1,6 @@
+/// Decimal fix-point number with 18 decimal places backed by U256
+/// 18 decimal places are recommended for most DeFi applications
+
 use crate::define_precise_number;
 use crate::uint::U256;
 
