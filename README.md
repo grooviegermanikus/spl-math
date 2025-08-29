@@ -24,8 +24,10 @@ Import and use in your Rust code:
 ```rust
 use spl_math_evolved::precise_number::PreciseNumber;
 
-let a = PreciseNumber::new(10u128).expect("valid number");
-let sqrt = a.sqrt();
+fn use_it() {
+    let a = PreciseNumber::new(10u128).expect("valid number");
+    let _sqrt = a.sqrt();
+}
 ```
 
 ## Development
