@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main};
 
 mod pn;
+mod muldiv;
 
 criterion_group!(
     benches_basic_math,
@@ -25,8 +26,15 @@ criterion_group!(
     pn::sqrt::bench_sqrt,
 );
 
+criterion_group!(
+    benches_muldiv,
+    muldiv::basic::bench_signum3,
+    muldiv::basic::bench_signum3_fast,
+);
+
 criterion_main!(
     benches_basic_math,
     benches_pow,
     benches_sqrt,
+    benches_muldiv,
 );
