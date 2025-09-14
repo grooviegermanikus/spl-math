@@ -6,6 +6,7 @@ pub fn slow(a: i32, b: i32, c: i32) -> bool {
 }
 
 // TODO bake in assumptions that c is never zero
+// 953 vs 1477
 #[inline(always)]
 pub fn fast(a: i32, b: i32, c: i32) -> bool {
     // let sgn = (a ^ b ^ c).signum();
