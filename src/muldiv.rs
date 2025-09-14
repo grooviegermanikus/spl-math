@@ -7,11 +7,13 @@ pub fn slow(a: i32, b: i32, c: i32) -> bool {
 
 #[inline(always)]
 pub fn fast(a: i32, b: i32, c: i32) -> bool {
-    let sgn = (a ^ b ^ c).signum();
+    // let sgn = (a ^ b ^ c).signum();
+    // don't need to check for zero or positive, just need to check for negative
+    let sgn =  (a ^ b ^ c) & (1 << 31);
     // TODO for multdiv we can assume that c != 0 and also shortcut for the  two others
     let any_zero = a == 0 || b == 0 || c == 0;
-    // sgn < 0
     !any_zero && sgn < 0
+    // !any_zero
 }
 
 #[cfg(test)]
