@@ -8,3 +8,4 @@ pub mod uint;
 
 // map precise number implementation
 pub mod precise_number;
+pub mod muldiv;
