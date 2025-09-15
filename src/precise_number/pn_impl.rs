@@ -378,3 +378,26 @@ macro_rules! define_precise_number {
         }
     };
 } // -- macro
+
+
+#[macro_export]
+macro_rules! define_muldiv {
+
+    // Struct, u128, U256, U512
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty) => {
+        #[allow(dead_code)]
+        impl $Precise {
+
+             pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self::Output> {
+                // assert_ne!(denom, U256::default()); // TODO
+                let r = (self.as_u512() * num.as_u512()) / denom.as_u512();
+                if r > U256::MAX.as_u512() {
+                    None
+                } else {
+                    Some(r.as_u256())
+                }
+            }
+
+        }
+    }
+}
