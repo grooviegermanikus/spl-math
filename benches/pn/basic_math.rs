@@ -34,7 +34,7 @@ pub(crate) fn bench_to_imprecise(c: &mut Criterion) {
 pub(crate) fn bench_add(c: &mut Criterion) {
     const SAMPLES: u64 = 10_000;
 
-    let testdata = (0..SAMPLES).map(|i| i).collect_vec();
+    let testdata = (0..SAMPLES).collect_vec();
 
     let mut testdata_iter = testdata.into_iter().cycle();
 
@@ -45,7 +45,7 @@ pub(crate) fn bench_add(c: &mut Criterion) {
                 value: U256::from(i),
             };
             let b = PreciseNumber {
-                value: U256::from(1_000_000_000_000u64.sub(i as u64)),
+                value: U256::from(1_000_000_000_000u64.sub(i)),
             };
             let result = a.checked_add(&b).unwrap();
 
@@ -57,7 +57,7 @@ pub(crate) fn bench_add(c: &mut Criterion) {
 pub(crate) fn bench_sub(c: &mut Criterion) {
     const SAMPLES: u64 = 10_000;
 
-    let testdata = (0..SAMPLES).map(|i| i).collect_vec();
+    let testdata = (0..SAMPLES).collect_vec();
 
     let mut testdata_iter = testdata.into_iter().cycle();
 
@@ -65,10 +65,10 @@ pub(crate) fn bench_sub(c: &mut Criterion) {
         b.iter(|| {
             let i = testdata_iter.next()?;
             let a = PreciseNumber {
-                value: U256::from(1_000_000_000_000u64.sub(i as u64)),
+                value: U256::from(1_000_000_000_000u64.sub(i)),
             };
             let b = PreciseNumber {
-                value: U256::from(i as u64),
+                value: U256::from(i),
             };
             let result = a.checked_sub(&b).unwrap();
 
@@ -80,7 +80,7 @@ pub(crate) fn bench_sub(c: &mut Criterion) {
 pub(crate) fn bench_unsigned_sub(c: &mut Criterion) {
     const SAMPLES: u64 = 10_000;
 
-    let testdata = (0..SAMPLES).map(|i| i).collect_vec();
+    let testdata = (0..SAMPLES).collect_vec();
 
     let mut testdata_iter = testdata.into_iter().cycle();
 
@@ -88,10 +88,10 @@ pub(crate) fn bench_unsigned_sub(c: &mut Criterion) {
         b.iter(|| {
             let i = testdata_iter.next()?;
             let a = PreciseNumber {
-                value: U256::from(1_000_000_000_000u64.sub(i as u64)),
+                value: U256::from(1_000_000_000_000u64.sub(i)),
             };
             let b = PreciseNumber {
-                value: U256::from(i as u64),
+                value: U256::from(i),
             };
             let (abs, _sign) = a.unsigned_sub(&b);
 
@@ -108,7 +108,7 @@ pub(crate) fn bench_ceiling(c: &mut Criterion) {
             PreciseNumber::new(1)
                 .unwrap()
                 .checked_add(&PreciseNumber {
-                    value: U256::from(i as u64),
+                    value: U256::from(i),
                 })
                 .unwrap()
         })
@@ -135,7 +135,7 @@ pub(crate) fn bench_mul(c: &mut Criterion) {
                 PreciseNumber::new(100)
                     .unwrap()
                     .checked_add(&PreciseNumber {
-                        value: U256::from(i as u64),
+                        value: U256::from(i),
                     })
                     .unwrap(),
                 PreciseNumber::new(200)
@@ -237,7 +237,7 @@ fn create_divisor_dividend(i: u64) -> (PreciseNumber, PreciseNumber) {
         })
         .unwrap()
         .checked_add(&PreciseNumber {
-            value: U256::from(i as u64),
+            value: U256::from(i),
         })
         .unwrap(),
         PreciseNumber::new(200)
