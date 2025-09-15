@@ -1,6 +1,6 @@
 use criterion::Criterion;
 use itertools::Itertools;
-use spl_math_evolved::muldiv::{fast, slow};
+use spl_math_evolved::muldiv::{signum3_fast, signum3_simple};
 
 pub(crate) fn bench_signum3(c: &mut Criterion) {
     let testdata = (0..10_000)
@@ -12,7 +12,7 @@ pub(crate) fn bench_signum3(c: &mut Criterion) {
     c.bench_function("bench_signum3", |b| {
         b.iter(|| {
             let (a, b, c) = testdata_iter.next()?;
-            let result = slow(a, b, c);
+            let result = signum3_simple(a, b, c);
             Some(result)
         });
     });
@@ -28,7 +28,7 @@ pub(crate) fn bench_signum3_fast(c: &mut Criterion) {
     c.bench_function("bench_signum3_fast", |b| {
         b.iter(|| {
             let (a, b, c) = testdata_iter.next()?;
-            let result = fast(a, b, c);
+            let result = signum3_fast(a, b, c);
             Some(result)
         });
     });
