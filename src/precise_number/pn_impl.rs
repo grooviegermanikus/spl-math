@@ -344,7 +344,7 @@ macro_rules! define_precise_number {
                 }
                 Some(guess)
             }
-            
+
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
             fn minimum_sqrt_base() -> Self {
@@ -379,15 +379,12 @@ macro_rules! define_precise_number {
     };
 } // -- macro
 
-
 #[macro_export]
 macro_rules! define_muldiv {
-
     // Struct, u128, U256, U512
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty) => {
         #[allow(dead_code)]
         impl $Precise {
-
             #[inline(always)]
             fn extend_precsion(val: $FPInner) -> $FPInnerDoublePrecision {
                 <$FPInnerDoublePrecision>::from(val)
@@ -398,14 +395,13 @@ macro_rules! define_muldiv {
                 <$FPInner>::try_from(val).ok()
             }
 
-
             // TODO rename
             // TODO num+denomf?
-             pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
-                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value)) / Self::extend_precsion(denom.value);
+            pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    / Self::extend_precsion(denom.value);
 
-                Self::trunc_precision(r)
-                    .map(|v| $Precise { value: v })
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
 
                 // assert_ne!(denom, U256::default()); // TODO use proper zero0
                 // let r = (self.as_u512() * num.as_u512()) / denom.as_u512();
@@ -415,7 +411,6 @@ macro_rules! define_muldiv {
                 //     Some(r.as_u256())
                 // }
             }
-
         }
-    }
+    };
 }

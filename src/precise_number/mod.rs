@@ -9,4 +9,3 @@ mod pn_tests;
 pub type PreciseNumber = pn_256_128_d12::PreciseNumber;
 pub type PreciseNumber128D12 = pn_128_64_d12::PreciseNumber;
 pub type PreciseNumber256D18 = pn_256_128_d18::PreciseNumber;
-

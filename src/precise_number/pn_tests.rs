@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::{define_muldiv, define_precise_number};
     use crate::uint::{U256, U512};
+    use crate::{define_muldiv, define_precise_number};
     use proptest::prelude::*;
 
     type InnerUint = U256;
@@ -68,9 +68,8 @@ mod tests {
         //     0,
         //     0,
         // ];
-        let u512 = U512 { 0: bytes8.try_into().unwrap() };
+        let u512 = U512(bytes8.try_into().unwrap());
         assert_eq!(u512.as_u128(), u256.as_u128());
-
     }
 
     #[test]
@@ -242,7 +241,8 @@ mod tests {
 
     #[test]
     fn test_checked_div() {
-        let one_tenth = PreciseNumber::new(1).unwrap()
+        let one_tenth = PreciseNumber::new(1)
+            .unwrap()
             .checked_div(&PreciseNumber::new(10).unwrap())
             .unwrap();
         let two = PreciseNumber::new(2).unwrap();
@@ -368,7 +368,6 @@ mod tests {
         // (10 * 5) / 2 = 25
         let result = a.mul_div_floor(b, c).unwrap();
         assert_eq!(result.value, 200);
-
     }
 
     proptest! {
