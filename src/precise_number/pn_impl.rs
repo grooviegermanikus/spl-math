@@ -388,14 +388,19 @@ macro_rules! define_muldiv {
         #[allow(dead_code)]
         impl $Precise {
 
-            fn as_doubleprecision(val: $FPInner) -> $FPInnerDoublePrecision {
+            #[inline(always)]
+            fn extend_precsion(val: $FPInner) -> $FPInnerDoublePrecision {
                     <$FPInnerDoublePrecision>::from(val)
             }
 
             // TODO rename
             // TODO num+denomf?
              pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
-                unimplemented!()
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value)) / Self::extend_precsion(denom.value);
+
+                <$FPInner>::try_from(r).ok()
+                    .map(|v| $Precise { value: v })
+
                 // assert_ne!(denom, U256::default()); // TODO use proper zero0
                 // let r = (self.as_u512() * num.as_u512()) / denom.as_u512();
                 // if r > U256::MAX.as_u512() {
