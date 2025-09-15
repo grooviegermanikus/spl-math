@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{define_muldiv, define_precise_number};
-    use crate::uint::U256;
+    use crate::uint::{U256, U512};
     use proptest::prelude::*;
 
     type InnerUint = U256;
@@ -44,6 +44,33 @@ mod tests {
             .unwrap();
         let expected = PreciseNumber { value: expected };
         assert!(root.almost_eq(&expected, precision));
+    }
+
+    #[test]
+    fn test_extend_precision() {
+        let u256: U256 = U256::from(1_000_000_000_000u128);
+        // cast to U512
+        let bytes: &[u64] = u256.as_ref();
+        let len = bytes.len();
+        let dlen = len * 2;
+        // extend to 8 bytes:
+        let mut bytes8 = Vec::with_capacity(dlen);
+        bytes8.extend_from_slice(bytes);
+        bytes8.resize(dlen, 0);
+        // bytes8[0..bytes.len()].copy_from_slice(bytes);
+        // let zz: [u64; 8] = [
+        //     bytes[0],
+        //     bytes[1],
+        //     bytes[2],
+        //     bytes[3],
+        //     0,
+        //     0,
+        //     0,
+        //     0,
+        // ];
+        let u512 = U512 { 0: bytes8.try_into().unwrap() };
+        assert_eq!(u512.as_u128(), u256.as_u128());
+
     }
 
     #[test]
