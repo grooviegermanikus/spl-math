@@ -41,6 +41,9 @@ mod tests {
 
     #[test]
     fn test_u128_maximum_sqrt_base_constant() {
-        assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u64::MAX).unwrap().value);
+        assert_eq!(
+            MAXIMUM_SQRT_BASE,
+            PreciseNumber::new(u64::MAX).unwrap().value
+        );
     }
 }

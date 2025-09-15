@@ -1,8 +1,7 @@
+use crate::uint::{U256, U512};
 /// Decimal fix-point number with 12 decimal places backed by U256
 /// backward-compatible with spl-math's PreciseNumber (12 decimal places)
-
 use crate::{define_muldiv, define_precise_number};
-use crate::uint::{U256, U512};
 
 const ONE_CONST: U256 = U256([1000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000 / 2, 0, 0, 0]);
@@ -19,20 +18,6 @@ define_precise_number!(
     MAXIMUM_SQRT_BASE
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
-
-impl From<crate::uint::U256> for U512 {
-    fn from(value: crate::uint::U256) -> Self {
-        unimplemented!()
-    }
-}
-
-impl TryFrom<crate::uint::U512> for U256 {
-    type Error = ();
-
-    fn try_from(value: U512) -> Result<Self, Self::Error> {
-        todo!()
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -60,15 +45,16 @@ mod tests {
 
     #[test]
     fn test_u256_maximum_sqrt_base_constant() {
-        assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u128::MAX).unwrap().value);
+        assert_eq!(
+            MAXIMUM_SQRT_BASE,
+            PreciseNumber::new(u128::MAX).unwrap().value
+        );
     }
-    
+
     #[test]
     fn test_u256_precision_constant() {
         assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
     }
-
-
 
     #[test]
     fn test_call_muldiv() {
@@ -79,7 +65,5 @@ mod tests {
         // (10 * 5) / 2 = 25
         let result = a.mul_div_floor(b, c).unwrap();
         assert_eq!(result, PreciseNumber::new(25).unwrap());
-
     }
-    
 }
