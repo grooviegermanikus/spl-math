@@ -338,7 +338,9 @@ mod tests {
         let b = TestPreciseNumber8 { value: 50 };
         let c = TestPreciseNumber8 { value: 25 };
 
+        // (10 * 5) / 2 = 25
         let result = a.mul_div_floor(b, c).unwrap();
+        assert_eq!(result.value, 200);
 
     }
 
