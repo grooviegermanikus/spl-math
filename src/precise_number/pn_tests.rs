@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::define_precise_number;
+    use crate::{define_muldiv, define_precise_number};
     use crate::uint::U256;
     use proptest::prelude::*;
 
@@ -23,6 +23,7 @@ mod tests {
     );
 
     define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 0u8, 5u8, 1u8, 10u8);
+    define_muldiv!(TestPreciseNumber8, u8, u8, u16);
     define_precise_number!(
         TestPreciseNumber32,
         u32,
@@ -334,6 +335,10 @@ mod tests {
     #[test]
     fn test_call_muldiv() {
         let a = TestPreciseNumber8 { value: 100 };
+        let b = TestPreciseNumber8 { value: 50 };
+        let c = TestPreciseNumber8 { value: 25 };
+
+        let result = a.mul_div_floor(b, c).unwrap();
 
     }
 

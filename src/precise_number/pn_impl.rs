@@ -388,14 +388,17 @@ macro_rules! define_muldiv {
         #[allow(dead_code)]
         impl $Precise {
 
-             pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self::Output> {
+            // TODO rename
+            // TODO num+denomf?
+             pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
+                todo!()
                 // assert_ne!(denom, U256::default()); // TODO
-                let r = (self.as_u512() * num.as_u512()) / denom.as_u512();
-                if r > U256::MAX.as_u512() {
-                    None
-                } else {
-                    Some(r.as_u256())
-                }
+                // let r = (self.as_u512() * num.as_u512()) / denom.as_u512();
+                // if r > U256::MAX.as_u512() {
+                //     None
+                // } else {
+                //     Some(r.as_u256())
+                // }
             }
 
         }
