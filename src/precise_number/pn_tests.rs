@@ -331,6 +331,12 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_call_muldiv() {
+        let a = TestPreciseNumber8 { value: 100 };
+
+    }
+
     proptest! {
         #[test]
         fn test_square_root(a in 0..u128::MAX) {

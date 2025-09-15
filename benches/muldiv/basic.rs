@@ -1,8 +1,6 @@
 use criterion::Criterion;
 use itertools::Itertools;
 use spl_math_evolved::muldiv::{fast, slow};
-use spl_math_evolved::precise_number::PreciseNumber;
-use spl_math_evolved::uint::U256;
 
 pub(crate) fn bench_signum3(c: &mut Criterion) {
 
