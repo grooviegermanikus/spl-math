@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use {super::*, proptest::prelude::*};
+    use {proptest::prelude::*};
     use crate::{define_muldiv, define_precise_number};
 
     define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 0u8, 5u8, 1u8, 10u8);
@@ -24,7 +24,7 @@ mod tests {
         }
         if base.value.leading_zeros() + num.value.leading_zeros() >= u8::BITS {
             // small number, no overflow
-            let r = base.value * num.value
+            let r = base.value.checked_mul(num.value).expect("no overflow")
                 / denom.value;
             Some(TestPreciseNumber8 { value: r })
         } else {
@@ -37,6 +37,9 @@ mod tests {
     }
 
     fn mul_div_floor_naiv(base: TestPreciseNumber8, num: TestPreciseNumber8, denom: TestPreciseNumber8) -> Option<TestPreciseNumber8> {
+        if denom.value == 0 {
+            return None;
+        }
         let raw_muldiv = base.value as u32 * num.value as u32 / denom.value as u32;
         u8::try_from(raw_muldiv)
             .map(|v| TestPreciseNumber8 { value: v })
