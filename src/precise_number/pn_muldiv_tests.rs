@@ -20,12 +20,18 @@ mod tests {
     }
 
     fn mul_div_floor_hacking(base: TestPreciseNumber8, num: TestPreciseNumber8, denom: TestPreciseNumber8) -> Option<TestPreciseNumber8> {
-        let r = base.value as u16 * num.value as u16
-            / denom.value as u16;
-
-        u8::try_from(r)
-            .map(|v| TestPreciseNumber8 { value: v })
-            .ok()
+        if base.value.leading_zeros() + num.value.leading_zeros() >= u8::BITS {
+            // small number, no overflow
+            let r = base.value * num.value
+                / denom.value;
+            Some(TestPreciseNumber8 { value: r })
+        } else {
+            let r = base.value as u16 * num.value as u16
+                / denom.value as u16;
+            u8::try_from(r)
+                .map(|v| TestPreciseNumber8 { value: v })
+                .ok()
+        }
     }
 
     fn mul_div_floor_naiv(base: TestPreciseNumber8, num: TestPreciseNumber8, denom: TestPreciseNumber8) -> Option<TestPreciseNumber8> {
