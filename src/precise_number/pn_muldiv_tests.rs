@@ -45,7 +45,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn test_check_mul_div(a: u8, b: u8, c in 1..u8::MAX) {
+        fn test_check_mul_div(a: u8, b: u8, c in 0..u8::MAX) {
             let aa = TestPreciseNumber8 { value: a };
             let bb = TestPreciseNumber8 { value: b };
             let cc = TestPreciseNumber8 { value: c };
