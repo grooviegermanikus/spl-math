@@ -1,7 +1,6 @@
 
 mod tests {
-    use proptest::proptest;
-    use super::*;
+    use {super::*, proptest::prelude::*};
     use crate::{define_muldiv, define_precise_number};
 
     define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 0u8, 5u8, 1u8, 10u8);
@@ -20,6 +19,9 @@ mod tests {
     }
 
     fn mul_div_floor_hacking(base: TestPreciseNumber8, num: TestPreciseNumber8, denom: TestPreciseNumber8) -> Option<TestPreciseNumber8> {
+        if denom.value == 0 {
+            return None;
+        }
         if base.value.leading_zeros() + num.value.leading_zeros() >= u8::BITS {
             // small number, no overflow
             let r = base.value * num.value
