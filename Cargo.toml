@@ -16,7 +16,7 @@ num-traits = "0.2"
 uint = "0.10"
 
 [dev-dependencies]
-proptest = { version = "1.6.0", features = ["timeout"] }
+proptest = { version = "1.8", features = ["timeout"] }
 quickcheck = "1"
 quickcheck_macros = "1"
 libm = "0.2.11"

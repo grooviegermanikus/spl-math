@@ -1,4 +1,4 @@
-
+#[cfg(test)]
 mod tests {
     use {super::*, proptest::prelude::*};
     use crate::{define_muldiv, define_precise_number};
