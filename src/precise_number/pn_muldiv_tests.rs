@@ -67,6 +67,28 @@ mod tests {
             .ok()
     }
 
+    // more tests for ceil edge cases
+    #[test]
+    fn test_mul_div_ceil_edge_cases() {
+        let a = TestPreciseNumber8 { value: 10 };
+        let b = TestPreciseNumber8 { value: 10 };
+
+        // exact division
+        let c_exact = TestPreciseNumber8 { value: 5 };
+        let r_exact = mul_div_ceil_naiv(a.clone(), b.clone(), c_exact).unwrap();
+        assert_eq!(r_exact.value, 20);
+
+        // inexact division
+        let c_inexact = TestPreciseNumber8 { value: 6 };
+        let r_inexact = mul_div_ceil_naiv(a.clone(), b.clone(), c_inexact).unwrap();
+        assert_eq!(r_inexact.value, 17); // (10*10 + 5)/6 = 16.66.. -> 17
+
+        // another inexact division
+        let c_inexact2 = TestPreciseNumber8 { value: 7 };
+        let r_inexact2 = mul_div_ceil_naiv(a.clone(), b.clone(), c_inexact2).unwrap();
+        assert_eq!(r_inexact2.value, 15); // (10*10 + 6)/7 = 14.28.. -> 15
+    }
+
     proptest! {
         #[test]
         fn test_check_mul_div(a: u8, b: u8, c in 0..u8::MAX) {
