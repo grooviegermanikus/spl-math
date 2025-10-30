@@ -6,7 +6,7 @@ macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Copy, Debug, PartialEq)]
         pub struct $Precise {
             /// Wrapper over the inner value, which is multiplied by ONE
             pub value: $FPInner,
@@ -33,7 +33,7 @@ macro_rules! define_precise_number {
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
-            pub const BITS: usize = size_of::<$FPInner>();
+            pub const BITS: usize = size_of::<$FPInner>() * 8;
 
             fn zero() -> Self {
                 Self {
@@ -397,17 +397,6 @@ macro_rules! define_muldiv {
                 <$FPInner>::try_from(val).ok()
             }
 
-            pub fn mul_div_floor_naiv(self, num: Self, denom: Self) -> Option<Self> {
-                if denom.value == Self::FP_ZERO {
-                    return None;
-                }
-                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
-                    / Self::extend_precsion(denom.value);
-
-                Self::trunc_precision(r).map(|v| $Precise { value: v })
-            }
-
-
             pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
                 if denom.value == Self::FP_ZERO {
                     return None;
@@ -423,6 +412,26 @@ macro_rules! define_muldiv {
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
                 }
+            }
+
+            pub fn mul_div_floor_naiv(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    / Self::extend_precsion(denom.value);
+
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+
+            pub fn mul_div_ceil_naiv(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+               let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value) + (Self::extend_precsion(denom.value) - 1))
+                    / Self::extend_precsion(denom.value);
+
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
             }
 
 
