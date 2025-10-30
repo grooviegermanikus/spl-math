@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
     use crate::uint::{U256, U512};
     use crate::{define_precise_number};
     use proptest::prelude::*;
@@ -345,6 +346,15 @@ mod tests {
             let a = TestPreciseNumber8 { value };
             assert!(a.ceiling().is_none(), "will overflow");
         }
+    }
+
+    #[test]
+    fn test_overflow_u256() {
+        let ten = U256::from_dec_str("10").unwrap();
+        let a = ten.pow(U256::from(50u32));
+        let b = ten.pow(U256::from(50u32));
+        // u256 overflows at 1e77
+        assert_eq!(a.checked_mul(b), None);
     }
 
     proptest! {
