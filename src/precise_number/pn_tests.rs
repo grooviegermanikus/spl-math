@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
     use crate::uint::{U256, U512};
     use crate::{define_precise_number};
     use proptest::prelude::*;
