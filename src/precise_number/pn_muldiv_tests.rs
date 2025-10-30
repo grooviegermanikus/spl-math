@@ -61,13 +61,12 @@ mod tests {
 
             let expected = aa.mul_div_floor_naiv(bb, cc);
             assert_eq!(r, expected);
-            // 128, b = 222, c = 1 OVERFLOW
         }
 
-            // ceil(x) = floor(x + denom)
-            // ....x... 10 ........ 20
-            // floor(x) <= x <= ceil(x)
-            // x == floor(x) <=> x == ceil(x)
+        // ceil(x) = floor(x + denom)
+        // ....x... 10 ........ 20
+        // floor(x) <= x <= ceil(x)
+        // x == floor(x) <=> x == ceil(x)
         #[test]
         fn test_check_mul_div_invariants(a: u8, b: u8, c in 1..u8::MAX) {
             let aa = TestPreciseNumber8 { value: a };
