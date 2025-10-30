@@ -56,17 +56,6 @@ mod tests {
         let mut bytes8 = Vec::with_capacity(dlen);
         bytes8.extend_from_slice(bytes);
         bytes8.resize(dlen, 0);
-        // bytes8[0..bytes.len()].copy_from_slice(bytes);
-        // let zz: [u64; 8] = [
-        //     bytes[0],
-        //     bytes[1],
-        //     bytes[2],
-        //     bytes[3],
-        //     0,
-        //     0,
-        //     0,
-        //     0,
-        // ];
         let u512 = U512(bytes8.try_into().unwrap());
         assert_eq!(u512.as_u128(), u256.as_u128());
     }
