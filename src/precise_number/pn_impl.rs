@@ -33,6 +33,8 @@ macro_rules! define_precise_number {
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
+            pub const BITS: usize = size_of::<$FPInner>();
+
             fn zero() -> Self {
                 Self {
                     value: Self::FP_ZERO,
@@ -395,22 +397,35 @@ macro_rules! define_muldiv {
                 <$FPInner>::try_from(val).ok()
             }
 
-            // TODO rename
-            // TODO num+denomf?
-            pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
+            pub fn mul_div_floor_naiv(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
                 let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
-
-                // assert_ne!(denom, U256::default()); // TODO use proper zero0
-                // let r = (self.as_u512() * num.as_u512()) / denom.as_u512();
-                // if r > U256::MAX.as_u512() {
-                //     None
-                // } else {
-                //     Some(r.as_u256())
-                // }
             }
+
+
+            pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+                if self.value.leading_zeros() + num.value.leading_zeros() >= Self::BITS as u32 {
+                    // small number, no overflow
+                    let r = self.value.checked_mul(num.value).expect("no overflow")
+                        / denom.value;
+                    Some($Precise { value: r })
+                } else {
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                        / Self::extend_precsion(denom.value);
+
+                    Self::trunc_precision(r).map(|v| $Precise { value: v })
+                }
+            }
+
+
         }
     };
 }

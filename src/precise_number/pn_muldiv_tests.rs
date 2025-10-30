@@ -15,7 +15,7 @@ mod tests {
         let c = TestPreciseNumber8 { value: 25 };
 
         // (10 * 5) / 2 = 25
-        let result = mul_div_floor_hacking(a, b, c).unwrap();
+        let result = a.mul_div_floor_hacking(b, c).unwrap();
         assert_eq!(result.value, 200);
     }
 
@@ -27,24 +27,6 @@ mod tests {
 
         let result = mul_div_ceil_naiv(a, b, c).unwrap();
         assert_eq!(result.value, 152);
-    }
-
-    fn mul_div_floor_hacking(base: TestPreciseNumber8, num: TestPreciseNumber8, denom: TestPreciseNumber8) -> Option<TestPreciseNumber8> {
-        if denom.value == 0 {
-            return None;
-        }
-        if base.value.leading_zeros() + num.value.leading_zeros() >= u8::BITS {
-            // small number, no overflow
-            let r = base.value.checked_mul(num.value).expect("no overflow")
-                / denom.value;
-            Some(TestPreciseNumber8 { value: r })
-        } else {
-            let r = base.value as u16 * num.value as u16
-                / denom.value as u16;
-            u8::try_from(r)
-                .map(|v| TestPreciseNumber8 { value: v })
-                .ok()
-        }
     }
 
     fn mul_div_floor_naiv(base: TestPreciseNumber8, num: TestPreciseNumber8, denom: TestPreciseNumber8) -> Option<TestPreciseNumber8> {
@@ -95,9 +77,10 @@ mod tests {
             let aa = TestPreciseNumber8 { value: a };
             let bb = TestPreciseNumber8 { value: b };
             let cc = TestPreciseNumber8 { value: c };
-            let r = mul_div_floor_hacking(aa.clone(), bb.clone(), cc.clone());
+            let r = aa.mul_div_floor_hacking(bb.clone(), cc.clone());
 
-            let expected = mul_div_floor_naiv(aa, bb, cc);
+            let aa = TestPreciseNumber8 { value: a };
+            let expected = aa.mul_div_floor(bb, cc);
             assert_eq!(r, expected);
             // 128, b = 222, c = 1 OVERFLOW
         }
