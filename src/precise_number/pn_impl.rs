@@ -414,7 +414,7 @@ macro_rules! define_muldiv {
                 }
             }
 
-            pub fn mul_div_floor_naiv(self, num: Self, denom: Self) -> Option<Self> {
+            pub fn mul_div_floor_naive(self, num: Self, denom: Self) -> Option<Self> {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
@@ -429,9 +429,7 @@ macro_rules! define_muldiv {
                     return None;
                 }
 
-                let demom_plus_one_minus_1 = denom.value.checked_sub(Self::FP_ONE).expect("denom > 0");
-
-                if let Some(dividend) = self.value.checked_mul(num.value).and_then(|x| x.checked_add(demom_plus_one_minus_1)) {
+                if let Some(dividend) = self.value.checked_mul(num.value).and_then(|x| x.checked_add(denom.value - 1)) {
                     // small number, no overflow
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
@@ -444,7 +442,7 @@ macro_rules! define_muldiv {
 
             }
 
-            pub fn mul_div_ceil_naiv(self, num: Self, denom: Self) -> Option<Self> {
+            pub fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }

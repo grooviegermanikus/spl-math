@@ -22,8 +22,7 @@ criterion_group!(benches_sqrt, pn::sqrt::bench_sqrt,);
 
 criterion_group!(
     benches_muldiv,
-    muldiv::basic::bench_signum3,
-    muldiv::basic::bench_signum3_fast,
+    muldiv::basic::bench_muldiv,
 );
 
 criterion_main!(
