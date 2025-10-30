@@ -401,13 +401,13 @@ macro_rules! define_muldiv {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
-                if self.value.leading_zeros() + num.value.leading_zeros() >= Self::BITS as u32 {
+
+                if let Some(dividend) = self.value.checked_mul(num.value) {
                     // small number, no overflow
-                    let r = self.value.checked_mul(num.value).expect("no overflow")
-                        / denom.value;
+                    let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
                         / Self::extend_precsion(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
@@ -422,6 +422,26 @@ macro_rules! define_muldiv {
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+
+            pub fn mul_div_ceil(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+
+                let demom_plus_one_minus_1 = denom.value.checked_sub(Self::FP_ONE).expect("denom > 0");
+
+                if let Some(dividend) = self.value.checked_mul(num.value).and_then(|x| x.checked_add(demom_plus_one_minus_1)) {
+                    // small number, no overflow
+                    let r = dividend / denom.value;
+                    Some($Precise { value: r })
+                } else {
+                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                        / Self::extend_precsion(denom.value);
+
+                    Self::trunc_precision(r).map(|v| $Precise { value: v })
+                }
+
             }
 
             pub fn mul_div_ceil_naiv(self, num: Self, denom: Self) -> Option<Self> {
