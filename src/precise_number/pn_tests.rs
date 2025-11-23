@@ -336,6 +336,22 @@ mod tests {
     }
 
     #[test]
+    fn test_pn_from_f64() {
+        let a = TestPreciseNumber8::try_from(12.3f64).unwrap();
+        assert_eq!(a.value, 123);
+
+        let b = TestPreciseNumber8::try_from(0.1f64).unwrap();
+        assert_eq!(b.value, 1);
+
+        let c = TestPreciseNumber8::try_from(0.07f64).unwrap();
+        assert_eq!(c.value, 0);
+
+        assert!(TestPreciseNumber8::try_from(25.5f64).is_ok());
+        assert!(TestPreciseNumber8::try_from(25.59f64).is_ok());
+        assert!(TestPreciseNumber8::try_from(25.6f64).is_err());
+    }
+
+    #[test]
     fn test_u256_from_f64() {
         // 340282366920938463463374607431768211455 = 3.4e38
         let value: f64 = 3e12 + 0.123456789;
