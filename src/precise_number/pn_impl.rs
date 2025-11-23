@@ -70,8 +70,6 @@ macro_rules! define_precise_number {
                 Some(Self { value })
             }
 
-            ///
-
             /// Convert a precise number back to outer type
             pub fn to_imprecise(&self) -> Option<$TOuter> {
                 self.value
@@ -385,14 +383,22 @@ macro_rules! define_precise_number {
 
         fn try_from(value: f64) -> Result<Self, Self::Error> {
             use num_traits::ToPrimitive;
-            let scaled = value * $FP_ONE_f64;
-            let foo: $FPInner = scaled.to_u128().unwrap().try_into().unwrap(); // TODO
+            let int_part: $TOuter = value.try_into().unwrap();
+            let lower_part = value - value.trunc();
+            assert!(lower_part < 1.0);
+            const ONE: f64 = 1e12;
+            let lower_part = (lower_part * ONE) as u64;
 
-            // let scaled = value * Self::FP_ONE as f64;
-            // // u16=$TOuter
-            // let foo = <u16>::try_from(scaled).unwrap();
-            let pn = Self { value: foo }; // TODO replace unwrap
-            Ok(pn)
+            let upper = Self::new(int_part).unwrap();
+            let lower = Self {
+                value: lower_part.into()
+            };
+
+            assert!(lower.value < ONE_CONST);
+
+            let combined = upper.checked_add(&lower).unwrap();
+
+            Ok(combined)
         }
     }
 
