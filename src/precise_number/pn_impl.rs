@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! define_precise_number {
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_f64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_f64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
         #[derive(Clone, Debug, PartialEq)]
@@ -16,6 +16,7 @@ macro_rules! define_precise_number {
         impl $Precise {
             const FP_ONE: $FPInner = $FP_ONE;
             const FP_ZERO: $FPInner = $FP_ZERO;
+            const CONVERT_FROM_F64: fn(f64) -> $TOuter = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
             /// integer operations will always floor the result, we artificially bump it
@@ -378,29 +379,27 @@ macro_rules! define_precise_number {
             }
         }
 
-    impl TryFrom<f64> for $Precise {
-        type Error = (); // TODO
+        impl TryFrom<f64> for $Precise {
+            type Error = (); // TODO
 
-        fn try_from(value: f64) -> Result<Self, Self::Error> {
-            use num_traits::ToPrimitive;
-            let int_part: $TOuter = value.try_into().unwrap();
-            let lower_part = value - value.trunc();
-            assert!(lower_part < 1.0);
-            const ONE: f64 = 1e12;
-            let lower_part = (lower_part * ONE) as u64;
+            fn try_from(value: f64) -> Result<Self, Self::Error> {
+                let int_part: $TOuter = Self::CONVERT_FROM_F64(value);
+                let lower_part = value - value.trunc();
+                assert!(lower_part < 1.0);
+                let lower_part = (lower_part * $FP_ONE_f64) as $TOuter;
 
-            let upper = Self::new(int_part).unwrap();
-            let lower = Self {
-                value: lower_part.into()
-            };
+                let upper = Self::new(int_part).unwrap();
+                let lower = Self {
+                    value: lower_part.into()
+                };
 
-            assert!(lower.value < ONE_CONST);
+                assert!(lower.value < Self::FP_ONE);
 
-            let combined = upper.checked_add(&lower).unwrap();
+                let combined = upper.checked_add(&lower).unwrap();
 
-            Ok(combined)
+                Ok(combined)
+            }
         }
-    }
 
     };
 } // -- macro

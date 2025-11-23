@@ -15,7 +15,8 @@ define_precise_number!(
     0u64,
     ROUNDING_CORRECTION,
     PRECISION,
-    MAXIMUM_SQRT_BASE
+    MAXIMUM_SQRT_BASE,
+    |value| value as u32
 );
 
 #[cfg(test)]
