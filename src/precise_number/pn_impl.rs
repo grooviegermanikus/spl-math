@@ -69,6 +69,9 @@ macro_rules! define_precise_number {
                 let value: $FPInner = int_value.checked_mul(Self::FP_ONE).unwrap();
                 Some(Self { value })
             }
+
+            ///
+
             /// Convert a precise number back to outer type
             pub fn to_imprecise(&self) -> Option<$TOuter> {
                 self.value

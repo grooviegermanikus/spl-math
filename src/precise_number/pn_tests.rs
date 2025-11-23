@@ -48,21 +48,6 @@ mod tests {
         assert!(root.almost_eq(&expected, precision));
     }
 
-    // impl TryFrom<f64> for TestPreciseNumber8 {
-    //     type Error = (); // TODO
-    //
-    //     fn try_from(value: f64) -> Result<Self, Self::Error> {
-    //         let scaled = value * Self::FP_ONE as f64;
-    //         let foo: u8 = scaled.to_u128().unwrap().try_into().unwrap(); // TODO
-    //
-    //         // let scaled = value * Self::FP_ONE as f64;
-    //         // // u16=$TOuter
-    //         // let foo = <u16>::try_from(scaled).unwrap();
-    //         let pn = Self { value: foo }; // TODO replace unwrap
-    //         Ok(pn)
-    //     }
-    // }
-
     #[test]
     fn test_max_number_to_u128() {
         // 3.4e38
@@ -347,6 +332,79 @@ mod tests {
             let a = TestPreciseNumber8 { value };
             assert!(a.ceiling().is_none(), "will overflow");
         }
+    }
+
+    #[test]
+    fn test_u256_from_f64_bits() {
+        const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
+        const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+
+
+        let value: f64 = 1.0;
+        let bits = value.to_bits();
+
+        let mantissa = bits & MAN_MASK;
+        let exponent = ((bits & EXP_MASK) >> 52) as i32 - 1023;
+
+        println!("value: {}", value);
+        println!("bits: {:064b}", bits);
+        println!("mantissa: {:064b}", mantissa);
+        println!("mantissa: {}", mantissa as u64);
+        println!("exponent: {}", exponent);
+
+
+
+        // value.classify();
+        // u64::MAX
+        // f64::MANTISSA_DIGITS
+        // value.to_u64()
+        // let bytes = [0u64; 4];
+        // U256::(bytes);
+
+    }
+
+    #[test]
+    fn test_u256_from_f64() {
+        // TODO discuss, max input value might be u128::MAX, which is same as for existing new()
+        // 340282366920938463463374607431768211455 = 3.4e38
+        // let value: f64 = 3.4e38;
+        let valuexx: f64 = 3.4e38 + 0.123456789;
+        let value: f64 = 3e12 + 0.123456789;
+        // cut integer part into upper and lower 64 bits
+        // let upper = (value / 2f64.powi(64)).trunc() as u64;
+        // let lower = (value % 2f64.powi(64)).trunc() as u64;
+
+        let int_part = value.to_u128().unwrap();
+        // .123454
+        let lower_part = value - value.trunc();
+        assert!(lower_part < 1.0);
+        const ONE: f64 = 1e12;
+        let lower_part = (lower_part * ONE) as u64;
+
+        println!("value: {}", value);
+        println!("int_part: {}", int_part);
+        println!("lower_part: {}", lower_part);
+        // println!("upper: {}", upper);
+        // println!("lower: {}", lower);
+        // maxvalue for u256
+        let upper = crate::precise_number::pn_tests::tests::PreciseNumber::new(int_part).unwrap();
+        let lower = crate::precise_number::pn_tests::tests::PreciseNumber {
+            value: lower_part.into()
+        };
+
+        assert!(lower.value < ONE_CONST);
+
+        let combined = upper.checked_add(&lower).unwrap();
+        println!("combined: {}", combined.value);
+
+        // 3000000000000.123535156250
+        assert_eq!(combined.value.as_u128(), 3000000000000123535156250);
+
+
+
+        // PreciseNumber { value: U256::from(int128) };
+
+
     }
 
     #[test]
