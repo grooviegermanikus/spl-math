@@ -16,7 +16,7 @@ macro_rules! define_precise_number {
         impl $Precise {
             const FP_ONE: $FPInner = $FP_ONE;
             const FP_ZERO: $FPInner = $FP_ZERO;
-            const CONVERT_FROM_F64: fn(f64) -> $TOuter = $CONVERT_F64;
+            const CONVERT_FROM_F64: fn(f64) -> Option<$TOuter> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
             /// integer operations will always floor the result, we artificially bump it
@@ -383,7 +383,7 @@ macro_rules! define_precise_number {
             type Error = ();
 
             fn try_from(value: f64) -> Result<Self, Self::Error> {
-                let int_part: $TOuter = Self::CONVERT_FROM_F64(value);
+                let int_part: $TOuter = Self::CONVERT_FROM_F64(value).ok_or_else(|| ())?;
                 let lower_part = value - value.trunc();
                 assert!(lower_part < 1.0);
                 let lower_part = (lower_part * $FP_ONE_f64) as $TOuter;

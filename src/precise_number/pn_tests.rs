@@ -2,6 +2,7 @@
 mod tests {
     use crate::define_precise_number;
     use crate::uint::U256;
+    use num_traits::ToPrimitive;
     use proptest::prelude::*;
 
     type InnerUint = U256;
@@ -21,10 +22,10 @@ mod tests {
         ROUNDING_CORRECTION,
         PRECISION,
         MAXIMUM_SQRT_BASE,
-        |value| value as u128
+        |value| value.to_u128()
     );
 
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value as u8);
+    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
     define_precise_number!(
         TestPreciseNumber32,
         u32,
@@ -35,7 +36,7 @@ mod tests {
         500u32,
         1u32,
         1_000u32,
-        |value| value as u32
+        |value| value.to_u32()
     ); // MAXIMUM_SQRT_BASE is likely incorrect
 
     fn check_pow_approximation(base: InnerUint, exponent: InnerUint, expected: InnerUint) {
@@ -349,6 +350,8 @@ mod tests {
         assert!(TestPreciseNumber8::try_from(25.5f64).is_ok());
         assert!(TestPreciseNumber8::try_from(25.59f64).is_ok());
         assert!(TestPreciseNumber8::try_from(25.6f64).is_err());
+
+        assert!(TestPreciseNumber8::try_from(-1.0f64).is_err());
     }
 
     #[test]
