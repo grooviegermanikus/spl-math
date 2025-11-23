@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! define_precise_number {
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_f64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
         #[derive(Clone, Debug, PartialEq)]
@@ -376,5 +376,22 @@ macro_rules! define_precise_number {
                 self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
         }
+
+    impl TryFrom<f64> for $Precise {
+        type Error = (); // TODO
+
+        fn try_from(value: f64) -> Result<Self, Self::Error> {
+            use num_traits::ToPrimitive;
+            let scaled = value * $FP_ONE_f64;
+            let foo: $FPInner = scaled.to_u128().unwrap().try_into().unwrap(); // TODO
+
+            // let scaled = value * Self::FP_ONE as f64;
+            // // u16=$TOuter
+            // let foo = <u16>::try_from(scaled).unwrap();
+            let pn = Self { value: foo }; // TODO replace unwrap
+            Ok(pn)
+        }
+    }
+
     };
 } // -- macro

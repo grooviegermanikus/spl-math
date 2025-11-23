@@ -11,6 +11,7 @@ define_precise_number!(
     u32,
     u64,
     ONE_CONST,
+    1e4f64,
     0u64,
     ROUNDING_CORRECTION,
     PRECISION,

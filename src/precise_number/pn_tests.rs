@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use num_traits::ToPrimitive;
     use crate::define_precise_number;
     use crate::uint::U256;
     use proptest::prelude::*;
@@ -16,18 +17,20 @@ mod tests {
         u128,
         U256,
         ONE_CONST,
+        1e12f64,
         U256::zero(),
         ROUNDING_CORRECTION,
         PRECISION,
         MAXIMUM_SQRT_BASE
     );
 
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 0u8, 5u8, 1u8, 10u8);
+    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8);
     define_precise_number!(
         TestPreciseNumber32,
         u32,
         u32,
         1_000u32,
+        1e3f64,
         0u32,
         500u32,
         1u32,
@@ -44,6 +47,21 @@ mod tests {
         let expected = PreciseNumber { value: expected };
         assert!(root.almost_eq(&expected, precision));
     }
+
+    // impl TryFrom<f64> for TestPreciseNumber8 {
+    //     type Error = (); // TODO
+    //
+    //     fn try_from(value: f64) -> Result<Self, Self::Error> {
+    //         let scaled = value * Self::FP_ONE as f64;
+    //         let foo: u8 = scaled.to_u128().unwrap().try_into().unwrap(); // TODO
+    //
+    //         // let scaled = value * Self::FP_ONE as f64;
+    //         // // u16=$TOuter
+    //         // let foo = <u16>::try_from(scaled).unwrap();
+    //         let pn = Self { value: foo }; // TODO replace unwrap
+    //         Ok(pn)
+    //     }
+    // }
 
     #[test]
     fn test_max_number_to_u128() {
@@ -329,6 +347,12 @@ mod tests {
             let a = TestPreciseNumber8 { value };
             assert!(a.ceiling().is_none(), "will overflow");
         }
+    }
+
+    #[test]
+    fn test_from_f64() {
+        let pn = TestPreciseNumber8::try_from(12.3f64).unwrap();
+        assert_eq!(pn.value, 123);
     }
 
     proptest! {
