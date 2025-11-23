@@ -1,6 +1,7 @@
 /// Decimal fix-point number with 12 decimal places backed by u64
 ///
 use crate::define_precise_number;
+use num_traits::ToPrimitive;
 
 const ONE_CONST: u64 = 10_000;
 const ROUNDING_CORRECTION: u64 = 10_000 / 2;
@@ -16,7 +17,7 @@ define_precise_number!(
     ROUNDING_CORRECTION,
     PRECISION,
     MAXIMUM_SQRT_BASE,
-    |value| value as u32
+    |value| value.to_u32()
 );
 
 #[cfg(test)]

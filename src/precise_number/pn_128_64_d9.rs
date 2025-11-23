@@ -16,7 +16,7 @@ define_precise_number!(
     ROUNDING_CORRECTION,
     PRECISION,
     MAXIMUM_SQRT_BASE,
-    |value| value as u64
+    |value| Some(value as u64)
 );
 
 #[cfg(test)]
