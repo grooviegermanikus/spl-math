@@ -14,6 +14,7 @@ define_precise_number!(
     u128,
     U256,
     ONE_CONST,
+    1e12f64,
     U256::zero(),
     ROUNDING_CORRECTION,
     PRECISION,
