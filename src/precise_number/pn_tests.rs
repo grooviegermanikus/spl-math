@@ -367,8 +367,6 @@ mod tests {
     fn test_u256_from_f64() {
         // TODO discuss, max input value might be u128::MAX, which is same as for existing new()
         // 340282366920938463463374607431768211455 = 3.4e38
-        // let value: f64 = 3.4e38;
-        let valuexx: f64 = 3.4e38 + 0.123456789;
         let value: f64 = 3e12 + 0.123456789;
         // cut integer part into upper and lower 64 bits
         // let upper = (value / 2f64.powi(64)).trunc() as u64;
