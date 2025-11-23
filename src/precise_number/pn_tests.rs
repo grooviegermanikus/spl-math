@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use num_traits::ToPrimitive;
     use crate::define_precise_number;
     use crate::uint::U256;
     use proptest::prelude::*;

@@ -380,7 +380,7 @@ macro_rules! define_precise_number {
         }
 
         impl TryFrom<f64> for $Precise {
-            type Error = (); // TODO
+            type Error = ();
 
             fn try_from(value: f64) -> Result<Self, Self::Error> {
                 let int_part: $TOuter = Self::CONVERT_FROM_F64(value);
@@ -388,14 +388,14 @@ macro_rules! define_precise_number {
                 assert!(lower_part < 1.0);
                 let lower_part = (lower_part * $FP_ONE_f64) as $TOuter;
 
-                let upper = Self::new(int_part).unwrap();
+                let upper = Self::new(int_part).ok_or_else(|| ())?;
                 let lower = Self {
                     value: lower_part.into()
                 };
 
                 assert!(lower.value < Self::FP_ONE);
 
-                let combined = upper.checked_add(&lower).unwrap();
+                let combined = upper.checked_add(&lower).ok_or_else(|| ())?;
 
                 Ok(combined)
             }
