@@ -6,7 +6,7 @@ macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_f64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Copy, Debug, PartialEq)]
         pub struct $Precise {
             /// Wrapper over the inner value, which is multiplied by ONE
             pub value: $FPInner,
