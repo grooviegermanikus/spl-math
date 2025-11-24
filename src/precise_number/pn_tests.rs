@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use std::num::FpCategory;
     use std::ops::Shl;
     use crate::define_precise_number;
     use crate::uint::U256;
@@ -367,12 +368,34 @@ mod tests {
 
     #[test]
     fn test_u256_from_f64_bits() {
+
+        // 2^20
+        let u256 = u256_from_f64_bits(1048576f64);
+        assert_eq!(u256.unwrap().as_u128(), 1048576u128);
+    }
+
+    #[test]
+    fn test_u256_from_f64_bits_zero() {
+        let u256 = u256_from_f64_bits(0.0);
+        assert_eq!(u256.unwrap().as_u128(), 0u128);
+    }
+
+    fn u256_from_f64_bits(value: f64) -> Option<U256> {
+
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
 
-
         // 1.111111111 (binary) * 2^-2 = 0.3 (decimal)
-        let value: f64 = 1048576f64; // 2^20
+        // let value: f64 = 1048576f64; // 2^20
+
+        match value.classify() {
+            FpCategory::Nan => return None,
+            FpCategory::Infinite => return None,
+            FpCategory::Zero => return U256::zero().into(),
+            FpCategory::Subnormal => {}
+            FpCategory::Normal => {}
+        }
+
         let mut bits = value.to_bits();
         // bits = bits | MAN_MASK;
         // let value = f64::from_bits(bits);
@@ -425,6 +448,7 @@ mod tests {
         // let bytes = [0u64; 4];
         // U256::(bytes);
 
+        Some(u256)
     }
 
 
