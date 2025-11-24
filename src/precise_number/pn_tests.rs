@@ -386,6 +386,37 @@ mod tests {
 
     #[test]
     fn test_u256_from_f64_max() {
+
+        let bits = 0f64.to_bits();
+        // = largest mantissa
+        const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+        const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
+
+        let mut best: f64 = 0.0;
+        // for exponent in 1270..=2046 {
+        let exponent = 255+1023;
+        {
+            // max exponent is largest minus 1 = (2^11-1) - 1 = 2046
+            let max_supported = f64::from_bits(bits | MAN_MASK | (exponent << 52 & EXP_MASK));
+            println!("max_supported: {}", max_supported);
+            let u256 = u256_from_f64_bits(max_supported);
+            if u256.is_none() {
+                panic!();
+            }
+            println!("u256[3]: {:?}", u256.unwrap().0[3]);
+            best = best.max(max_supported);
+        }
+
+        println!("best supported: {}", best);
+        let u256 = u256_from_f64_bits(best).unwrap();
+        println!("best supported: {:?}", u256.0);
+        // note: bit 53 is implicit from the mantissa interpretation as 1.xxxxx
+        assert_eq!(u256.0, [0, 0, 0, 0xffff_ffff_ffff_f800]);
+
+    }
+
+    #[test]
+    fn test_u256_from_f64_block3() {
         // 2^256 => 1.15e77
         // U256 is little-endian
         // not that the mantissa is only 52 bits and fits in the highest block
@@ -416,13 +447,19 @@ mod tests {
 
     #[test]
     fn test_u256_from_f64_bits_subnormal() {
-        todo!()
+        let bits = 0f64.to_bits();
+        const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+        let max_supported = f64::from_bits(bits | MAN_MASK);
+        println!("max_supported: {}", max_supported);
+
+        assert_eq!(u256_from_f64_bits(max_supported), None);
     }
 
     fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+
 
         // 1.111111111 (binary) * 2^-2 = 0.3 (decimal)
         // let value: f64 = 1048576f64; // 2^20
@@ -431,13 +468,12 @@ mod tests {
             FpCategory::Nan => return None,
             FpCategory::Infinite => return None,
             FpCategory::Zero => return U256::zero().into(),
-            FpCategory::Subnormal => {}
+            // subnormal numbers not supported
+            FpCategory::Subnormal => return None,
             FpCategory::Normal => {}
         }
 
         let bits = value.to_bits();
-        // bits = bits | MAN_MASK;
-        // let value = f64::from_bits(bits);
 
         let mantissa: u64 = bits & MAN_MASK;
         let exponent: i32 = ((bits & EXP_MASK) >> 52) as i32 - 1023;
@@ -449,8 +485,22 @@ mod tests {
         let bit_range_start = exponent - 52;
         let lower_block = (1024 + bit_range_start) / 64 - 16;
         let upper_block = lower_block + 1;
+
+        println!("bit_range_start: {}", bit_range_start);
+        println!("lower_block: {}", lower_block);
+        println!("upper_block: {}", upper_block);
+
+        if lower_block > 3 {
+            println!("overflow lower block");
+            return None;
+        }
+
+        if upper_block < 0 {
+            println!("underflow upper block");
+            return None;
+        }
+
         assert!(lower_block >= -1 && lower_block <= 3);
-        // assert!(upper_block >= 0 && upper_block <= 3);
 
         println!("value: {}", value);
         println!("bits: {:064b}", bits);
@@ -462,9 +512,7 @@ mod tests {
         let lower_shift = (bit_range_start + 1024) % 64; // add 1024 to avoid negative modulo
         let upper_shift = 64 - lower_shift;
 
-        println!("bit_range_start: {}", bit_range_start);
-        println!("lower_block: {}", lower_block);
-        println!("upper_block: {}", upper_block);
+
         println!("lower_shift: {}", lower_shift);
         println!("upper_shift: {}", upper_shift);
 
@@ -484,7 +532,7 @@ mod tests {
                 if lower == 0 {
                     U256([upper, 0, 0, 0])
                 } else {
-                    println!("overflow lower block");
+                    println!("underflow lower block");
                     return None;
                 }
             },
