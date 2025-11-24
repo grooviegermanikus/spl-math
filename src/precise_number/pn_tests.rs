@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
+    use std::f64::EPSILON;
     use std::num::FpCategory;
+    use std::ops::Add;
     use crate::define_precise_number;
     use crate::uint::U256;
     use num_traits::ToPrimitive;
@@ -392,26 +394,32 @@ mod tests {
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
 
-        let mut best: f64 = 0.0;
-        // for exponent in 1270..=2046 {
         let exponent = 255+1023;
-        {
-            // max exponent is largest minus 1 = (2^11-1) - 1 = 2046
-            let max_supported = f64::from_bits(bits | MAN_MASK | (exponent << 52 & EXP_MASK));
-            println!("max_supported: {}", max_supported);
-            let u256 = u256_from_f64_bits(max_supported);
-            if u256.is_none() {
-                panic!();
-            }
-            println!("u256[3]: {:?}", u256.unwrap().0[3]);
-            best = best.max(max_supported);
-        }
+        // max exponent is largest minus 1 = (2^11-1) - 1 = 2046
+        let max_supported = f64::from_bits(bits | MAN_MASK | (exponent << 52 & EXP_MASK));
+        // https://float.exposed/0x4fefffffffffffff
+        assert_eq!(max_supported, 1.15792089237316182568e+77);
+        // bits: 0100111111101111111111111111111111111111111111111111111111111111
+        // mantissa: (1.)1111111111111111111111111111111111111111111111111111
 
-        println!("best supported: {}", best);
-        let u256 = u256_from_f64_bits(best).unwrap();
+
+        println!("best supported: {}", max_supported);
+        let u256 = u256_from_f64_bits(max_supported).unwrap();
         println!("best supported: {:?}", u256.0);
         // note: bit 53 is implicit from the mantissa interpretation as 1.xxxxx
         assert_eq!(u256.0, [0, 0, 0, 0xffff_ffff_ffff_f800]);
+
+
+        let exponentplus1 = exponent + 1;
+        let overflow_value2 = f64::from_bits((bits & !MAN_MASK + 1) | (exponentplus1 << 52 & EXP_MASK));
+
+        let overflow_value = max_supported + 1.2855504354071922204335696738729300820177623950262342682411008e61;
+        // bits: 0100111111110000000000000000000000000000000000000000000000000000
+        assert_eq!(overflow_value2, overflow_value);
+
+        println!("overflow value: {}", overflow_value);
+        println!("overflow value: {:064b}", overflow_value.to_bits());
+        assert_eq!(u256_from_f64_bits(overflow_value), None);
 
     }
 

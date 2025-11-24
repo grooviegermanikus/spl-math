@@ -379,6 +379,9 @@ macro_rules! define_precise_number {
             }
         }
 
+        // TODO decide if we want to have a "default"
+        // provide multiple new(f64)
+        // enable "from" conversion using features
         impl TryFrom<f64> for $Precise {
             type Error = ();
 
