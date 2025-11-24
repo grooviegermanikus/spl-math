@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use std::ops::Shl;
     use crate::define_precise_number;
     use crate::uint::U256;
     use num_traits::ToPrimitive;
@@ -365,6 +366,69 @@ mod tests {
     }
 
     #[test]
+    fn test_u256_from_f64_bits() {
+        const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
+        const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+
+
+        // 1.111111111 (binary) * 2^-2 = 0.3 (decimal)
+        let value: f64 = 1048576f64; // 2^20
+        let mut bits = value.to_bits();
+        // bits = bits | MAN_MASK;
+        // let value = f64::from_bits(bits);
+
+        let mantissa: u64 = bits & MAN_MASK;
+        let exponent: i32 = ((bits & EXP_MASK) >> 52) as i32 - 1023;
+
+        let mantissa_value = mantissa | (1u64 << 52);
+        // bits 0..52
+        // shift right by 52 and left by exponent
+        // e.g. exponent 20 -> bit 20..72
+        let bit_range_start = exponent - 52;
+        let lower_block = bit_range_start / 64;
+        let upper_block = lower_block + 1;
+        let lower_shift = (bit_range_start + 256) % 64;
+        let upper_shift = 64 - lower_shift;
+        let (lower, _) = mantissa_value.overflowing_shr(lower_shift as u32);
+        let (upper, _) = mantissa_value.overflowing_shl(upper_shift as u32);
+
+        println!("bit_range_start: {}", bit_range_start);
+        println!("lower_block: {}", lower_block);
+        println!("upper_block: {}", upper_block);
+        println!("lower_shift: {}", lower_shift);
+        println!("upper_shift: {}", upper_shift);
+        println!("lower: {:064b}", lower);
+        println!("upper: {:064b}", upper);
+
+
+
+        // shift to right position and project on 2 of the 4 u64s in U256
+        // TODO add 2 more blocks
+        let u256 = U256([lower, upper, 0, 0]);
+
+        // 52 bits
+        // mantissa: (1.)0000000000001111111111111111111111111111111111111111111111111111
+        println!("value: {}", value);
+        println!("bits: {:064b}", bits);
+        println!("mantissa: (1.){:064b}", mantissa);
+        println!("mantissa_value: {}", mantissa_value);
+        println!("mantissa: {}", mantissa as u64);
+        println!("exponent: {}", exponent);
+        println!("u256: {:?}", u256);
+
+
+
+        // value.classify();
+        // u64::MAX
+        // f64::MANTISSA_DIGITS
+        // value.to_u64()
+        // let bytes = [0u64; 4];
+        // U256::(bytes);
+
+    }
+
+
+    #[test]
     fn test_from_f64() {
         let pn = TestPreciseNumber8::try_from(12.3f64).unwrap();
         assert_eq!(pn.value, 123);
@@ -375,6 +439,11 @@ mod tests {
         fn test_square_root(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
             check_square_root(&a);
+        }
+
+         #[test]
+        fn test_f64(value: f64) { // TODO
+            crate::precise_number::pn_tests::tests::PreciseNumber::try_from(value).unwrap();
         }
     }
 }
