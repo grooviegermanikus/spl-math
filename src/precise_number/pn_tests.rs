@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::f64::EPSILON;
     use std::num::FpCategory;
-    use std::ops::Add;
     use crate::define_precise_number;
     use crate::uint::U256;
     use num_traits::ToPrimitive;
@@ -600,6 +598,7 @@ mod tests {
 
          #[test]
         fn test_u256_from_f64_prop(value: f64) { // TODO
+
             u256_from_f64_bits(value).unwrap();
         }
     }
