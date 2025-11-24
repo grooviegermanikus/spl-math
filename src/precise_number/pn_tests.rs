@@ -421,6 +421,23 @@ mod tests {
 
     }
 
+
+    #[test]
+    fn test_u256_from_f64_min() {
+
+        let min_value = 0.0f64;
+
+        println!("min value: {}", min_value);
+        println!("min value: {:064b}", min_value.to_bits());
+
+        let u256 = u256_from_f64_bits(min_value).unwrap();
+
+        assert_eq!(u256.0, [0, 0, 0, 0]);
+
+        let underflow_value = -1e-100;
+        assert_eq!(u256_from_f64_bits(underflow_value), None);
+    }
+
     #[test]
     fn test_u256_from_f64_block3() {
         // 2^256 => 1.15e77
@@ -477,6 +494,10 @@ mod tests {
             // subnormal numbers not supported
             FpCategory::Subnormal => return None,
             FpCategory::Normal => {}
+        }
+
+        if value.is_sign_negative() {
+            return None;
         }
 
         let bits = value.to_bits();
