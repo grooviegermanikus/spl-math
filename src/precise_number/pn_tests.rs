@@ -380,10 +380,24 @@ mod tests {
 
 
     #[test]
+    fn test_u256_small() {
+        assert_eq!(U256([1, 0, 0, 0]).as_u128(), 1u128);
+    }
+
+    #[test]
     fn test_u256_from_f64_max() {
         // 2^256 => 1.15e77
-        assert_eq!(u256_from_f64_bits(1.15e77), Some(U256::MAX) );
+        // U256 is little-endian
+        // not that the mantissa is only 52 bits and fits in the highest block
+        assert_eq!(u256_from_f64_bits(1.15e77).unwrap().0, [0, 0, 0, 18320556978023200768]);
     }
+
+    #[test]
+    fn test_u256_from_f64_block2and3() {
+        // U256 is little-endian
+        assert_eq!(u256_from_f64_bits(2.0f64.powi(222) * 1.1111).unwrap().0, [0, 0, 11923974904812142592, 1193034540]);
+    }
+
 
     #[test]
     fn test_u256_from_f64_overflow() {
