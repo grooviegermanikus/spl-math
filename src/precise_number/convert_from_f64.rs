@@ -2,7 +2,7 @@
 #[cfg(test)]
 mod tests {
     use std::num::FpCategory;
-    use num_traits::ToPrimitive;
+    use num_traits::{ToPrimitive, Zero};
     use proptest::proptest;
     use crate::define_precise_number;
     use crate::precise_number::PreciseNumber;
@@ -13,6 +13,7 @@ mod tests {
 
     #[test]
     fn test_u256_small() {
+        // U256 is little-endian
         assert_eq!(U256([1, 0, 0, 0]).as_u128(), 1u128);
     }
 
@@ -95,8 +96,36 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn test_u256_from_f64_one() {
+        let one: f64 = 1.0;
+        let u256 = u256_from_f64_bits(one).unwrap();
+        assert_eq!(u256.0, [1, 0, 0, 0]);
+    }
+
     #[test]
     fn test_u256_from_f64_min() {
+
+        // TODO everyhting smaller than 1.0e52 needs special handing
+
+        // 4.503.599.627.370.496 =
+        // let min_value: f64 = 4_503_599_627_370_496u128 as f64;
+        // let min_value: f64 = 3.7921553222237964e3;
+        let min_value: f64 = 3.7921553222237964e-231;
+
+        println!("min value: {}", min_value);
+        println!("min value: {:064b}", min_value.to_bits());
+
+        let u256 = u256_from_f64_bits(min_value).unwrap();
+
+        // assert_eq!(u256.0, [1, 0, 0, 0]);
+    }
+
+
+
+    #[test]
+    fn test_u256_from_f64_zero() {
 
         let min_value = 0.0f64;
 
@@ -142,17 +171,26 @@ mod tests {
     fn test_u256_from_f64_bits_subnormal() {
         let bits = 0f64.to_bits();
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
-        let max_supported = f64::from_bits(bits | MAN_MASK);
-        println!("max_supported: {}", max_supported);
+        let subnormal = f64::from_bits(bits | MAN_MASK);
+        println!("subnormal: {}", subnormal);
 
-        assert_eq!(u256_from_f64_bits(max_supported), None);
+        assert_eq!(u256_from_f64_bits(subnormal), U256::zero().into());
     }
 
+
+    // will take the truncated value
     fn u256_from_f64_bits(value: f64) -> Option<U256> {
+
+        if value.is_sign_negative() && !value.is_zero() {
+            return None;
+        }
+
+        // FIXME
+        let value = value.trunc();
+
 
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
-
 
         // 1.111111111 (binary) * 2^-2 = 0.3 (decimal)
         // let value: f64 = 1048576f64; // 2^20
@@ -162,13 +200,18 @@ mod tests {
             FpCategory::Infinite => return None,
             FpCategory::Zero => return U256::zero().into(),
             // subnormal numbers not supported
-            FpCategory::Subnormal => return None,
+            FpCategory::Subnormal => {
+                println!("subnormal not supported");
+                return None;
+
+            },
             FpCategory::Normal => {}
         }
 
-        if value.is_sign_negative() {
-            return None;
-        }
+
+
+
+
 
         let bits = value.to_bits();
 
@@ -230,7 +273,9 @@ mod tests {
                     U256([upper, 0, 0, 0])
                 } else {
                     println!("underflow lower block");
-                    return None;
+                    // TODO check if that's what we want
+                    U256([upper, 0, 0, 0])
+                    // return None;
                 }
             },
             0 => U256([lower, upper, 0, 0]),
@@ -282,10 +327,25 @@ mod tests {
 
 
     proptest! {
-         #[test]
+
+        #[test]
+        fn test_truncated_prop(value: f64) { // TODO
+
+            if value >= 0.0 && value < 1.15792089237316182568e+77 {
+                let original = u256_from_f64_bits(value).unwrap();
+                let truncated = u256_from_f64_bits(value.trunc()).unwrap();
+                assert_eq!(original, truncated);
+            }
+
+        }
+
+        #[test]
         fn test_u256_from_f64_prop(value: f64) { // TODO
 
-            u256_from_f64_bits(value).unwrap();
+            if value >= 0.0 && value < 1.15792089237316182568e+77 {
+                u256_from_f64_bits(value).unwrap();
+            }
+
         }
     }
 }
