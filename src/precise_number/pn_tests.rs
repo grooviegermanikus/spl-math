@@ -373,6 +373,19 @@ mod tests {
         assert_eq!(u256.unwrap().as_u128(), 1048576u128);
     }
 
+
+    #[test]
+    fn test_u256_from_f64_large() {
+        // 2^256 => 1.15e77
+        assert_eq!(u256_from_f64_bits(1.15e77), Some(U256::MAX) );
+    }
+
+    #[test]
+    fn test_u256_from_f64_overflow() {
+        // 2^256 => apprx 1.16e77
+        assert_eq!(u256_from_f64_bits(1.16e77), None);
+    }
+
     #[test]
     fn test_u256_from_f64_bits_zero() {
         let u256 = u256_from_f64_bits(0.0);
@@ -440,12 +453,14 @@ mod tests {
             2 => U256([0, 0, lower, upper]),
             3 => {
                 if upper == 0 {
-                    U256([0, 0, lower, upper])
+                    U256([0, 0, 0, lower])
                 } else {
+                    println!("overflow upper block");
                     return None;
                 }
             },
             _ => {
+                println!("overflow lower block index");
                 return None;
             }
         };
