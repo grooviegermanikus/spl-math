@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use std::num::FpCategory;
-    use std::ops::Shl;
     use crate::define_precise_number;
     use crate::uint::U256;
     use num_traits::ToPrimitive;
@@ -380,6 +379,14 @@ mod tests {
         assert_eq!(u256.unwrap().as_u128(), 0u128);
     }
 
+    // TODO very small
+    // value: 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001118361050833455
+
+    #[test]
+    fn test_u256_from_f64_bits_subnormal() {
+        todo!()
+    }
+
     fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
@@ -396,7 +403,7 @@ mod tests {
             FpCategory::Normal => {}
         }
 
-        let mut bits = value.to_bits();
+        let bits = value.to_bits();
         // bits = bits | MAN_MASK;
         // let value = f64::from_bits(bits);
 
@@ -410,6 +417,9 @@ mod tests {
         let bit_range_start = exponent - 52;
         let lower_block = bit_range_start / 64;
         let upper_block = lower_block + 1;
+        assert!(lower_block >= 0 && lower_block <= 3);
+        // assert!(upper_block >= 0 && upper_block <= 3);
+
         let lower_shift = (bit_range_start + 256) % 64;
         let upper_shift = 64 - lower_shift;
         let (lower, _) = mantissa_value.overflowing_shr(lower_shift as u32);
@@ -424,10 +434,27 @@ mod tests {
         println!("upper: {:064b}", upper);
 
 
+        let u256 = match lower_block {
+            0 => U256([lower, upper, 0, 0]),
+            1 => U256([0, lower, upper, 0]),
+            2 => U256([0, 0, lower, upper]),
+            3 => {
+                if upper == 0 {
+                    U256([0, 0, lower, upper])
+                } else {
+                    return None;
+                }
+            },
+            _ => {
+                return None;
+            }
+        };
+
+
 
         // shift to right position and project on 2 of the 4 u64s in U256
         // TODO add 2 more blocks
-        let u256 = U256([lower, upper, 0, 0]);
+
 
         // 52 bits
         // mantissa: (1.)0000000000001111111111111111111111111111111111111111111111111111
@@ -466,8 +493,8 @@ mod tests {
         }
 
          #[test]
-        fn test_f64(value: f64) { // TODO
-            crate::precise_number::pn_tests::tests::PreciseNumber::try_from(value).unwrap();
+        fn test_u256_from_f64_prop(value: f64) { // TODO
+            u256_from_f64_bits(value).unwrap();
         }
     }
 }
