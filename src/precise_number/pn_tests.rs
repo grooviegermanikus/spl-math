@@ -366,16 +366,21 @@ mod tests {
     }
 
     #[test]
-    fn test_u256_from_f64_bits() {
+    fn test_u256_from_f64_block0() {
+        // will underflow
+        let u256 = u256_from_f64_bits(2f64.powi(20));
+        assert_eq!(u256.unwrap().as_u128(), 2u128.pow(20));
+    }
 
-        // 2^20
-        let u256 = u256_from_f64_bits(1048576f64);
-        assert_eq!(u256.unwrap().as_u128(), 1048576u128);
+    #[test]
+    fn test_u256_from_f64_block0and1() {
+        let u256 = u256_from_f64_bits(2f64.powi(80));
+        assert_eq!(u256.unwrap().as_u128(), 2u128.pow(80));
     }
 
 
     #[test]
-    fn test_u256_from_f64_large() {
+    fn test_u256_from_f64_max() {
         // 2^256 => 1.15e77
         assert_eq!(u256_from_f64_bits(1.15e77), Some(U256::MAX) );
     }
@@ -428,26 +433,47 @@ mod tests {
         // shift right by 52 and left by exponent
         // e.g. exponent 20 -> bit 20..72
         let bit_range_start = exponent - 52;
-        let lower_block = bit_range_start / 64;
+        let lower_block = (1024 + bit_range_start) / 64 - 16;
         let upper_block = lower_block + 1;
-        assert!(lower_block >= 0 && lower_block <= 3);
+        assert!(lower_block >= -1 && lower_block <= 3);
         // assert!(upper_block >= 0 && upper_block <= 3);
 
-        let lower_shift = (bit_range_start + 256) % 64;
+        println!("value: {}", value);
+        println!("bits: {:064b}", bits);
+        println!("mantissa: (1.){:052b}", mantissa);
+        println!("mantissa_value: {}", mantissa_value);
+        println!("mantissa: {}", mantissa as u64);
+        println!("exponent: {}", exponent);
+
+        let lower_shift = (bit_range_start + 1024) % 64; // add 1024 to avoid negative modulo
         let upper_shift = 64 - lower_shift;
-        let (lower, _) = mantissa_value.overflowing_shr(lower_shift as u32);
-        let (upper, _) = mantissa_value.overflowing_shl(upper_shift as u32);
 
         println!("bit_range_start: {}", bit_range_start);
         println!("lower_block: {}", lower_block);
         println!("upper_block: {}", upper_block);
         println!("lower_shift: {}", lower_shift);
         println!("upper_shift: {}", upper_shift);
+
+        //                           v--- bit_range_start
+        // ...................xxxxxxxx.....
+        // 33333333222222221111111100000000
+        let (lower, _) = mantissa_value.overflowing_shl(lower_shift as u32);
+        let (upper, _) = mantissa_value.overflowing_shr(upper_shift as u32);
+
+
         println!("lower: {:064b}", lower);
         println!("upper: {:064b}", upper);
 
 
         let u256 = match lower_block {
+            -1 => {
+                if lower == 0 {
+                    U256([upper, 0, 0, 0])
+                } else {
+                    println!("overflow lower block");
+                    return None;
+                }
+            },
             0 => U256([lower, upper, 0, 0]),
             1 => U256([0, lower, upper, 0]),
             2 => U256([0, 0, lower, upper]),
@@ -473,12 +499,7 @@ mod tests {
 
         // 52 bits
         // mantissa: (1.)0000000000001111111111111111111111111111111111111111111111111111
-        println!("value: {}", value);
-        println!("bits: {:064b}", bits);
-        println!("mantissa: (1.){:064b}", mantissa);
-        println!("mantissa_value: {}", mantissa_value);
-        println!("mantissa: {}", mantissa as u64);
-        println!("exponent: {}", exponent);
+
         println!("u256: {:?}", u256);
 
 
