@@ -11,10 +11,12 @@ define_precise_number!(
     u64,
     u128,
     ONE_CONST,
+    1e9f64,
     0u128,
     ROUNDING_CORRECTION,
     PRECISION,
-    MAXIMUM_SQRT_BASE
+    MAXIMUM_SQRT_BASE,
+    |value| Some(value as u64)
 );
 
 #[cfg(test)]

@@ -3,10 +3,10 @@
 
 #[macro_export]
 macro_rules! define_precise_number {
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_f64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Copy, Debug, PartialEq)]
         pub struct $Precise {
             /// Wrapper over the inner value, which is multiplied by ONE
             pub value: $FPInner,
@@ -16,6 +16,7 @@ macro_rules! define_precise_number {
         impl $Precise {
             const FP_ONE: $FPInner = $FP_ONE;
             const FP_ZERO: $FPInner = $FP_ZERO;
+            const CONVERT_FROM_F64: fn(f64) -> Option<$TOuter> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
             /// integer operations will always floor the result, we artificially bump it
@@ -69,6 +70,7 @@ macro_rules! define_precise_number {
                 let value: $FPInner = int_value.checked_mul(Self::FP_ONE).unwrap();
                 Some(Self { value })
             }
+
             /// Convert a precise number back to outer type
             pub fn to_imprecise(&self) -> Option<$TOuter> {
                 self.value
@@ -376,5 +378,31 @@ macro_rules! define_precise_number {
                 self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
         }
+
+        // TODO decide if we want to have a "default"
+        // provide multiple new(f64)
+        // enable "from" conversion using features
+        impl TryFrom<f64> for $Precise {
+            type Error = ();
+
+            fn try_from(value: f64) -> Result<Self, Self::Error> {
+                let int_part: $TOuter = Self::CONVERT_FROM_F64(value).ok_or_else(|| ())?;
+                let lower_part = value - value.trunc();
+                assert!(lower_part < 1.0);
+                let lower_part = (lower_part * $FP_ONE_f64) as $TOuter;
+
+                let upper = Self::new(int_part).ok_or_else(|| ())?;
+                let lower = Self {
+                    value: lower_part.into()
+                };
+
+                assert!(lower.value < Self::FP_ONE);
+
+                let combined = upper.checked_add(&lower).ok_or_else(|| ())?;
+
+                Ok(combined)
+            }
+        }
+
     };
 } // -- macro
