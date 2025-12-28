@@ -23,11 +23,12 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
     match value.classify() {
         FpCategory::Nan => return None,
         FpCategory::Infinite => return None,
-        FpCategory::Zero => return ZERO,
+        FpCategory::Zero => {
+           unreachable!("already checked for < 1.0");
+        },
         // subnormal numbers not supported
         FpCategory::Subnormal => {
-            // subnormals are too small
-            return ZERO;
+           unreachable!("already checked for < 1.0");
         },
         FpCategory::Normal => {}
     }
