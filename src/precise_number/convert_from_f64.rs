@@ -153,26 +153,41 @@ mod tests {
 
     #[test]
     fn test_pn_from_f64() {
-        let a = TestPreciseNumber8::try_from(12.3f64).unwrap();
+        let a = TestPreciseNumber8::new_from_f64(12.3f64).unwrap();
         assert_eq!(a.value, 123);
 
-        let b = TestPreciseNumber8::try_from(0.1f64).unwrap();
+        let b = TestPreciseNumber8::new_from_f64(0.1f64).unwrap();
         assert_eq!(b.value, 1);
 
-        let c = TestPreciseNumber8::try_from(0.07f64).unwrap();
+        let c = TestPreciseNumber8::new_from_f64(0.07f64).unwrap();
         assert_eq!(c.value, 0);
 
-        assert!(TestPreciseNumber8::try_from(25.5f64).is_ok());
-        assert!(TestPreciseNumber8::try_from(25.59f64).is_ok());
-        assert!(TestPreciseNumber8::try_from(25.6f64).is_err());
+        assert!(TestPreciseNumber8::new_from_f64(25.5f64).is_some());
+        assert!(TestPreciseNumber8::new_from_f64(25.59f64).is_some());
+        assert!(TestPreciseNumber8::new_from_f64(25.6f64).is_none());
 
-        assert!(TestPreciseNumber8::try_from(-1.0f64).is_err());
+        assert!(TestPreciseNumber8::new_from_f64(-1.0f64).is_none());
+    }
+
+    #[test]
+    fn test_pn_raw_from_f64() {
+        let a = TestPreciseNumber8::new_from_raw_f64(12.3f64).unwrap();
+        assert_eq!(a.value, 12);
+
+        let b = TestPreciseNumber8::new_from_raw_f64(0.1f64).unwrap();
+        assert_eq!(b.value, 0);
+
+        let c = TestPreciseNumber8::new_from_raw_f64(0.9f64).unwrap();
+        assert_eq!(c.value, 0);
+
+        assert!(TestPreciseNumber8::new_from_raw_f64(255.9f64).is_some());
+        // assert!(TestPreciseNumber8::new_from_raw_f64(256.0f64).is_err());
     }
 
     #[test]
     fn test_u256_from_f64() {
         let value: f64 = 3e12 + 0.123456789;
-        let combined = PreciseNumber::try_from(value).unwrap();
+        let combined = PreciseNumber::new_from_f64(value).unwrap();
 
         // test is vague and should be rewritten
         assert_eq!(combined.value.as_u128(), 3000000000000123429978112);
@@ -331,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_from_f64() {
-        let pn = TestPreciseNumber8::try_from(12.3f64).unwrap();
+        let pn = TestPreciseNumber8::new_from_f64(12.3f64).unwrap();
         assert_eq!(pn.value, 123);
     }
 

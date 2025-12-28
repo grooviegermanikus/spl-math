@@ -378,22 +378,18 @@ macro_rules! define_precise_number {
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
                 self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
-        }
 
-        // TODO decide if we want to have a "default"
-        // provide multiple new(f64)
-        // enable "from" conversion using features
-        impl TryFrom<f64> for $Precise {
-            type Error = ();
-
-            fn try_from(input_f64: f64) -> Result<Self, Self::Error> {
-
+            #[cfg(feature = "from_f64")]
+            pub fn new_from_f64(input_f64: f64) -> Option<Self> {
                 let scaled_value = input_f64 * Self::FP_ONE_F64;
+                Self::new_from_raw_f64(scaled_value)
+            }
 
-                let value: $FPInner = Self::CONVERT_FROM_F64(scaled_value).ok_or(())?;
-                Ok(Self { value } )
+            #[cfg(feature = "from_f64")]
+            pub fn new_from_raw_f64(raw_value: f64) -> Option<Self> {
+                Self::CONVERT_FROM_F64(raw_value).map(|value| Self { value })
             }
         }
-
+        
     };
 } // -- macro
