@@ -75,9 +75,7 @@ mod tests {
         // mantissa: (1.)1111111111111111111111111111111111111111111111111111
 
 
-        println!("best supported: {}", max_supported);
         let u256 = u256_from_f64_bits(max_supported).unwrap();
-        println!("best supported: {:?}", u256.0);
         // note: bit 53 is implicit from the mantissa interpretation as 1.xxxxx
         assert_eq!(u256.0, [0, 0, 0, 0xffff_ffff_ffff_f800]);
 
@@ -89,8 +87,6 @@ mod tests {
         // bits: 0100111111110000000000000000000000000000000000000000000000000000
         assert_eq!(overflow_value2, overflow_value);
 
-        println!("overflow value: {}", overflow_value);
-        println!("overflow value: {:064b}", overflow_value.to_bits());
         assert_eq!(u256_from_f64_bits(overflow_value), None);
 
     }
@@ -114,9 +110,6 @@ mod tests {
         // let min_value: f64 = 3.7921553222237964e3;
         let min_value: f64 = 3.7921553222237964e-231;
 
-        println!("min value: {}", min_value);
-        println!("min value: {:064b}", min_value.to_bits());
-
         let u256 = u256_from_f64_bits(min_value).unwrap();
 
         // assert_eq!(u256.0, [1, 0, 0, 0]);
@@ -128,9 +121,6 @@ mod tests {
     fn test_u256_from_f64_zero() {
 
         let min_value = 0.0f64;
-
-        println!("min value: {}", min_value);
-        println!("min value: {:064b}", min_value.to_bits());
 
         let u256 = u256_from_f64_bits(min_value).unwrap();
 
@@ -215,11 +205,6 @@ mod tests {
             return ZERO;
         }
 
-        // FIXME
-        // let value = value.trunc();
-        // TODO might catch 0..1
-
-
         const ZERO: Option<U256> = Some(U256::zero());
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
@@ -252,32 +237,31 @@ mod tests {
         let lower_block = (1024 + bit_range_start) / 64 - 16;
         let upper_block = lower_block + 1;
 
-        println!("bit_range_start: {}", bit_range_start);
-        println!("lower_block: {}", lower_block);
-        println!("upper_block: {}", upper_block);
+        // println!("bit_range_start: {}", bit_range_start);
+        // println!("lower_block: {}", lower_block);
+        // println!("upper_block: {}", upper_block);
 
         if lower_block > 3 {
-            println!("overflow lower block");
+            // println!("overflow lower block");
             return None;
         }
 
         if upper_block < 0 {
-            println!("underflow upper block");
-            // return None;
+            // println!("underflow upper block");
             return ZERO;
         }
 
-        println!("value: {}", value);
-        println!("bits: {:064b}", bits);
-        println!("mantissa: (1.){:052b}", mantissa_bits);
-        println!("exponent: {}", exponent);
+        // println!("value: {}", value);
+        // println!("bits: {:064b}", bits);
+        // println!("mantissa: (1.){:052b}", mantissa_bits);
+        // println!("exponent: {}", exponent);
 
         let lower_shift = (bit_range_start + 1024) % 64; // add 1024 to avoid negative modulo
         let upper_shift = 64 - lower_shift;
 
 
-        println!("lower_shift: {}", lower_shift);
-        println!("upper_shift: {}", upper_shift);
+        // println!("lower_shift: {}", lower_shift);
+        // println!("upper_shift: {}", upper_shift);
 
         //                           v--- bit_range_start
         // ...................xxxxxxxx.....
@@ -285,8 +269,8 @@ mod tests {
         let lower = shl_oldschool(mantissa_value, lower_shift as u32);
         let upper = shr_oldschool(mantissa_value, upper_shift as u32);
 
-        println!("lower: {:064b}", lower);
-        println!("upper: {:064b}", upper);
+        // println!("lower: {:064b}", lower);
+        // println!("upper: {:064b}", upper);
 
         assert!(lower_block >= -1 && lower_block <= 3, "prev checks should catch this");
         let u256 = match lower_block {
@@ -294,7 +278,7 @@ mod tests {
                 if lower == 0 {
                     U256([upper, 0, 0, 0])
                 } else {
-                    println!("underflow lower block");
+                    // println!("underflow lower block");
                     // TODO check if that's what we want
                     U256([upper, 0, 0, 0])
                     // return None;
@@ -307,35 +291,17 @@ mod tests {
                 if upper == 0 {
                     U256([0, 0, 0, lower])
                 } else {
-                    println!("overflow upper block: {}", upper);
+                    // println!("overflow upper block: {}", upper);
                     return None;
                 }
             },
             _ => {
-                println!("overflow lower block index");
+                // println!("overflow lower block index");
                 return None;
             }
         };
 
-
-
-        // shift to right position and project on 2 of the 4 u64s in U256
-        // TODO add 2 more blocks
-
-
-        // 52 bits
-        // mantissa: (1.)0000000000001111111111111111111111111111111111111111111111111111
-
-        println!("u256: {:?}", u256);
-
-
-
-        // value.classify();
-        // u64::MAX
-        // f64::MANTISSA_DIGITS
-        // value.to_u64()
-        // let bytes = [0u64; 4];
-        // U256::(bytes);
+        // println!("u256: {:?}", u256);
 
         Some(u256)
     }
@@ -346,14 +312,6 @@ mod tests {
         let pn = TestPreciseNumber8::try_from(12.3f64).unwrap();
         assert_eq!(pn.value, 123);
     }
-
-    #[test]
-    fn test_fail_dunno() {
-        u256_from_f64_bits(2.82e73).unwrap();
-        // fails!
-        u256_from_f64_bits(2.83e73).unwrap();
-    }
-
 
     proptest! {
 
