@@ -4,114 +4,103 @@ use crate::uint::U256;
 
 // Converts from the integer part of f64 to U256, returns None on overflow or negative input
 pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
+    use std::num::FpCategory;
 
     if value.is_sign_negative() && !value.is_zero() {
         return None;
     }
 
-    if value < 1.0 {
-        return ZERO;
-    }
-
-    const ZERO: Option<U256> = Some(U256::zero());
-    const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
-    const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
-
-    // 1.111111111 (binary) * 2^-2 = 0.3 (decimal)
-    // let value: f64 = 1048576f64; // 2^20
-
     match value.classify() {
         FpCategory::Nan => return None,
         FpCategory::Infinite => return None,
-        FpCategory::Zero => {
-           unreachable!("already checked for < 1.0");
-        },
-        // subnormal numbers not supported
-        FpCategory::Subnormal => {
-           unreachable!("already checked for < 1.0");
-        },
+        FpCategory::Zero => return Some(U256::zero()),
+        FpCategory::Subnormal => return Some(U256::zero()),
         FpCategory::Normal => {}
     }
+
+    if value < 1.0 {
+        return Some(U256::zero());
+    }
+
+    const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
+    const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+
     let bits = value.to_bits();
-
+    let exponent: i32 = (((bits & EXP_MASK) >> 52) as i32) - 1023;
     let mantissa_bits: u64 = bits & MAN_MASK;
-    let exponent: i32 = ((bits & EXP_MASK) >> 52) as i32 - 1023;
+    let mantissa = mantissa_bits | (1u64 << 52); // 53-bit value
 
-    let mantissa_value = mantissa_bits | (1u64 << 52);
-    // bits 0..52
-    // shift right by 52 and left by exponent
-    // e.g. exponent 20 -> bit 20..72
-    // might be negative
-    let bit_range_start = exponent - 52;
-    let lower_block = (1024 + bit_range_start) / 64 - 16;
-    let upper_block = lower_block + 1;
+    // position of mantissa's least-significant bit in the resulting integer
+    let bit_range_start = exponent - 52; // may be negative
 
-    // println!("bit_range_start: {}", bit_range_start);
-    // println!("lower_block: {}", lower_block);
-    // println!("upper_block: {}", upper_block);
-
-    if lower_block > 3 {
-        // println!("overflow lower block");
-        return None;
-    }
-
-    if upper_block < 0 {
-        // println!("underflow upper block");
-        return ZERO;
-    }
-
-    // println!("value: {}", value);
-    // println!("bits: {:064b}", bits);
-    // println!("mantissa: (1.){:052b}", mantissa_bits);
-    // println!("exponent: {}", exponent);
-
-    let lower_shift = (bit_range_start + 1024) % 64; // add 1024 to avoid negative modulo
-    let upper_shift = 64 - lower_shift;
-
-
-    // println!("lower_shift: {}", lower_shift);
-    // println!("upper_shift: {}", upper_shift);
-
-    //                           v--- bit_range_start
-    // ...................xxxxxxxx.....
-    // 33333333222222221111111100000000
-    let lower = shl_raw(mantissa_value, lower_shift as u32);
-    let upper = shr_raw(mantissa_value, upper_shift as u32);
-
-    // println!("lower: {:064b}", lower);
-    // println!("upper: {:064b}", upper);
-
-    assert!(lower_block >= -1 && lower_block <= 3, "prev checks should catch this");
-    let u256 = match lower_block {
-        -1 => {
-            if lower == 0 {
-                U256([upper, 0, 0, 0])
-            } else {
-                // println!("underflow lower block");
-                // we lose the lower bits, which is okey
-                U256([upper, 0, 0, 0])
-            }
-        },
-        0 => U256([lower, upper, 0, 0]),
-        1 => U256([0, lower, upper, 0]),
-        2 => U256([0, 0, lower, upper]),
-        3 => {
-            if upper == 0 {
-                U256([0, 0, 0, lower])
-            } else {
-                // println!("overflow upper block: {}", upper);
-                return None;
-            }
-        },
-        _ => {
-            // println!("overflow lower block index");
+    if bit_range_start >= 0 {
+        let highest_pos = bit_range_start as usize + 52usize;
+        if highest_pos >= 256 {
             return None;
         }
-    };
 
-    // println!("u256: {:?}", u256);
+        let start_word = (bit_range_start as usize) / 64;
+        let offset = (bit_range_start as usize) % 64;
 
-    Some(u256)
+        if start_word > 3 {
+            return None;
+        }
+
+        // shift the 53-bit mantissa by offset (0..63). result fits in u128.
+        let combined = (mantissa as u128) << offset;
+        let low = combined as u64;
+        let high = (combined >> 64) as u64;
+
+        let mut out = [0u64; 4];
+        out[start_word] = low;
+
+        if start_word + 1 <= 3 {
+            out[start_word + 1] = high;
+        } else if high != 0 {
+            // high would spill past the highest word
+            return None;
+        }
+
+        return Some(U256(out));
+    } else {
+        // right shift the mantissa by -bit_range_start (truncate fractional bits)
+        let rs = (-bit_range_start) as u32;
+        if rs >= 64 {
+            // mantissa is 53 bits; shifting >=64 clears it
+            return Some(U256::zero());
+        }
+        let shifted = mantissa >> rs;
+        return Some(U256([shifted as u64, 0, 0, 0]));
+    }
+}
+
+fn shr_u256(input: U256, shift: u32) -> U256 {
+    if shift == 0 {
+        return input;
+    }
+    if shift >= 256 {
+        return U256([0, 0, 0, 0]);
+    }
+    let word_shift = (shift / 64) as usize;
+    let bit_shift = (shift % 64) as u32;
+
+    let mut out = [0u64; 4];
+    if bit_shift == 0 {
+        for i in 0..4 {
+            let src = i + word_shift;
+            out[i] = if src < 4 { input.0[src] } else { 0 };
+        }
+    } else {
+        let right = bit_shift;
+        let left = 64 - right;
+        for i in 0..4 {
+            let src = i + word_shift;
+            let lo = if src < 4 { input.0[src] >> right } else { 0 };
+            let hi = if src + 1 < 4 { input.0[src + 1] << left } else { 0 };
+            out[i] = lo | hi;
+        }
+    }
+    U256(out)
 }
 
 // asm semantic of shift right
@@ -139,12 +128,22 @@ mod tests {
     use num_traits::{ToPrimitive};
     use proptest::proptest;
     use crate::define_precise_number;
-    use crate::precise_number::convert_from_f64::{shr_raw, u256_from_f64_bits};
+    use crate::precise_number::convert_from_f64::{shr_raw, shr_u256, u256_from_f64_bits};
     use crate::precise_number::PreciseNumber;
     use crate::uint::U256;
     
     define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
 
+    #[test]
+    fn shr_u256_basic() {
+        let v = U256([1, 0, 0, 0]); // 1
+        assert_eq!(shr_u256(v, 0).0, [1, 0, 0, 0]);
+        assert_eq!(shr_u256(v, 1).0, [0, 0, 0, 0]); // 1 >> 1 == 0
+        let big = U256([0xffff_ffff_ffff_ffff, 0, 0, 0]);
+        assert_eq!(shr_u256(big, 64).0, [0, 0, 0, 0]); // shifting whole word out
+        let mixed = U256([0, 1, 0, 0]); // 1<<64
+        assert_eq!(shr_u256(mixed, 1).0, [0x8000_0000_0000_0000, 0, 0, 0]); // low half of word 1 flows into word 0
+    }
 
     #[test]
     fn test_u256_small() {
