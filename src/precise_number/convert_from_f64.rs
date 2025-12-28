@@ -1,4 +1,3 @@
-use std::num::FpCategory;
 use num_traits::Zero;
 use crate::uint::U256;
 
@@ -36,6 +35,7 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
     if bit_range_start >= 0 {
         let highest_pos = bit_range_start as usize + 52usize;
         if highest_pos >= 256 {
+            // overflow highest bit
             return None;
         }
 
@@ -43,6 +43,7 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
         let offset = (bit_range_start as usize) % 64;
 
         if start_word > 3 {
+            // overflow highest word
             return None;
         }
 
@@ -61,65 +62,16 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
             return None;
         }
 
-        return Some(U256(out));
+        Some(U256(out))
     } else {
-        // right shift the mantissa by -bit_range_start (truncate fractional bits)
+        // right shift the mantissa will never use more than the lowest word
         let rs = (-bit_range_start) as u32;
         if rs >= 64 {
             // mantissa is 53 bits; shifting >=64 clears it
             return Some(U256::zero());
         }
         let shifted = mantissa >> rs;
-        return Some(U256([shifted as u64, 0, 0, 0]));
-    }
-}
-
-fn shr_u256(input: U256, shift: u32) -> U256 {
-    if shift == 0 {
-        return input;
-    }
-    if shift >= 256 {
-        return U256([0, 0, 0, 0]);
-    }
-    let word_shift = (shift / 64) as usize;
-    let bit_shift = (shift % 64) as u32;
-
-    let mut out = [0u64; 4];
-    if bit_shift == 0 {
-        for i in 0..4 {
-            let src = i + word_shift;
-            out[i] = if src < 4 { input.0[src] } else { 0 };
-        }
-    } else {
-        let right = bit_shift;
-        let left = 64 - right;
-        for i in 0..4 {
-            let src = i + word_shift;
-            let lo = if src < 4 { input.0[src] >> right } else { 0 };
-            let hi = if src + 1 < 4 { input.0[src + 1] << left } else { 0 };
-            out[i] = lo | hi;
-        }
-    }
-    U256(out)
-}
-
-// asm semantic of shift right
-#[inline]
-fn shr_raw(value: u64, shift: u32) -> u64 {
-    if shift >= 64 {
-        0
-    } else {
-        value >> shift
-    }
-}
-
-// asm semantic of shift left
-#[inline]
-fn shl_raw(value: u64, shift: u32) -> u64 {
-    if shift >= 64 {
-        0
-    } else {
-        value << shift
+        Some(U256([shifted, 0, 0, 0]))
     }
 }
 
@@ -128,22 +80,11 @@ mod tests {
     use num_traits::{ToPrimitive};
     use proptest::proptest;
     use crate::define_precise_number;
-    use crate::precise_number::convert_from_f64::{shr_raw, shr_u256, u256_from_f64_bits};
+    use crate::precise_number::convert_from_f64::{u256_from_f64_bits};
     use crate::precise_number::PreciseNumber;
     use crate::uint::U256;
     
     define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
-
-    #[test]
-    fn shr_u256_basic() {
-        let v = U256([1, 0, 0, 0]); // 1
-        assert_eq!(shr_u256(v, 0).0, [1, 0, 0, 0]);
-        assert_eq!(shr_u256(v, 1).0, [0, 0, 0, 0]); // 1 >> 1 == 0
-        let big = U256([0xffff_ffff_ffff_ffff, 0, 0, 0]);
-        assert_eq!(shr_u256(big, 64).0, [0, 0, 0, 0]); // shifting whole word out
-        let mixed = U256([0, 1, 0, 0]); // 1<<64
-        assert_eq!(shr_u256(mixed, 1).0, [0x8000_0000_0000_0000, 0, 0, 0]); // low half of word 1 flows into word 0
-    }
 
     #[test]
     fn test_u256_small() {
@@ -335,13 +276,6 @@ mod tests {
 
         // subnormals are very small numbers and are guaranteed to be smaller than one
         assert_eq!(u256_from_f64_bits(subnormal), U256::zero().into());
-    }
-
-    #[test]
-    fn test_shift_basics() {
-        let value: u64 = 1024;
-        let value = shr_raw(value, 64);
-        assert_eq!(value, 0);
     }
 
     #[test]
