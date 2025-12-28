@@ -2,7 +2,7 @@
 #[cfg(test)]
 mod tests {
     use std::num::FpCategory;
-    use num_traits::{ToPrimitive, Zero};
+    use num_traits::{CheckedShr, ToPrimitive, Zero};
     use proptest::proptest;
     use crate::define_precise_number;
     use crate::precise_number::PreciseNumber;
@@ -172,23 +172,55 @@ mod tests {
         let bits = 0f64.to_bits();
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
         let subnormal = f64::from_bits(bits | MAN_MASK);
-        println!("subnormal: {}", subnormal);
 
+        // subnormals are very small numbers and are guaranteed to be smaller than one
         assert_eq!(u256_from_f64_bits(subnormal), U256::zero().into());
     }
 
+    #[test]
+    fn test_shift_basics() {
+        let value: u64 = 1024;
+        let value = shr_oldschool(value, 64);
+        assert_eq!(value, 0);
+    }
 
-    // will take the truncated value
+    // asm semantic of shift right
+    #[inline]
+    fn shr_oldschool(value: u64, shift: u32) -> u64 {
+        if shift >= 64 {
+            0
+        } else {
+            value >> shift
+        }
+    }
+
+    // asm semantic of shift left
+    #[inline]
+    fn shl_oldschool(value: u64, shift: u32) -> u64 {
+        if shift >= 64 {
+            0
+        } else {
+            value << shift
+        }
+    }
+
+    // Converts from the integer part of f64 to U256, returns None on overflow or negative input
     fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
         if value.is_sign_negative() && !value.is_zero() {
             return None;
         }
 
+        if value < 1.0 {
+            return ZERO;
+        }
+
         // FIXME
-        let value = value.trunc();
+        // let value = value.trunc();
+        // TODO might catch 0..1
 
 
+        const ZERO: Option<U256> = Some(U256::zero());
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
 
@@ -198,30 +230,24 @@ mod tests {
         match value.classify() {
             FpCategory::Nan => return None,
             FpCategory::Infinite => return None,
-            FpCategory::Zero => return U256::zero().into(),
+            FpCategory::Zero => return ZERO,
             // subnormal numbers not supported
             FpCategory::Subnormal => {
-                println!("subnormal not supported");
-                return None;
-
+                // subnormals are too small
+                return return ZERO;
             },
             FpCategory::Normal => {}
         }
-
-
-
-
-
-
         let bits = value.to_bits();
 
-        let mantissa: u64 = bits & MAN_MASK;
+        let mantissa_bits: u64 = bits & MAN_MASK;
         let exponent: i32 = ((bits & EXP_MASK) >> 52) as i32 - 1023;
 
-        let mantissa_value = mantissa | (1u64 << 52);
+        let mantissa_value = mantissa_bits | (1u64 << 52);
         // bits 0..52
         // shift right by 52 and left by exponent
         // e.g. exponent 20 -> bit 20..72
+        // might be negative
         let bit_range_start = exponent - 52;
         let lower_block = (1024 + bit_range_start) / 64 - 16;
         let upper_block = lower_block + 1;
@@ -237,16 +263,13 @@ mod tests {
 
         if upper_block < 0 {
             println!("underflow upper block");
-            return None;
+            // return None;
+            return ZERO;
         }
-
-        assert!(lower_block >= -1 && lower_block <= 3);
 
         println!("value: {}", value);
         println!("bits: {:064b}", bits);
-        println!("mantissa: (1.){:052b}", mantissa);
-        println!("mantissa_value: {}", mantissa_value);
-        println!("mantissa: {}", mantissa as u64);
+        println!("mantissa: (1.){:052b}", mantissa_bits);
         println!("exponent: {}", exponent);
 
         let lower_shift = (bit_range_start + 1024) % 64; // add 1024 to avoid negative modulo
@@ -259,14 +282,13 @@ mod tests {
         //                           v--- bit_range_start
         // ...................xxxxxxxx.....
         // 33333333222222221111111100000000
-        let (lower, _) = mantissa_value.overflowing_shl(lower_shift as u32);
-        let (upper, _) = mantissa_value.overflowing_shr(upper_shift as u32);
-
+        let lower = shl_oldschool(mantissa_value, lower_shift as u32);
+        let upper = shr_oldschool(mantissa_value, upper_shift as u32);
 
         println!("lower: {:064b}", lower);
         println!("upper: {:064b}", upper);
 
-
+        assert!(lower_block >= -1 && lower_block <= 3, "prev checks should catch this");
         let u256 = match lower_block {
             -1 => {
                 if lower == 0 {
@@ -285,7 +307,7 @@ mod tests {
                 if upper == 0 {
                     U256([0, 0, 0, lower])
                 } else {
-                    println!("overflow upper block");
+                    println!("overflow upper block: {}", upper);
                     return None;
                 }
             },
@@ -323,6 +345,13 @@ mod tests {
     fn test_from_f64() {
         let pn = TestPreciseNumber8::try_from(12.3f64).unwrap();
         assert_eq!(pn.value, 123);
+    }
+
+    #[test]
+    fn test_fail_dunno() {
+        u256_from_f64_bits(2.82e73).unwrap();
+        // fails!
+        u256_from_f64_bits(2.83e73).unwrap();
     }
 
 
