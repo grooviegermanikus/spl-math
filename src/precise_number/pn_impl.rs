@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! define_precise_number {
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_f64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
         #[derive(Clone, Copy, Debug, PartialEq)]
@@ -15,8 +15,9 @@ macro_rules! define_precise_number {
         #[allow(dead_code)]
         impl $Precise {
             const FP_ONE: $FPInner = $FP_ONE;
+            const FP_ONE_F64: f64 = $FP_ONE_F64;
             const FP_ZERO: $FPInner = $FP_ZERO;
-            const CONVERT_FROM_F64: fn(f64) -> Option<$TOuter> = $CONVERT_F64;
+            const CONVERT_FROM_F64: fn(f64) -> Option<$FPInner> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
             /// integer operations will always floor the result, we artificially bump it
@@ -385,22 +386,12 @@ macro_rules! define_precise_number {
         impl TryFrom<f64> for $Precise {
             type Error = ();
 
-            fn try_from(value: f64) -> Result<Self, Self::Error> {
-                let int_part: $TOuter = Self::CONVERT_FROM_F64(value).ok_or_else(|| ())?;
-                let lower_part = value - value.trunc();
-                assert!(lower_part < 1.0);
-                let lower_part = (lower_part * $FP_ONE_f64) as $TOuter;
+            fn try_from(input_f64: f64) -> Result<Self, Self::Error> {
 
-                let upper = Self::new(int_part).ok_or_else(|| ())?;
-                let lower = Self {
-                    value: lower_part.into()
-                };
+                let scaled_value = input_f64 * Self::FP_ONE_F64;
 
-                assert!(lower.value < Self::FP_ONE);
-
-                let combined = upper.checked_add(&lower).ok_or_else(|| ())?;
-
-                Ok(combined)
+                let value: $FPInner = Self::CONVERT_FROM_F64(scaled_value).ok_or(())?;
+                Ok(Self { value } )
             }
         }
 
