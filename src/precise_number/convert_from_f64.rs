@@ -130,6 +130,14 @@ mod tests {
         assert_eq!(u256, None);
     }
 
+    #[test]
+    fn test_u256_from_negative_zer0() {
+        let u256 = u256_from_f64_bits(-0.0).unwrap();
+
+        assert_eq!(u256.0, [0, 0, 0, 0]);
+    }
+
+
 
     #[test]
     fn test_u256_from_f64_zero() {
