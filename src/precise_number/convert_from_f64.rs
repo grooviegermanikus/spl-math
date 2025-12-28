@@ -2,7 +2,7 @@
 #[cfg(test)]
 mod tests {
     use std::num::FpCategory;
-    use num_traits::{CheckedShr, ToPrimitive, Zero};
+    use num_traits::{ToPrimitive, Zero};
     use proptest::proptest;
     use crate::define_precise_number;
     use crate::precise_number::PreciseNumber;
@@ -101,20 +101,34 @@ mod tests {
     }
 
     #[test]
-    fn test_u256_from_f64_min() {
+    fn test_u256_from_min() {
 
-        // TODO everyhting smaller than 1.0e52 needs special handing
-
-        // 4.503.599.627.370.496 =
-        // let min_value: f64 = 4_503_599_627_370_496u128 as f64;
-        // let min_value: f64 = 3.7921553222237964e3;
         let min_value: f64 = 3.7921553222237964e-231;
 
         let u256 = u256_from_f64_bits(min_value).unwrap();
 
-        // assert_eq!(u256.0, [1, 0, 0, 0]);
+        assert_eq!(u256.0, [0, 0, 0, 0]);
     }
 
+    #[test]
+    fn test_u256_from_f64_min() {
+
+        let min_value: f64 = f64::MIN_POSITIVE;
+
+        let u256 = u256_from_f64_bits(min_value).unwrap();
+
+        assert_eq!(u256.0, [0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_u256_from_negative_f64() {
+
+        let neg_value: f64 = -42.0;
+
+        let u256 = u256_from_f64_bits(neg_value);
+
+        assert_eq!(u256, None);
+    }
 
 
     #[test]
@@ -219,7 +233,7 @@ mod tests {
             // subnormal numbers not supported
             FpCategory::Subnormal => {
                 // subnormals are too small
-                return return ZERO;
+                return ZERO;
             },
             FpCategory::Normal => {}
         }
@@ -279,9 +293,8 @@ mod tests {
                     U256([upper, 0, 0, 0])
                 } else {
                     // println!("underflow lower block");
-                    // TODO check if that's what we want
+                    // we lose the lower bits, which is okey
                     U256([upper, 0, 0, 0])
-                    // return None;
                 }
             },
             0 => U256([lower, upper, 0, 0]),
