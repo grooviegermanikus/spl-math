@@ -1,3 +1,4 @@
+use num_traits::ToPrimitive;
 /// Decimal fix-point number with 12 decimal places backed by u128
 ///
 use crate::define_precise_number;
@@ -16,7 +17,7 @@ define_precise_number!(
     ROUNDING_CORRECTION,
     PRECISION,
     MAXIMUM_SQRT_BASE,
-    |value| Some(value as u64)
+    |value| value.to_u128()
 );
 
 #[cfg(test)]
