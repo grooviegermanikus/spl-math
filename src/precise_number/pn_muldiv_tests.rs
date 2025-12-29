@@ -1,14 +1,24 @@
 #[cfg(test)]
 mod tests {
-    use num_traits::ToPrimitive;
-    use proptest::test_runner::TestCaseResult;
-    use {proptest::prelude::*};
     use crate::{define_muldiv, define_precise_number};
+    use num_traits::ToPrimitive;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
+    define_precise_number!(
+        TestPreciseNumber8,
+        u8,
+        u8,
+        10u8,
+        1e1f64,
+        0u8,
+        5u8,
+        1u8,
+        10u8,
+        |value| value.to_u8()
+    );
 
     define_muldiv!(TestPreciseNumber8, u8, u8, u16);
-
 
     #[test]
     fn test_call_muldiv_floor() {

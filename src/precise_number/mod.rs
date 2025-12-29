@@ -4,8 +4,8 @@ mod pn_256_128_d12;
 mod pn_256_128_d18;
 mod pn_64_32_d4;
 mod pn_impl;
-mod pn_tests;
 mod pn_muldiv_tests;
+mod pn_tests;
 
 // type aliases for initial version of PreciseNumber
 pub type PreciseNumber = pn_256_128_d12::PreciseNumber;
