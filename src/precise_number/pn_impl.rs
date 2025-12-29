@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! define_precise_number {
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
         #[derive(Clone, Copy, Debug, PartialEq)]
@@ -15,7 +15,9 @@ macro_rules! define_precise_number {
         #[allow(dead_code)]
         impl $Precise {
             const FP_ONE: $FPInner = $FP_ONE;
+            const FP_ONE_F64: f64 = $FP_ONE_F64;
             const FP_ZERO: $FPInner = $FP_ZERO;
+            const CONVERT_FROM_F64: fn(f64) -> Option<$FPInner> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
             /// integer operations will always floor the result, we artificially bump it
@@ -71,6 +73,7 @@ macro_rules! define_precise_number {
                 let value: $FPInner = int_value.checked_mul(Self::FP_ONE).unwrap();
                 Some(Self { value })
             }
+
             /// Convert a precise number back to outer type
             pub fn to_imprecise(&self) -> Option<$TOuter> {
                 self.value
@@ -377,7 +380,19 @@ macro_rules! define_precise_number {
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
                 self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
+
+            #[cfg(feature = "from_f64")]
+            pub fn new_from_f64(input_f64: f64) -> Option<Self> {
+                let scaled_value = input_f64 * Self::FP_ONE_F64;
+                Self::new_from_inner_f64(scaled_value)
+            }
+
+            #[cfg(feature = "from_f64")]
+            pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
+                Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
+            }
         }
+
     };
 } // -- macro
 

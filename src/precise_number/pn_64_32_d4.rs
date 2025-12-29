@@ -1,6 +1,7 @@
 /// Decimal fix-point number with 12 decimal places backed by u64
 ///
 use crate::{define_muldiv, define_precise_number};
+use num_traits::ToPrimitive;
 
 const ONE_CONST: u64 = 10_000;
 const ROUNDING_CORRECTION: u64 = 10_000 / 2;
@@ -11,10 +12,12 @@ define_precise_number!(
     u32,
     u64,
     ONE_CONST,
+    1e4f64,
     0u64,
     ROUNDING_CORRECTION,
     PRECISION,
-    MAXIMUM_SQRT_BASE
+    MAXIMUM_SQRT_BASE,
+    |value| value.to_u64()
 );
 define_muldiv!(PreciseNumber, u32, u64, u128);
 
@@ -50,11 +53,11 @@ mod tests {
 
     #[test]
     fn test_call_muldiv() {
-        let a = crate::precise_number::pn_128_64_d12::PreciseNumber::new(10).unwrap();
-        let b = crate::precise_number::pn_128_64_d12::PreciseNumber::new(5).unwrap();
-        let c = crate::precise_number::pn_128_64_d12::PreciseNumber::new(2).unwrap();
+        let a = crate::precise_number::pn_128_64_d9::PreciseNumber::new(10).unwrap();
+        let b = crate::precise_number::pn_128_64_d9::PreciseNumber::new(5).unwrap();
+        let c = crate::precise_number::pn_128_64_d9::PreciseNumber::new(2).unwrap();
         let result = a.mul_div_floor(b, c).unwrap();
-        assert_eq!(result, crate::precise_number::pn_128_64_d12::PreciseNumber::new(25).unwrap());
+        assert_eq!(result, crate::precise_number::pn_128_64_d9::PreciseNumber::new(25).unwrap());
     }
 
 }

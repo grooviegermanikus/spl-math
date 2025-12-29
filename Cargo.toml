@@ -7,6 +7,10 @@ repository = "https://github.com/solana-labs/solana-program-library"
 license = "Apache-2.0"
 edition = "2021"
 
+[features]
+default = ["from_f64"]
+from_f64 = []
+
 [[bench]]
 name = "benches_precision_number"
 harness = false

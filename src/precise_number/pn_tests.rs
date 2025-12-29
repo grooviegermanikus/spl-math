@@ -2,7 +2,9 @@
 mod tests {
     use crate::uint::{U256, U512};
     use crate::{define_precise_number};
+    use num_traits::ToPrimitive;
     use proptest::prelude::*;
+    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 
     type InnerUint = U256;
 
@@ -16,22 +18,26 @@ mod tests {
         u128,
         U256,
         ONE_CONST,
+        1e12f64,
         U256::zero(),
         ROUNDING_CORRECTION,
         PRECISION,
-        MAXIMUM_SQRT_BASE
+        MAXIMUM_SQRT_BASE,
+        |value| u256_from_f64_bits(value)
     );
 
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 0u8, 5u8, 1u8, 10u8);
+    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
     define_precise_number!(
         TestPreciseNumber32,
         u32,
         u32,
         1_000u32,
+        1e3f64,
         0u32,
         500u32,
         1u32,
-        1_000u32
+        1_000u32,
+        |value| value.to_u32()
     ); // MAXIMUM_SQRT_BASE is likely incorrect
 
     fn check_pow_approximation(base: InnerUint, exponent: InnerUint, expected: InnerUint) {
