@@ -29,38 +29,40 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
     let bits = value.to_bits();
     // exponent ranges from -1022 to 1023 (0/-1023 has special meaning)
     let exponent: i32 = (((bits & EXP_MASK) >> 52) as i32) - EXP_BIAS;
-    let mantissa_bits: u64 = bits & MAN_MASK;
-    let mantissa = mantissa_bits | (1u64 << 52); // 53-bit value
+    let mantissa = (1u64 << 52) | (bits & MAN_MASK); // 53-bit value
 
-    // position of mantissa's least-significant bit in the resulting integer
+    // bit_range_start is the position of the lowest bit of the mantissa in the final U256
+    // we are exploiting the fact that exponent is base2
     let bit_range_start = exponent - 52; // may be negative
 
     if bit_range_start >= 0 {
-        let highest_pos = bit_range_start as usize + 52usize;
-        if highest_pos >= 256 {
+        // highest bit (inclusive)
+        let bit_range_end = bit_range_start as usize + 52usize;
+        if bit_range_end >= 256 {
             // overflow highest bit
             return None;
         }
 
-        let start_word = (bit_range_start as usize) / 64;
-        let offset = (bit_range_start as usize) % 64;
+        let first_word = (bit_range_start as usize) / 64;
+        let second_word = first_word + 1;
+        let offset_in_word = (bit_range_start as usize) % 64;
 
-        if start_word > 3 {
+        if first_word > 3 {
             // overflow highest word
             return None;
         }
 
-        // shift the 53-bit mantissa by offset (0..63). result fits in u128.
-        let combined = (mantissa as u128) << offset;
-        let low = combined as u64;
-        let high = (combined >> 64) as u64;
+        // shift the 53-bit mantissa which might span two words
+        let mantissa_shifted = (mantissa as u128) << offset_in_word;
+        let low_mantissa_bits = mantissa_shifted as u64;
+        let high_mantissa_bits = (mantissa_shifted >> 64) as u64;
 
         let mut out = [0u64; 4];
-        out[start_word] = low;
+        out[first_word] = low_mantissa_bits;
 
-        if start_word + 1 <= 3 {
-            out[start_word + 1] = high;
-        } else if high != 0 {
+        if second_word <= 3 {
+            out[second_word] = high_mantissa_bits;
+        } else if high_mantissa_bits != 0 {
             // high would spill past the highest word
             return None;
         }
