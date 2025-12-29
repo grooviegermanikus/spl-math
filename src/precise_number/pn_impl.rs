@@ -382,14 +382,14 @@ macro_rules! define_precise_number {
             #[cfg(feature = "from_f64")]
             pub fn new_from_f64(input_f64: f64) -> Option<Self> {
                 let scaled_value = input_f64 * Self::FP_ONE_F64;
-                Self::new_from_raw_f64(scaled_value)
+                Self::new_from_inner_f64(scaled_value)
             }
 
             #[cfg(feature = "from_f64")]
-            pub fn new_from_raw_f64(raw_value: f64) -> Option<Self> {
-                Self::CONVERT_FROM_F64(raw_value).map(|value| Self { value })
+            pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
+                Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
         }
-        
+
     };
 } // -- macro
