@@ -1,4 +1,5 @@
 #![allow(clippy::arithmetic_side_effects)]
+#![allow(clippy::manual_div_ceil)]
 //! Large uint types
 
 // required for clippy
