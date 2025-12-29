@@ -73,7 +73,7 @@ macro_rules! define_precise_number {
             }
 
             /// Convert a precise number back to outer type
-            pub fn to_imprecise(&self) -> Option<$TOuter> {
+            pub fn to_imprecise(self) -> Option<$TOuter> {
                 self.value
                     .checked_add(Self::ROUNDING_CORRECTION)?
                     .checked_div(Self::FP_ONE)
