@@ -389,11 +389,13 @@ mod tests {
     #[test]
     fn test_square_root_precision() {
         // number below 1 (with uneven number of bits) 1.23456789e-9
-        let number = PreciseNumber::new(123456789).unwrap()
+        let number = PreciseNumber::new(123456789)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(17)).unwrap()))
             .unwrap();
         // sqrt is 3.51364182864446216-5
-        let expected_sqrt = PreciseNumber::new(351364182864446216).unwrap()
+        let expected_sqrt = PreciseNumber::new(351364182864446216)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
         assert!(
@@ -408,13 +410,15 @@ mod tests {
         );
 
         // exactly max_bits 18446744073709551615e-18 (this is 64 bits of 1, then divided by ONE)
-        let number = PreciseNumber::new(18446744073709551615).unwrap()
+        let number = PreciseNumber::new(18446744073709551615)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         // assert_eq!(number.value.bits(), 64);
         assert_eq!(number.value.bits(), 45);
         // sqrt is 4.29496729599999999988
-        let expected_sqrt = PreciseNumber::new(4294967295999999999).unwrap()
+        let expected_sqrt = PreciseNumber::new(4294967295999999999)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         assert!(
