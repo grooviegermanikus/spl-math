@@ -3,6 +3,7 @@
 
 use crate::define_precise_number;
 use crate::uint::U256;
+use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 
 const ONE_CONST: U256 = U256([1000000000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000000000 / 2, 0, 0, 0]);
@@ -14,10 +15,12 @@ define_precise_number!(
     u128,
     U256,
     ONE_CONST,
+    1e12f64,
     U256::zero(),
     ROUNDING_CORRECTION,
     PRECISION,
-    MAXIMUM_SQRT_BASE
+    MAXIMUM_SQRT_BASE,
+    |value| u256_from_f64_bits(value)
 );
 
 #[cfg(test)]
