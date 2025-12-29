@@ -4,11 +4,16 @@ use spl_math_evolved::precise_number::PreciseNumber;
 #[inline(never)]
 fn calc_sqrt2() {
     PreciseNumber::new(10u128).unwrap().sqrt().unwrap();
-    PreciseNumber::new(50_000_000_000_000u128).unwrap().sqrt().unwrap();
-    PreciseNumber::new(50_000_000_000_000_000_000_000u128).unwrap()
+    PreciseNumber::new(50_000_000_000_000u128)
+        .unwrap()
         .sqrt()
         .unwrap();
-    PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128).unwrap()
+    PreciseNumber::new(50_000_000_000_000_000_000_000u128)
+        .unwrap()
+        .sqrt()
+        .unwrap();
+    PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128)
+        .unwrap()
         .sqrt()
         .unwrap();
 }
