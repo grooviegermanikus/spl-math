@@ -53,7 +53,6 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
         if first_word > 3 {
             // overflow both words
-            println!("u256_from_f64_bits: first_word overflow {}", first_word);
             return None;
         }
 
@@ -65,8 +64,6 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
         // U256 is little-endian
         let mut out = [0u64; 4];
         out[first_word] = low_mantissa_bits;
-
-        println!("first_word: {}, high_mantissa_bits: {}", first_word, high_mantissa_bits);
 
         if second_word <= 3 {
             out[second_word] = high_mantissa_bits;
@@ -85,6 +82,7 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
             return Some(U256::zero());
         }
         let shifted = mantissa >> rs;
+        // U256 is little-endian
         Some(U256([shifted, 0, 0, 0]))
     }
 }
@@ -161,6 +159,14 @@ mod tests {
         assert_eq!(u256.unwrap().as_u128(), 2u128.pow(80));
     }
 
+
+    #[test]
+    fn test_u256_highest_bit() {
+        let u256 = u256_from_f64_bits(2f64.powi(255));
+        assert_eq!(u256.unwrap().0, [0, 0, 0, 1 << 63]);
+    }
+
+    // the largest value in U256 notation we can get is the highest 53 bits set to one
     #[test]
     fn test_u256_from_f64_max() {
 
@@ -170,7 +176,6 @@ mod tests {
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
 
         let exponent = 255+1023;
-        // max exponent is largest minus 1 = (2^11-1) - 1 = 2046
         let max_supported = f64::from_bits(bits | MAN_MASK | (exponent << 52 & EXP_MASK));
         // https://float.exposed/0x4fefffffffffffff
         assert_eq!(max_supported, 1.15792089237316182568e+77);
