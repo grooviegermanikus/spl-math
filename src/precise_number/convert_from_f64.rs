@@ -199,8 +199,7 @@ mod tests {
         let overflow_value2 =
             f64::from_bits((bits & (!MAN_MASK + 1)) | (exponentplus1 << 52 & EXP_MASK));
 
-        let overflow_value =
-            max_supported + 1.285_550_435_407_192_2e61;
+        let overflow_value = max_supported + 1.285_550_435_407_192_2e61;
         // bits: 0100111111110000000000000000000000000000000000000000000000000000
         assert_eq!(overflow_value2, overflow_value);
 
