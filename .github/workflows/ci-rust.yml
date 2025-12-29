@@ -1,0 +1,82 @@
+name: Check Rust Crate
+# adopted from https://github.com/solana-labs/solana-program-library/blob/master/.github/workflows/publish-rust.yml
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: |
+          source ci/rust-version.sh
+          echo "RUST_NIGHTLY=$rust_nightly" >> $GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY }}
+          components: rustfmt
+
+      - name: Run fmt
+        run: ./cargo-nightly fmt --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: |
+          source ci/rust-version.sh
+          echo "RUST_NIGHTLY=$rust_nightly" >> $GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY }}
+          components: clippy
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-clippy-
+
+#      - name: Install dependencies
+#        run: ./ci/install-build-deps.sh
+
+      - name: Run clippy
+        run: ./cargo-nightly clippy -Zunstable-options --workspace --all-targets --all-features -- --deny=warnings
+
+  cargo-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: |
+          source ci/rust-version.sh
+          echo "RUST_STABLE=$rust_stable" >> $GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE }}
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-build-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_STABLE }}
+
+      - name: Build and test
+        run: ./ci/cargo-build-test.sh

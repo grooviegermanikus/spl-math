@@ -3,10 +3,10 @@
 
 #[macro_export]
 macro_rules! define_precise_number {
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr) => {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Copy, Debug, PartialEq)]
         pub struct $Precise {
             /// Wrapper over the inner value, which is multiplied by ONE
             pub value: $FPInner,
@@ -15,7 +15,9 @@ macro_rules! define_precise_number {
         #[allow(dead_code)]
         impl $Precise {
             const FP_ONE: $FPInner = $FP_ONE;
+            const FP_ONE_F64: f64 = $FP_ONE_F64;
             const FP_ZERO: $FPInner = $FP_ZERO;
+            const CONVERT_FROM_F64: fn(f64) -> Option<$FPInner> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
             /// integer operations will always floor the result, we artificially bump it
@@ -32,6 +34,8 @@ macro_rules! define_precise_number {
 
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
+
+            pub const BITS: usize = size_of::<$FPInner>() * 8;
 
             fn zero() -> Self {
                 Self {
@@ -64,13 +68,14 @@ macro_rules! define_precise_number {
             }
 
             /// Create a precise number from an imprecise outer type, should always succeed
-            pub fn new(int_val: $TOuter) -> Self {
+            pub fn new(int_val: $TOuter) -> Option<Self> {
                 let int_value: $FPInner = int_val.into();
                 let value: $FPInner = int_value.checked_mul(Self::FP_ONE).unwrap();
-                Self { value }
+                Some(Self { value })
             }
+
             /// Convert a precise number back to outer type
-            pub fn to_imprecise(&self) -> Option<$TOuter> {
+            pub fn to_imprecise(self) -> Option<$TOuter> {
                 self.value
                     .checked_add(Self::ROUNDING_CORRECTION)?
                     .checked_div(Self::FP_ONE)
@@ -377,7 +382,6 @@ macro_rules! define_precise_number {
                 }
                 Some(guess)
             }
-
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
             fn minimum_sqrt_base() -> Self {
@@ -409,6 +413,96 @@ macro_rules! define_precise_number {
                 self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
                 // self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
+
+            #[cfg(feature = "from_f64")]
+            pub fn new_from_f64(input_f64: f64) -> Option<Self> {
+                let scaled_value = input_f64 * Self::FP_ONE_F64;
+                Self::new_from_inner_f64(scaled_value)
+            }
+
+            #[cfg(feature = "from_f64")]
+            pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
+                Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
+            }
         }
     };
 } // -- macro
+
+#[macro_export]
+macro_rules! define_muldiv {
+    // Struct, u128, U256, U512
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty) => {
+        #[allow(dead_code)]
+        impl $Precise {
+            #[inline(always)]
+            fn extend_precsion(val: $FPInner) -> $FPInnerDoublePrecision {
+                <$FPInnerDoublePrecision>::from(val)
+            }
+
+            #[inline(always)]
+            fn trunc_precision(val: $FPInnerDoublePrecision) -> Option<$FPInner> {
+                <$FPInner>::try_from(val).ok()
+            }
+
+            pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+
+                if let Some(dividend) = self.value.checked_mul(num.value) {
+                    // small number, no overflow
+                    let r = dividend / denom.value;
+                    Some($Precise { value: r })
+                } else {
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                        / Self::extend_precsion(denom.value);
+
+                    Self::trunc_precision(r).map(|v| $Precise { value: v })
+                }
+            }
+
+            pub fn mul_div_floor_naive(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    / Self::extend_precsion(denom.value);
+
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+
+            pub fn mul_div_ceil(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+
+                if let Some(dividend) = self
+                    .value
+                    .checked_mul(num.value)
+                    .and_then(|x| x.checked_add(denom.value - 1))
+                {
+                    // small number, no overflow
+                    let r = dividend / denom.value;
+                    Some($Precise { value: r })
+                } else {
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                        / Self::extend_precsion(denom.value);
+
+                    Self::trunc_precision(r).map(|v| $Precise { value: v })
+                }
+            }
+
+            #[allow(clippy::manual_div_ceil)]
+            pub fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value)
+                    + (Self::extend_precsion(denom.value) - 1))
+                    / Self::extend_precsion(denom.value);
+
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+        }
+    };
+}

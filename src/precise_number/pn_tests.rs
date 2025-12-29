@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::define_precise_number;
-    use crate::uint::U256;
+    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
+    use crate::uint::{U256, U512};
+    use num_traits::ToPrimitive;
     use proptest::prelude::*;
 
     type InnerUint = U256;
@@ -16,22 +18,37 @@ mod tests {
         u128,
         U256,
         ONE_CONST,
+        1e12f64,
         U256::zero(),
         ROUNDING_CORRECTION,
         PRECISION,
-        MAXIMUM_SQRT_BASE
+        MAXIMUM_SQRT_BASE,
+        |value| u256_from_f64_bits(value)
     );
 
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 0u8, 5u8, 1u8, 10u8);
+    define_precise_number!(
+        TestPreciseNumber8,
+        u8,
+        u8,
+        10u8,
+        1e1f64,
+        0u8,
+        5u8,
+        1u8,
+        10u8,
+        |value| value.to_u8()
+    );
     define_precise_number!(
         TestPreciseNumber32,
         u32,
         u32,
         1_000u32,
+        1e3f64,
         0u32,
         500u32,
         1u32,
-        1_000u32
+        1_000u32,
+        |value| value.to_u32()
     ); // MAXIMUM_SQRT_BASE is likely incorrect
 
     fn check_pow_approximation(base: InnerUint, exponent: InnerUint, expected: InnerUint) {
@@ -46,13 +63,28 @@ mod tests {
     }
 
     #[test]
+    fn test_extend_precision() {
+        let u256: U256 = U256::from(1_000_000_000_000u128);
+        // cast to U512
+        let bytes: &[u64] = u256.as_ref();
+        let len = bytes.len();
+        let dlen = len * 2;
+        // extend to 8 bytes:
+        let mut bytes8 = Vec::with_capacity(dlen);
+        bytes8.extend_from_slice(bytes);
+        bytes8.resize(dlen, 0);
+        let u512 = U512(bytes8.try_into().unwrap());
+        assert_eq!(u512.as_u128(), u256.as_u128());
+    }
+
+    #[test]
     fn test_max_number_to_u128() {
         // 3.4e38
         // let a = PreciseNumber::new(300282366920938463463374607431768211455).unwrap();
         // let b = PreciseNumber::new(300282366920938463463374607431768211455).unwrap();
 
-        let a = PreciseNumber::new(3.4e32 as u128);
-        let b = PreciseNumber::new(3.4e32 as u128);
+        let a = PreciseNumber::new(3.4e32 as u128).unwrap();
+        let b = PreciseNumber::new(3.4e32 as u128).unwrap();
         // max 3,4028236692×10³²
 
         a.checked_mul(&b).unwrap();
@@ -67,9 +99,9 @@ mod tests {
     #[test]
     fn test_to_imprecise_rounding() {
         fn calc(a: u8, b: u8) -> u8 {
-            let a = TestPreciseNumber8::new(a);
+            let a = TestPreciseNumber8::new(a).unwrap();
             // println!("a: {}", a.value);
-            let b = TestPreciseNumber8::new(b);
+            let b = TestPreciseNumber8::new(b).unwrap();
             // println!("b: {}", b.value);
             let c = a.checked_div(&b).unwrap();
             // println!("c: {}", c.value);
@@ -148,14 +180,14 @@ mod tests {
 
     #[test]
     fn test_newtonian_approximation() {
-        let test = PreciseNumber::new(0);
-        let nth_root = PreciseNumber::new(0);
+        let test = PreciseNumber::new(0).unwrap();
+        let nth_root = PreciseNumber::new(0).unwrap();
         let guess = test.checked_div(&nth_root);
         assert_eq!(guess, Option::None);
 
         // square root
-        let test = PreciseNumber::new(9);
-        let nth_root = PreciseNumber::new(2);
+        let test = PreciseNumber::new(9).unwrap();
+        let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .newtonian_root_approximation(
@@ -168,8 +200,8 @@ mod tests {
             .unwrap();
         assert_eq!(root, 3); // actually 3
 
-        let test = PreciseNumber::new(101);
-        let nth_root = PreciseNumber::new(2);
+        let test = PreciseNumber::new(101).unwrap();
+        let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .newtonian_root_approximation(
@@ -182,8 +214,8 @@ mod tests {
             .unwrap();
         assert_eq!(root, 10); // actually 10.049875
 
-        let test = PreciseNumber::new(1_000_000_000);
-        let nth_root = PreciseNumber::new(2);
+        let test = PreciseNumber::new(1_000_000_000).unwrap();
+        let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .newtonian_root_approximation(
@@ -197,8 +229,8 @@ mod tests {
         assert_eq!(root, 31_623); // actually 31622.7766
 
         // 5th root
-        let test = PreciseNumber::new(500);
-        let nth_root = PreciseNumber::new(5);
+        let test = PreciseNumber::new(500).unwrap();
+        let nth_root = PreciseNumber::new(5).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .newtonian_root_approximation(
@@ -215,11 +247,12 @@ mod tests {
     #[test]
     fn test_checked_div() {
         let one_tenth = PreciseNumber::new(1)
-            .checked_div(&PreciseNumber::new(10))
+            .unwrap()
+            .checked_div(&PreciseNumber::new(10).unwrap())
             .unwrap();
-        let two = PreciseNumber::new(2);
+        let two = PreciseNumber::new(2).unwrap();
         let c = one_tenth.checked_div(&one_tenth).unwrap();
-        let e = PreciseNumber::new(1).checked_div(&c).unwrap();
+        let e = PreciseNumber::new(1).unwrap().checked_div(&c).unwrap();
         let d = c.checked_mul(&two).unwrap();
         assert_eq!(e.to_imprecise().unwrap(), 1);
         assert_eq!(d.to_imprecise().unwrap(), 2);
@@ -227,8 +260,8 @@ mod tests {
 
     #[test]
     fn test_checked_mul() {
-        let number_one = PreciseNumber::new(0);
-        let number_two = PreciseNumber::new(0);
+        let number_one = PreciseNumber::new(0).unwrap();
+        let number_two = PreciseNumber::new(0).unwrap();
         let result = number_one.checked_mul(&number_two);
         assert_eq!(
             result,
@@ -237,13 +270,13 @@ mod tests {
             })
         );
 
-        let number_one = PreciseNumber::new(2);
-        let number_two = PreciseNumber::new(2);
+        let number_one = PreciseNumber::new(2).unwrap();
+        let number_two = PreciseNumber::new(2).unwrap();
         let result = number_one.checked_mul(&number_two).unwrap();
-        assert_eq!(result, PreciseNumber::new(2 * 2));
+        assert_eq!(result, PreciseNumber::new(2 * 2).unwrap());
 
         let number_one = PreciseNumber { value: U256::MAX };
-        let number_two = PreciseNumber::new(1);
+        let number_two = PreciseNumber::new(1).unwrap();
         let result = number_one.checked_mul(&number_two).unwrap();
         assert_eq!(
             result.value,
@@ -251,7 +284,7 @@ mod tests {
         );
 
         let number_one = PreciseNumber { value: U256::MAX };
-        let mut number_two = PreciseNumber::new(1);
+        let mut number_two = PreciseNumber::new(1).unwrap();
         number_two.value += U256::from(1);
         let result = number_one.checked_mul(&number_two);
         assert_eq!(result, Option::None);
@@ -292,8 +325,8 @@ mod tests {
 
     #[test]
     fn test_floor() {
-        let whole_number = PreciseNumber::new(2);
-        let mut decimal_number = PreciseNumber::new(2);
+        let whole_number = PreciseNumber::new(2).unwrap();
+        let mut decimal_number = PreciseNumber::new(2).unwrap();
         decimal_number.value += InnerUint::from(1);
         let floor = decimal_number.floor().unwrap();
         let floor_again = floor.floor().unwrap();
@@ -304,12 +337,12 @@ mod tests {
     #[test]
     fn test_ceiling() {
         // 1.999999999999
-        let mut decimal_number = PreciseNumber::new(2);
+        let mut decimal_number = PreciseNumber::new(2).unwrap();
         decimal_number.value -= InnerUint::from(1);
         let ceiling = decimal_number.ceiling().unwrap();
         let ceiling_again = ceiling.ceiling().unwrap();
 
-        let expected_fp2: InnerUint = PreciseNumber::new(2).value;
+        let expected_fp2: InnerUint = PreciseNumber::new(2).unwrap().value;
         assert_eq!(ceiling.value, expected_fp2);
         assert_eq!(ceiling_again.value, expected_fp2);
     }
@@ -344,22 +377,24 @@ mod tests {
     }
 
     #[test]
-    fn test_precision() {
-        // 10^-9
-        let precision_9 = precision(9);
-        assert_eq!(precision_9, InnerUint::from(1000));
+    fn test_overflow_u256() {
+        let ten = U256::from_dec_str("10").unwrap();
+        let a = ten.pow(U256::from(50u32));
+        let b = ten.pow(U256::from(50u32));
+        // u256 overflows at 1e77
+        assert_eq!(a.checked_mul(b), None);
     }
 
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_square_root_precision() {
         // number below 1 (with uneven number of bits) 1.23456789e-9
-        let number = PreciseNumber::new(123456789)
-            .checked_div(&(PreciseNumber::new(10u128.pow(17))))
+        let number = PreciseNumber::new(123456789).unwrap()
+            .checked_div(&(PreciseNumber::new(10u128.pow(17)).unwrap()))
             .unwrap();
         // sqrt is 3.51364182864446216-5
-        let expected_sqrt = PreciseNumber::new(351364182864446216)
-            .checked_div(&(PreciseNumber::new(10u128.pow(22))))
+        let expected_sqrt = PreciseNumber::new(351364182864446216).unwrap()
+            .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
         assert!(
             number
@@ -373,14 +408,14 @@ mod tests {
         );
 
         // exactly max_bits 18446744073709551615e-18 (this is 64 bits of 1, then divided by ONE)
-        let number = PreciseNumber::new(18446744073709551615)
-            .checked_div(&(PreciseNumber::new(10u128.pow(18))))
+        let number = PreciseNumber::new(18446744073709551615).unwrap()
+            .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         // assert_eq!(number.value.bits(), 64);
         assert_eq!(number.value.bits(), 45);
         // sqrt is 4.29496729599999999988
-        let expected_sqrt = PreciseNumber::new(4294967295999999999)
-            .checked_div(&(PreciseNumber::new(10u128.pow(18))))
+        let expected_sqrt = PreciseNumber::new(4294967295999999999).unwrap()
+            .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         assert!(
             number
@@ -394,9 +429,9 @@ mod tests {
         );
 
         // 1 exactly
-        let number = PreciseNumber::new(1);
+        let number = PreciseNumber::new(1).unwrap();
         // sqrt is 1
-        let expected_sqrt = PreciseNumber::new(1);
+        let expected_sqrt = PreciseNumber::new(1).unwrap();
         assert!(
             number
                 .sqrt()
@@ -441,7 +476,7 @@ mod tests {
          #[test]
         fn test_newton(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
-            let two = PreciseNumber::new(2);
+            let two = PreciseNumber::new(2).unwrap();
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
             let generic_version = a.newtonian_root_approximation(&two, guess.clone(), 100);
             let root2_version = a.newtonian_root_approximation2(guess, 100);
