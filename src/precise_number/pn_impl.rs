@@ -421,7 +421,7 @@ macro_rules! define_muldiv {
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
                         / Self::extend_precsion(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
@@ -443,30 +443,32 @@ macro_rules! define_muldiv {
                     return None;
                 }
 
-                if let Some(dividend) = self.value.checked_mul(num.value).and_then(|x| x.checked_add(denom.value - 1)) {
+                if let Some(dividend) = self
+                    .value
+                    .checked_mul(num.value)
+                    .and_then(|x| x.checked_add(denom.value - 1))
+                {
                     // small number, no overflow
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
                         / Self::extend_precsion(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
                 }
-
             }
 
             pub fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
-               let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value) + (Self::extend_precsion(denom.value) - 1))
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value)
+                    + (Self::extend_precsion(denom.value) - 1))
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
             }
-
-
         }
     };
 }

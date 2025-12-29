@@ -57,7 +57,9 @@ mod tests {
         let b = crate::precise_number::pn_128_64_d9::PreciseNumber::new(5).unwrap();
         let c = crate::precise_number::pn_128_64_d9::PreciseNumber::new(2).unwrap();
         let result = a.mul_div_floor(b, c).unwrap();
-        assert_eq!(result, crate::precise_number::pn_128_64_d9::PreciseNumber::new(25).unwrap());
+        assert_eq!(
+            result,
+            crate::precise_number::pn_128_64_d9::PreciseNumber::new(25).unwrap()
+        );
     }
-
 }

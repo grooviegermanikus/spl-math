@@ -20,8 +20,15 @@ criterion_group!(benches_pow, pn::pow::bench_pow,);
 
 criterion_group!(benches_sqrt, pn::sqrt::bench_sqrt,);
 
-criterion_group!(benches_muldiv, muldiv::basic::bench_muldiv_nooverflow,
-    muldiv::basic::bench_muldiv_overflowing,);
+criterion_group!(
+    benches_muldiv,
+    muldiv::basic::bench_muldiv_nooverflow,
+    muldiv::basic::bench_muldiv_overflowing,
+);
 
-criterion_main!(benches_basic_math, benches_pow, benches_sqrt,benches_muldiv,
+criterion_main!(
+    benches_basic_math,
+    benches_pow,
+    benches_sqrt,
+    benches_muldiv,
 );

@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::uint::{U256, U512};
+    use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
-    use crate::{define_precise_number};
+    use crate::uint::{U256, U512};
     use num_traits::ToPrimitive;
     use proptest::prelude::*;
 
