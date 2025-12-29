@@ -187,7 +187,7 @@ mod tests {
         let exponent = 255 + 1023;
         let max_supported = f64::from_bits(bits | MAN_MASK | (exponent << 52 & EXP_MASK));
         // https://float.exposed/0x4fefffffffffffff
-        assert_eq!(max_supported, 1.15792089237316182568e+77);
+        assert_eq!(max_supported, 1.157_920_892_373_161_8e77);
         // bits: 0100111111101111111111111111111111111111111111111111111111111111
         // mantissa: (1.)1111111111111111111111111111111111111111111111111111
 
@@ -197,10 +197,10 @@ mod tests {
 
         let exponentplus1 = exponent + 1;
         let overflow_value2 =
-            f64::from_bits((bits & !MAN_MASK + 1) | (exponentplus1 << 52 & EXP_MASK));
+            f64::from_bits((bits & (!MAN_MASK + 1)) | (exponentplus1 << 52 & EXP_MASK));
 
         let overflow_value =
-            max_supported + 1.2855504354071922204335696738729300820177623950262342682411008e61;
+            max_supported + 1.285_550_435_407_192_2e61;
         // bits: 0100111111110000000000000000000000000000000000000000000000000000
         assert_eq!(overflow_value2, overflow_value);
 
@@ -319,7 +319,7 @@ mod tests {
         #[test]
         fn test_truncated_prop(value: f64) { // TODO
 
-            if value >= 0.0 && value < 1.15792089237316182568e+77 {
+            if (0.0..1.157_920_892_373_161_8e77).contains(&value) {
                 let original = u256_from_f64_bits(value).unwrap();
                 let truncated = u256_from_f64_bits(value.trunc()).unwrap();
                 assert_eq!(original, truncated);
@@ -330,7 +330,7 @@ mod tests {
         #[test]
         fn test_u256_from_f64_prop(value: f64) { // TODO
 
-            if value >= 0.0 && value < 1.15792089237316182568e+77 {
+            if (0.0..1.157_920_892_373_161_8e77).contains(&value) {
                 u256_from_f64_bits(value).unwrap();
             }
 

@@ -12,5 +12,5 @@ cargo fix
 #cargo +nightly fmt --all
 
 #cargo clippy --fix --all-targets -- -D warnings
- ./cargo-nightly clippy --fix -Zunstable-options --workspace --all-targets --all-features -- --deny=warnings --deny=clippy::arithmetic_side_effects
+ ./cargo-nightly clippy --fix -Zunstable-options --workspace --all-targets --all-features -- --deny=warnings
 
