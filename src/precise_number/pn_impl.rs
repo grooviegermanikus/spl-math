@@ -347,7 +347,7 @@ macro_rules! define_precise_number {
                 }
                 Some(guess)
             }
-            
+
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
             fn minimum_sqrt_base() -> Self {
@@ -390,6 +390,5 @@ macro_rules! define_precise_number {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
         }
-
     };
 } // -- macro

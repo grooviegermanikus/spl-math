@@ -12,7 +12,8 @@ pub(crate) fn bench_pow(c: &mut Criterion) {
                 value: U256::from(i * 10_000u64),
             };
             one.checked_add(&small_number).unwrap()
-        }).collect_vec();
+        })
+        .collect_vec();
 
     let mut testdata_iter = testdata.into_iter().cycle();
 

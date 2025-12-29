@@ -1,6 +1,5 @@
 /// Decimal fix-point number with 12 decimal places backed by U256
 /// backward-compatible with spl-math's PreciseNumber (12 decimal places)
-
 use crate::define_precise_number;
 use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::U256;
@@ -48,12 +47,14 @@ mod tests {
 
     #[test]
     fn test_u256_maximum_sqrt_base_constant() {
-        assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u128::MAX).unwrap().value);
+        assert_eq!(
+            MAXIMUM_SQRT_BASE,
+            PreciseNumber::new(u128::MAX).unwrap().value
+        );
     }
-    
+
     #[test]
     fn test_u256_precision_constant() {
         assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
     }
-    
 }
