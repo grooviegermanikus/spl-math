@@ -1,14 +1,13 @@
+use crate::uint::{U256, U512};
 /// Decimal fix-point number with 18 decimal places backed by U256
 /// 18 decimal places are recommended for most DeFi applications
-
-use crate::define_precise_number;
-use crate::uint::U256;
+use crate::{define_muldiv, define_precise_number};
 use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 
 const ONE_CONST: U256 = U256([1000000000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000000000 / 2, 0, 0, 0]);
 const PRECISION: U256 = U256([100, 0, 0, 0]); // TODO
-// TODO
+                                              // TODO
 const MAXIMUM_SQRT_BASE: U256 = U256([18446743073709551616, 18446744073709551615, 999999999999, 0]);
 define_precise_number!(
     PreciseNumber,
@@ -22,6 +21,7 @@ define_precise_number!(
     MAXIMUM_SQRT_BASE,
     |value| u256_from_f64_bits(value)
 );
+define_muldiv!(PreciseNumber, u128, U256, U512);
 
 #[cfg(test)]
 mod tests {
@@ -43,15 +43,14 @@ mod tests {
     fn test_u256_maximum_sqrt_base_constant() {
         // TODO
     }
-    
+
     #[test]
     fn test_u256_precision_constant() {
         assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
     }
 
-
-    use crate::uint::U256;
     use crate::precise_number::pn_256_128_d18::PreciseNumber;
+    use crate::uint::U256;
 
     type InnerUint = U256;
 
@@ -78,11 +77,13 @@ mod tests {
     #[test]
     fn test_square_root_precision() {
         // number below 1 (with uneven number of bits) 1.23456789e-9
-        let number = PreciseNumber::new(123456789).unwrap()
+        let number = PreciseNumber::new(123456789)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(17)).unwrap()))
             .unwrap();
         // sqrt is 3.51364182864446216-5
-        let expected_sqrt = PreciseNumber::new(351364182864446216).unwrap()
+        let expected_sqrt = PreciseNumber::new(351364182864446216)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
         assert!(
@@ -97,12 +98,14 @@ mod tests {
         );
 
         // exactly max_bits 18446744073709551615e-18 (this is 64 bits of 1, then divided by ONE)
-        let number = PreciseNumber::new(18446744073709551615).unwrap()
+        let number = PreciseNumber::new(18446744073709551615)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         assert_eq!(number.value.bits(), 64);
         // sqrt is 4.29496729599999999988
-        let expected_sqrt = PreciseNumber::new(4294967295999999999).unwrap()
+        let expected_sqrt = PreciseNumber::new(4294967295999999999)
+            .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         assert!(
@@ -146,9 +149,5 @@ mod tests {
         //     number.sqrt().unwrap(),
         //     expected_sqrt,
         // );
-
     }
-
-
-
 }
