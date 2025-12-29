@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::define_precise_number;
-    use crate::uint::U256;
+    use crate::uint::{U256, U512};
+    use crate::{define_precise_number};
     use num_traits::ToPrimitive;
     use proptest::prelude::*;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
@@ -49,6 +49,21 @@ mod tests {
             .unwrap();
         let expected = PreciseNumber { value: expected };
         assert!(root.almost_eq(&expected, precision));
+    }
+
+    #[test]
+    fn test_extend_precision() {
+        let u256: U256 = U256::from(1_000_000_000_000u128);
+        // cast to U512
+        let bytes: &[u64] = u256.as_ref();
+        let len = bytes.len();
+        let dlen = len * 2;
+        // extend to 8 bytes:
+        let mut bytes8 = Vec::with_capacity(dlen);
+        bytes8.extend_from_slice(bytes);
+        bytes8.resize(dlen, 0);
+        let u512 = U512(bytes8.try_into().unwrap());
+        assert_eq!(u512.as_u128(), u256.as_u128());
     }
 
     #[test]
@@ -220,7 +235,8 @@ mod tests {
 
     #[test]
     fn test_checked_div() {
-        let one_tenth = PreciseNumber::new(1).unwrap()
+        let one_tenth = PreciseNumber::new(1)
+            .unwrap()
             .checked_div(&PreciseNumber::new(10).unwrap())
             .unwrap();
         let two = PreciseNumber::new(2).unwrap();
@@ -337,6 +353,14 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_overflow_u256() {
+        let ten = U256::from_dec_str("10").unwrap();
+        let a = ten.pow(U256::from(50u32));
+        let b = ten.pow(U256::from(50u32));
+        // u256 overflows at 1e77
+        assert_eq!(a.checked_mul(b), None);
+    }
 
     proptest! {
         #[test]
