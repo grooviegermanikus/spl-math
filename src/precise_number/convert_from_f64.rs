@@ -23,9 +23,12 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
     const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
     const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
+    // bias - see https://en.wikipedia.org/wiki/IEEE_754
+    const EXP_BIAS: i32 = 1023;
 
     let bits = value.to_bits();
-    let exponent: i32 = (((bits & EXP_MASK) >> 52) as i32) - 1023;
+    // exponent ranges from -1022 to 1023 (0/-1023 has special meaning)
+    let exponent: i32 = (((bits & EXP_MASK) >> 52) as i32) - EXP_BIAS;
     let mantissa_bits: u64 = bits & MAN_MASK;
     let mantissa = mantissa_bits | (1u64 << 52); // 53-bit value
 
