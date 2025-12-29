@@ -1,7 +1,7 @@
-use num_traits::ToPrimitive;
 /// Decimal fix-point number with 12 decimal places backed by u128
 ///
 use crate::define_precise_number;
+use num_traits::ToPrimitive;
 
 const ONE_CONST: u128 = 1_000_000_000;
 const ROUNDING_CORRECTION: u128 = 1_000_000_000 / 2;
@@ -44,6 +44,9 @@ mod tests {
 
     #[test]
     fn test_u128_maximum_sqrt_base_constant() {
-        assert_eq!(MAXIMUM_SQRT_BASE, PreciseNumber::new(u64::MAX).unwrap().value);
+        assert_eq!(
+            MAXIMUM_SQRT_BASE,
+            PreciseNumber::new(u64::MAX).unwrap().value
+        );
     }
 }

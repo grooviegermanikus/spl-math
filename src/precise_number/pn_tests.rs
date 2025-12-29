@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
     use crate::define_precise_number;
+    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
     use num_traits::ToPrimitive;
     use proptest::prelude::*;
-    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 
     type InnerUint = U256;
 
@@ -26,7 +26,18 @@ mod tests {
         |value| u256_from_f64_bits(value)
     );
 
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
+    define_precise_number!(
+        TestPreciseNumber8,
+        u8,
+        u8,
+        10u8,
+        1e1f64,
+        0u8,
+        5u8,
+        1u8,
+        10u8,
+        |value| value.to_u8()
+    );
     define_precise_number!(
         TestPreciseNumber32,
         u32,
@@ -220,7 +231,8 @@ mod tests {
 
     #[test]
     fn test_checked_div() {
-        let one_tenth = PreciseNumber::new(1).unwrap()
+        let one_tenth = PreciseNumber::new(1)
+            .unwrap()
             .checked_div(&PreciseNumber::new(10).unwrap())
             .unwrap();
         let two = PreciseNumber::new(2).unwrap();
@@ -336,7 +348,6 @@ mod tests {
             assert!(a.ceiling().is_none(), "will overflow");
         }
     }
-
 
     proptest! {
         #[test]
