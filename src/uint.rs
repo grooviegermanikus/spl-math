@@ -1,7 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 // note that uint crate does not (yet) support div_ceil; remove that and other clippy allow when it does
 #![allow(clippy::manual_div_ceil)]
-
 // required for clippy
 #![allow(clippy::assign_op_pattern)]
 #![allow(clippy::ptr_offset_with_cast)]
