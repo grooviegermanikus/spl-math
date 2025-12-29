@@ -112,17 +112,17 @@ mod tests {
 
     #[test]
     fn test_pn_raw_from_f64() {
-        let a = TestPreciseNumber8::new_from_raw_f64(12.3f64).unwrap();
+        let a = TestPreciseNumber8::new_from_inner_f64(12.3f64).unwrap();
         assert_eq!(a.value, 12);
 
-        let b = TestPreciseNumber8::new_from_raw_f64(0.1f64).unwrap();
+        let b = TestPreciseNumber8::new_from_inner_f64(0.1f64).unwrap();
         assert_eq!(b.value, 0);
 
-        let c = TestPreciseNumber8::new_from_raw_f64(0.9f64).unwrap();
+        let c = TestPreciseNumber8::new_from_inner_f64(0.9f64).unwrap();
         assert_eq!(c.value, 0);
 
-        assert!(TestPreciseNumber8::new_from_raw_f64(255.9f64).is_some());
-        // assert!(TestPreciseNumber8::new_from_raw_f64(256.0f64).is_err());
+        assert!(TestPreciseNumber8::new_from_inner_f64(255.9f64).is_some());
+        // assert!(TestPreciseNumber8::new_from_inner_f64(256.0f64).is_err());
     }
 
     #[test]
