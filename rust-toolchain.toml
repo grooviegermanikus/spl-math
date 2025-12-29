@@ -1,2 +1,3 @@
 [toolchain]
+# comply with https://github.com/anza-xyz/agave/blob/v2.3.13/ci/rust-version.sh
 channel = "1.86.0"
