@@ -35,6 +35,8 @@ macro_rules! define_precise_number {
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
+            pub const BITS: usize = size_of::<$FPInner>() * 8;
+
             fn zero() -> Self {
                 Self {
                     value: Self::FP_ZERO,
@@ -392,3 +394,79 @@ macro_rules! define_precise_number {
         }
     };
 } // -- macro
+
+#[macro_export]
+macro_rules! define_muldiv {
+    // Struct, u128, U256, U512
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty) => {
+        #[allow(dead_code)]
+        impl $Precise {
+            #[inline(always)]
+            fn extend_precsion(val: $FPInner) -> $FPInnerDoublePrecision {
+                <$FPInnerDoublePrecision>::from(val)
+            }
+
+            #[inline(always)]
+            fn trunc_precision(val: $FPInnerDoublePrecision) -> Option<$FPInner> {
+                <$FPInner>::try_from(val).ok()
+            }
+
+            pub fn mul_div_floor(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+
+                if let Some(dividend) = self.value.checked_mul(num.value) {
+                    // small number, no overflow
+                    let r = dividend / denom.value;
+                    Some($Precise { value: r })
+                } else {
+                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                        / Self::extend_precsion(denom.value);
+
+                    Self::trunc_precision(r).map(|v| $Precise { value: v })
+                }
+            }
+
+            pub fn mul_div_floor_naive(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    / Self::extend_precsion(denom.value);
+
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+
+            pub fn mul_div_ceil(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+
+                if let Some(dividend) = self.value.checked_mul(num.value).and_then(|x| x.checked_add(denom.value - 1)) {
+                    // small number, no overflow
+                    let r = dividend / denom.value;
+                    Some($Precise { value: r })
+                } else {
+                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                        / Self::extend_precsion(denom.value);
+
+                    Self::trunc_precision(r).map(|v| $Precise { value: v })
+                }
+
+            }
+
+            pub fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
+                if denom.value == Self::FP_ZERO {
+                    return None;
+                }
+               let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value) + (Self::extend_precsion(denom.value) - 1))
+                    / Self::extend_precsion(denom.value);
+
+                Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+
+
+        }
+    };
+}
