@@ -21,6 +21,13 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
         return Some(U256::zero());
     }
 
+    // the following code will shift the mantissa bits by the exponent and place them into U256 (= four u64 words)
+
+    //                           v--- bit_range_start
+    // .....................mmmmmm.....
+    // 33333333222222221111111100000000    (4 words)
+    // note that mantissa is 53 bits (including implicit leading 1) and will fit into two u64 words max
+
     const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
     const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
     // bias - see https://en.wikipedia.org/wiki/IEEE_754
@@ -37,18 +44,16 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
     if bit_range_start >= 0 {
         // highest bit (inclusive)
-        let bit_range_end = bit_range_start as usize + 52usize;
-        if bit_range_end >= 256 {
-            // overflow highest bit
-            return None;
-        }
+        let _bit_range_end = bit_range_start as usize + 52usize;
+        // note that bit_range_end might exceed 256 bits which is okey if the high bits are zero
 
         let first_word = (bit_range_start as usize) / 64;
         let second_word = first_word + 1;
         let offset_in_word = (bit_range_start as usize) % 64;
 
         if first_word > 3 {
-            // overflow highest word
+            // overflow both words
+            println!("u256_from_f64_bits: first_word overflow {}", first_word);
             return None;
         }
 
@@ -57,12 +62,16 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
         let low_mantissa_bits = mantissa_shifted as u64;
         let high_mantissa_bits = (mantissa_shifted >> 64) as u64;
 
+        // U256 is little-endian
         let mut out = [0u64; 4];
         out[first_word] = low_mantissa_bits;
+
+        println!("first_word: {}, high_mantissa_bits: {}", first_word, high_mantissa_bits);
 
         if second_word <= 3 {
             out[second_word] = high_mantissa_bits;
         } else if high_mantissa_bits != 0 {
+            debug_assert!(first_word == 3 && second_word == 4);
             // high would spill past the highest word
             return None;
         }
@@ -225,13 +234,17 @@ mod tests {
     }
 
     #[test]
-    fn test_u256_from_negative_zer0() {
+    fn test_u256_word3() {
+        let bigval_f64 = 5.8e77f64;
+        assert_eq!(u256_from_f64_bits(bigval_f64), None);
+    }
+
+    #[test]
+    fn test_u256_from_negative_zero() {
         let u256 = u256_from_f64_bits(-0.0).unwrap();
 
         assert_eq!(u256.0, [0, 0, 0, 0]);
     }
-
-
 
     #[test]
     fn test_u256_from_f64_zero() {
