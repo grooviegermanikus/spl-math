@@ -1,3 +1,4 @@
+use num_traits::ToPrimitive;
 use crate::uint::U256;
 /// Decimal fix-point number with 12 decimal places backed by u128
 ///
@@ -12,10 +13,12 @@ define_precise_number!(
     u64,
     u128,
     ONE_CONST,
+    1e9f64,
     0u128,
     ROUNDING_CORRECTION,
     PRECISION,
-    MAXIMUM_SQRT_BASE
+    MAXIMUM_SQRT_BASE,
+    |value| value.to_u128()
 );
 define_muldiv!(PreciseNumber, u64, u128, U256);
 
