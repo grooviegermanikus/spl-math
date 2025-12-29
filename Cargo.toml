@@ -12,6 +12,10 @@ default = ["from_f64"]
 from_f64 = []
 
 [[bench]]
+name = "bench_sqrt"
+harness = false
+
+[[bench]]
 name = "benches_precision_number"
 harness = false
 

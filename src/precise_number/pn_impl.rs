@@ -85,7 +85,7 @@ macro_rules! define_precise_number {
             /// Checks that two PreciseNumbers are equal within some tolerance
             pub fn almost_eq(&self, rhs: &Self, precision: $FPInner) -> bool {
                 let (difference, _) = self.unsigned_sub(rhs);
-                difference.value < precision
+                difference.value <= precision
             }
 
             /// Checks that a number is less than another
@@ -148,6 +148,12 @@ macro_rules! define_precise_number {
                         Some(Self { value })
                     }
                 }
+            }
+
+            fn div2(&self) -> Self {
+                use std::ops::Shr;
+                let value = self.value.shr(1);
+                Self { value }
             }
 
             /// Performs a multiplication on two precise numbers
@@ -312,7 +318,7 @@ macro_rules! define_precise_number {
             }
 
             /// Approximate the nth root of a number using Newton's method
-            /// https://en.wikipedia.org/wiki/Newton%27s_method
+            /// Adoption of python example in https://en.wikipedia.org/wiki/Newton%27s_method#Code
             /// NOTE: this function is private because its accurate range and precision
             /// have not been established.
             fn newtonian_root_approximation(
@@ -350,6 +356,32 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
+            // optimized version for root==2
+            fn newtonian_root_approximation2(
+                &self,
+                mut guess: Self,
+                iterations: u32,
+            ) -> Option<Self> {
+                let a = self;
+                let zero = Self::zero();
+                if *a == zero {
+                    return Some(zero);
+                }
+                for _ in 0..iterations {
+                    // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
+                    // .. with n=2
+                    // x_k+1 = (x_k + A / x_k) / 2
+                    let next_guess = guess.checked_add(&a.checked_div(&guess)?)?.div2();
+                    // note: reference algo uses "<="
+                    if guess.almost_eq(&next_guess, Self::PRECISION) {
+                        guess = next_guess;
+                        break;
+                    } else {
+                        guess = next_guess;
+                    }
+                }
+                Some(guess)
+            }
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
             fn minimum_sqrt_base() -> Self {
@@ -378,7 +410,8 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
-                self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                // self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
 
             #[cfg(feature = "from_f64")]
