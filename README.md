@@ -32,6 +32,15 @@ fn use_it() {
 
 ## Development
 
+### Fix Fmt+Clippy Issues
+
+Run this all-in-one script to fix formatting and clippy issues:
+
+```bash
+./cargofixall
+```
+
+
 ### Running Tests
 
 Run all tests:
