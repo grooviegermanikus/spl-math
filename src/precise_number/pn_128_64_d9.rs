@@ -1,8 +1,8 @@
-use num_traits::ToPrimitive;
 use crate::uint::U256;
 /// Decimal fix-point number with 12 decimal places backed by u128
 ///
 use crate::{define_muldiv, define_precise_number};
+use num_traits::ToPrimitive;
 
 const ONE_CONST: u128 = 1_000_000_000;
 const ROUNDING_CORRECTION: u128 = 1_000_000_000 / 2;

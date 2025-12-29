@@ -1,5 +1,5 @@
-use num_traits::Zero;
 use crate::uint::U256;
+use num_traits::Zero;
 
 // Converts from the integer part of f64 to U256, returns None on overflow or negative input
 pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
@@ -89,14 +89,25 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
 
 #[cfg(test)]
 mod tests {
-    use num_traits::{ToPrimitive};
-    use proptest::proptest;
     use crate::define_precise_number;
-    use crate::precise_number::convert_from_f64::{u256_from_f64_bits};
+    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::precise_number::PreciseNumber;
     use crate::uint::U256;
-    
-    define_precise_number!(TestPreciseNumber8, u8, u8, 10u8, 1e1f64, 0u8, 5u8, 1u8, 10u8, |value| value.to_u8());
+    use num_traits::ToPrimitive;
+    use proptest::proptest;
+
+    define_precise_number!(
+        TestPreciseNumber8,
+        u8,
+        u8,
+        10u8,
+        1e1f64,
+        0u8,
+        5u8,
+        1u8,
+        10u8,
+        |value| value.to_u8()
+    );
 
     #[test]
     fn test_u256_small() {
@@ -159,7 +170,6 @@ mod tests {
         assert_eq!(u256.unwrap().as_u128(), 2u128.pow(80));
     }
 
-
     #[test]
     fn test_u256_highest_bit() {
         let u256 = u256_from_f64_bits(2f64.powi(255));
@@ -169,37 +179,32 @@ mod tests {
     // the largest value in U256 notation we can get is the highest 53 bits set to one
     #[test]
     fn test_u256_from_f64_max() {
-
         let bits = 0f64.to_bits();
         // = largest mantissa
         const MAN_MASK: u64 = 0x000f_ffff_ffff_ffff;
         const EXP_MASK: u64 = 0x7ff0_0000_0000_0000;
 
-        let exponent = 255+1023;
+        let exponent = 255 + 1023;
         let max_supported = f64::from_bits(bits | MAN_MASK | (exponent << 52 & EXP_MASK));
         // https://float.exposed/0x4fefffffffffffff
-        assert_eq!(max_supported, 1.15792089237316182568e+77);
+        assert_eq!(max_supported, 1.157_920_892_373_161_8e77);
         // bits: 0100111111101111111111111111111111111111111111111111111111111111
         // mantissa: (1.)1111111111111111111111111111111111111111111111111111
-
 
         let u256 = u256_from_f64_bits(max_supported).unwrap();
         // note: bit 53 is implicit from the mantissa interpretation as 1.xxxxx
         assert_eq!(u256.0, [0, 0, 0, 0xffff_ffff_ffff_f800]);
 
-
         let exponentplus1 = exponent + 1;
-        let overflow_value2 = f64::from_bits((bits & !MAN_MASK + 1) | (exponentplus1 << 52 & EXP_MASK));
+        let overflow_value2 =
+            f64::from_bits((bits & (!MAN_MASK + 1)) | (exponentplus1 << 52 & EXP_MASK));
 
-        let overflow_value = max_supported + 1.2855504354071922204335696738729300820177623950262342682411008e61;
+        let overflow_value = max_supported + 1.285_550_435_407_192_2e61;
         // bits: 0100111111110000000000000000000000000000000000000000000000000000
         assert_eq!(overflow_value2, overflow_value);
 
         assert_eq!(u256_from_f64_bits(overflow_value), None);
-
     }
-
-
 
     #[test]
     fn test_u256_from_f64_one() {
@@ -210,7 +215,6 @@ mod tests {
 
     #[test]
     fn test_u256_from_min() {
-
         let min_value: f64 = 3.7921553222237964e-231;
 
         let u256 = u256_from_f64_bits(min_value).unwrap();
@@ -220,7 +224,6 @@ mod tests {
 
     #[test]
     fn test_u256_from_f64_min() {
-
         let min_value: f64 = f64::MIN_POSITIVE;
 
         let u256 = u256_from_f64_bits(min_value).unwrap();
@@ -230,7 +233,6 @@ mod tests {
 
     #[test]
     fn test_u256_from_negative_f64() {
-
         let neg_value: f64 = -42.0;
 
         let u256 = u256_from_f64_bits(neg_value);
@@ -253,7 +255,6 @@ mod tests {
 
     #[test]
     fn test_u256_from_f64_zero() {
-
         let min_value = 0.0f64;
 
         let u256 = u256_from_f64_bits(min_value).unwrap();
@@ -269,15 +270,20 @@ mod tests {
         // 2^256 => 1.15e77
         // U256 is little-endian
         // not that the mantissa is only 52 bits and fits in the highest block
-        assert_eq!(u256_from_f64_bits(1.15e77).unwrap().0, [0, 0, 0, 18320556978023200768]);
+        assert_eq!(
+            u256_from_f64_bits(1.15e77).unwrap().0,
+            [0, 0, 0, 18320556978023200768]
+        );
     }
 
     #[test]
     fn test_u256_from_f64_block2and3() {
         // U256 is little-endian
-        assert_eq!(u256_from_f64_bits(2.0f64.powi(222) * 1.1111).unwrap().0, [0, 0, 11923974904812142592, 1193034540]);
+        assert_eq!(
+            u256_from_f64_bits(2.0f64.powi(222) * 1.1111).unwrap().0,
+            [0, 0, 11923974904812142592, 1193034540]
+        );
     }
-
 
     #[test]
     fn test_u256_from_f64_overflow() {
@@ -312,7 +318,7 @@ mod tests {
         #[test]
         fn test_truncated_prop(value: f64) { // TODO
 
-            if value >= 0.0 && value < 1.15792089237316182568e+77 {
+            if (0.0..1.157_920_892_373_161_8e77).contains(&value) {
                 let original = u256_from_f64_bits(value).unwrap();
                 let truncated = u256_from_f64_bits(value.trunc()).unwrap();
                 assert_eq!(original, truncated);
@@ -323,7 +329,7 @@ mod tests {
         #[test]
         fn test_u256_from_f64_prop(value: f64) { // TODO
 
-            if value >= 0.0 && value < 1.15792089237316182568e+77 {
+            if (0.0..1.157_920_892_373_161_8e77).contains(&value) {
                 u256_from_f64_bits(value).unwrap();
             }
 

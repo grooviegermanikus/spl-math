@@ -7,9 +7,15 @@ pub(crate) fn bench_muldiv_nooverflow(c: &mut Criterion) {
     let testdata = (0..100_000u32)
         .map(|i| (123 + i, 456 - i, (500 + i) / 10))
         .map(|(a, b, c)| {
-            let a = PreciseNumber { value: U256::from(a) };
-            let b = PreciseNumber { value: U256::from(b) };
-            let c = PreciseNumber { value: U256::from(c) };
+            let a = PreciseNumber {
+                value: U256::from(a),
+            };
+            let b = PreciseNumber {
+                value: U256::from(b),
+            };
+            let c = PreciseNumber {
+                value: U256::from(c),
+            };
             (a, b, c)
         })
         .collect_vec();
@@ -49,7 +55,6 @@ pub(crate) fn bench_muldiv_nooverflow(c: &mut Criterion) {
     });
 }
 
-
 pub(crate) fn bench_muldiv_overflowing(c: &mut Criterion) {
     let ten = U256::from_dec_str("10").unwrap();
     let testdata = (0..100_000u32)
@@ -60,7 +65,9 @@ pub(crate) fn bench_muldiv_overflowing(c: &mut Criterion) {
             let a = PreciseNumber { value: a };
             let b = ten.pow(U256::from(48 + b));
             let b = PreciseNumber { value: b };
-            let c = PreciseNumber { value: U256::from(c) };
+            let c = PreciseNumber {
+                value: U256::from(c),
+            };
             (a, b, c)
         })
         .collect_vec();
@@ -99,4 +106,3 @@ pub(crate) fn bench_muldiv_overflowing(c: &mut Criterion) {
         });
     });
 }
-

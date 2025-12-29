@@ -75,7 +75,7 @@ macro_rules! define_precise_number {
             }
 
             /// Convert a precise number back to outer type
-            pub fn to_imprecise(&self) -> Option<$TOuter> {
+            pub fn to_imprecise(self) -> Option<$TOuter> {
                 self.value
                     .checked_add(Self::ROUNDING_CORRECTION)?
                     .checked_div(Self::FP_ONE)
@@ -392,7 +392,6 @@ macro_rules! define_precise_number {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
         }
-
     };
 } // -- macro
 
@@ -422,7 +421,7 @@ macro_rules! define_muldiv {
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
                         / Self::extend_precsion(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
@@ -444,30 +443,33 @@ macro_rules! define_muldiv {
                     return None;
                 }
 
-                if let Some(dividend) = self.value.checked_mul(num.value).and_then(|x| x.checked_add(denom.value - 1)) {
+                if let Some(dividend) = self
+                    .value
+                    .checked_mul(num.value)
+                    .and_then(|x| x.checked_add(denom.value - 1))
+                {
                     // small number, no overflow
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                   let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
+                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
                         / Self::extend_precsion(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
                 }
-
             }
 
+            #[allow(clippy::manual_div_ceil)]
             pub fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
-               let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value) + (Self::extend_precsion(denom.value) - 1))
+                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value)
+                    + (Self::extend_precsion(denom.value) - 1))
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
             }
-
-
         }
     };
 }
