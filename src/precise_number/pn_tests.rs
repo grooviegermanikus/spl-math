@@ -188,6 +188,27 @@ mod tests {
         let guess = test.checked_div(&nth_root);
         assert_eq!(guess, Option::None);
 
+        // square root 0+1
+        let test = PreciseNumber::new(0).unwrap();
+        let nth_root = PreciseNumber::new(2).unwrap();
+        let guess = test.checked_div(&nth_root).unwrap();
+        let root = test
+            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .unwrap()
+            .to_imprecise()
+            .unwrap();
+        assert_eq!(root, 0);
+
+        let test = PreciseNumber::new(1).unwrap();
+        let nth_root = PreciseNumber::new(2).unwrap();
+        let guess = test.checked_div(&nth_root).unwrap();
+        let root = test
+            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .unwrap()
+            .to_imprecise()
+            .unwrap();
+        assert_eq!(root, 1);
+
         // square root
         let test = PreciseNumber::new(9).unwrap();
         let nth_root = PreciseNumber::new(2).unwrap();
@@ -511,14 +532,16 @@ mod tests {
         }
 
          #[test]
-        fn test_newton(a in 0..u128::MAX) {
+        fn test_newton_vs_cordic_vs_generic(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
             let two = PreciseNumber::new(2).unwrap();
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
             let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100);
-            let root2_version = a.newtonian_root_approximation2(guess, 100);
+            let newton2_version = a.newtonian_root_approximation2(guess, 100);
+            let cordic_version = a.cordic_root_approximation(100);
 
-            assert_eq!(root2_version, generic_version);
+            assert_eq!(newton2_version, generic_version);
+            assert_eq!(cordic_version, generic_version);
 
         }
     }
