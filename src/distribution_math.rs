@@ -28,7 +28,6 @@ pub fn f32_normal_cdf(argument: f32) -> f32 {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use {super::*, proptest::prelude::*};
@@ -56,4 +55,3 @@ mod tests {
         }
     }
 }
-
