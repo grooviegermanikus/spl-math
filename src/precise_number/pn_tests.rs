@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use std::ops::Div;
-    use std::str::FromStr;
-    use bigdecimal_rs::BigDecimal;
     use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::{U256, U512};
+    use bigdecimal_rs::BigDecimal;
     use num_traits::ToPrimitive;
     use proptest::prelude::*;
+    use std::ops::Div;
+    use std::str::FromStr;
 
     type InnerUint = U256;
 
@@ -193,10 +193,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation2(
-                guess,
-                PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
-            )
+            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -205,10 +202,7 @@ mod tests {
         let test = PreciseNumber::new(101).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation2(
-                guess,
-                PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
-            )
+            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -290,7 +284,6 @@ mod tests {
         assert_eq!(result, Option::None);
     }
 
-
     fn check_square_root(check: &PreciseNumber) {
         let (lower_bound, upper_bound) = calc_square_root_bounds(check);
         assert!(check.less_than_or_equal(&upper_bound));
@@ -319,22 +312,26 @@ mod tests {
     }
 
     fn compare_pn_fixed(i: u128) -> f64 {
-        let pn = PreciseNumber { value: InnerUint::from(i) };
+        let pn = PreciseNumber {
+            value: InnerUint::from(i),
+        };
 
         let pn_sqrt = pn.sqrt().unwrap();
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
-        // need to convert via string as BigDecimal::from_u128 does not work
-        let fx_x = BigDecimal::from_str(&i.to_string()).expect(&format!("convert from {}",i)) / fx_one.clone();
+                                                                     // need to convert via string as BigDecimal::from_u128 does not work
+        let fx_x = BigDecimal::from_str(&i.to_string()).expect(&format!("convert from {}", i))
+            / fx_one.clone();
         let fx_sqrt = fx_x.sqrt().unwrap();
         let fx_sqrt_pn = fx_sqrt;
 
-        let pn_sqrt_as_fixed = BigDecimal::from_str(&format!("{}", pn_sqrt.value.as_u128())).unwrap().div(fx_one);
+        let pn_sqrt_as_fixed = BigDecimal::from_str(&format!("{}", pn_sqrt.value.as_u128()))
+            .unwrap()
+            .div(fx_one);
 
         let float_sqrt_pn = fx_sqrt_pn.to_f64().unwrap();
         (fx_sqrt_pn - pn_sqrt_as_fixed).abs().to_f64().unwrap() / float_sqrt_pn
     }
-
 
     #[test]
     fn test_floor() {
@@ -363,9 +360,7 @@ mod tests {
     #[test]
     fn test_ceiling_all() {
         for value in 0..=246 {
-            let a = TestPreciseNumber8 {
-                value
-            };
+            let a = TestPreciseNumber8 { value };
 
             let ceil_expected = (value as f64 / 10.0).ceil() as u8;
             let ceiling = a.ceiling().unwrap();
@@ -374,9 +369,7 @@ mod tests {
         }
 
         for value in 247..=255 {
-            let a = TestPreciseNumber8 {
-                value
-            };
+            let a = TestPreciseNumber8 { value };
             assert!(a.ceiling().is_none(), "will overflow");
         }
     }
@@ -463,29 +456,37 @@ mod tests {
             number.sqrt().unwrap(),
             expected_sqrt,
         );
-
     }
 
     // BigDecimal will adjust the scale dynamically up to MAX_SCALE=100
     #[test]
     fn test_fixed_vs_pn() {
         let small_values = (1_000..2_000).step_by(100).into_iter();
-        let around2 = (1_800_000_000_000u128..2_200_000_000_000u128).step_by(10_000_000_000).into_iter();
-        let large_values = ((u128::MAX - 1_000_000)..u128::MAX).step_by(10_000).into_iter();
+        let around2 = (1_800_000_000_000u128..2_200_000_000_000u128)
+            .step_by(10_000_000_000)
+            .into_iter();
+        let large_values = ((u128::MAX - 1_000_000)..u128::MAX)
+            .step_by(10_000)
+            .into_iter();
 
         // i is in scaled by 1e12
         for i in small_values.chain(around2).chain(large_values) {
             let diff = compare_pn_fixed(i);
-            assert!(diff < 0.001, "Difference ({}) is greater than epsilon for i={}", diff, i);
+            assert!(
+                diff < 0.001,
+                "Difference ({}) is greater than epsilon for i={}",
+                diff,
+                i
+            );
 
-            let radicand = PreciseNumber { value: InnerUint::from(i) };
+            let radicand = PreciseNumber {
+                value: InnerUint::from(i),
+            };
             let (lower_bound, upper_bound) = calc_square_root_bounds(&radicand);
             assert!(radicand.less_than_or_equal(&upper_bound));
             assert!(radicand.greater_than_or_equal(&lower_bound));
         }
     }
-
-
 
     #[test]
     fn test_square_root_min_max() {
@@ -497,7 +498,6 @@ mod tests {
             check_square_root(i);
         }
     }
-
 
     proptest! {
         #![proptest_config(ProptestConfig {
