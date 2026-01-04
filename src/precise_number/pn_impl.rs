@@ -493,7 +493,7 @@ macro_rules! define_muldiv {
             }
 
             #[allow(clippy::manual_div_ceil)]
-             pub(crate) fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
+            pub(crate) fn mul_div_ceil_naive(self, num: Self, denom: Self) -> Option<Self> {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
