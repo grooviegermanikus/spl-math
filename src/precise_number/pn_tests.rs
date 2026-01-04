@@ -538,7 +538,7 @@ mod tests {
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
             let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100);
             let newton2_version = a.newtonian_root_approximation2(guess, 100);
-            let cordic_version = a.cordic_root_approximation(100);
+            let cordic_version = a.cordic_root_approximation();
 
             assert_eq!(newton2_version, generic_version);
             assert_eq!(cordic_version, generic_version);
