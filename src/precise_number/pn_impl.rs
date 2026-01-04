@@ -402,8 +402,7 @@ macro_rules! define_precise_number {
             }
 
             fn cordic_root_approximation(
-                &self,
-                iterations: u32,
+                &self
             ) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
@@ -469,8 +468,10 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
-                self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
-                // self.newtonian_root_approximation(&two, guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                // 11.115 us
+                // self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                // 116.22 us
+                self.cordic_root_approximation()
             }
 
             #[cfg(feature = "from_f64")]
