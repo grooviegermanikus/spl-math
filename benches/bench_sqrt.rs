@@ -4,7 +4,7 @@ use spl_math_evolved::precise_number::PreciseNumber;
 use spl_math_evolved::uint::U256;
 
 #[inline(never)]
-fn calc_sqrt2(testdata: u128) -> PreciseNumber {
+fn calc_sqrt_roots(testdata: u128) -> PreciseNumber {
     let a = PreciseNumber::new(10u128 + testdata).unwrap().sqrt().unwrap();
     let b = PreciseNumber::new(50_000_000_000_000u128 + testdata)
         .unwrap()
@@ -51,17 +51,18 @@ fn bench_sqrt_binary_system(c: &mut Criterion) {
     });
 }
 
-fn bench_newton(c: &mut Criterion) {
+// cordic or newton
+fn bench_fast_sqrt(c: &mut Criterion) {
     const SAMPLES: u128 = 1_000_000;
     let testdata = (0..SAMPLES).step_by(13).collect_vec();
     let mut testdata_iter = testdata.into_iter().cycle();
-    c.bench_function("bench_newton", |b| {
+    c.bench_function("bench_fast_sqrt", |b| {
         b.iter(|| {
-            let sum = calc_sqrt2(testdata_iter.next().unwrap());
+            let sum = calc_sqrt_roots(testdata_iter.next().unwrap());
             assert!(sum.value > U256::zero());
         });
     });
 }
 
-criterion_group!(benches_sqrt, bench_newton, bench_sqrt_binary_system,);
+criterion_group!(benches_sqrt, bench_fast_sqrt, bench_sqrt_binary_system,);
 criterion_main!(benches_sqrt);
