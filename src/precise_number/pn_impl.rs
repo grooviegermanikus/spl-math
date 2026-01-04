@@ -428,6 +428,9 @@ macro_rules! define_precise_number {
 
                 for _ in 0..Self::NUM_BITS {
                     pow2_inner = pow2_inner / 2;
+                    if pow2_inner == Self::FP_ZERO {
+                        break;
+                    }
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if next_result_inner.checked_mul(next_result_inner)?  // FIXME  will overflow
                         <= x_shifted { // note: pow(2) is not avaiable here
@@ -508,7 +511,7 @@ macro_rules! define_precise_number {
                 let guess = self.checked_add(&one)?.checked_div(&two)?;
                 // 11us
                 // self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
-                // 25us
+                // 11us
                 self.cordic_root_approximation()
             }
 
