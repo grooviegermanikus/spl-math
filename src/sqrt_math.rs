@@ -43,7 +43,8 @@ pub fn sqrt_binary_system<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> 
     Some(result)
 }
 
-fn sqrt_binary_system_naiv<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> Option<T> {
+// optimized version is about 20% faster
+pub(crate) fn sqrt_binary_system_naiv<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> Option<T> {
     match radicand.cmp(&T::zero()) {
         Ordering::Less => return None,             // fail for less than 0
         Ordering::Equal => return Some(T::zero()), // do nothing for 0
