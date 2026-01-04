@@ -95,7 +95,7 @@ mod tests {
             if floor_val.value == ceil_val.value {
                 // exact division
                 // floor(x) <= x <= ceil(x)
-                let raw_muldiv = (aa.value as u32 * bb.value as u32) / denom.value as u32; // TODO u16
+                let raw_muldiv = (aa.value as u32 * bb.value as u32) / denom.value as u32;
                 assert_eq!(floor_val.value as u32, raw_muldiv);
             } else {
                 // not exact division

@@ -30,13 +30,13 @@ pub(crate) fn bench_muldiv_nooverflow(c: &mut Criterion) {
         });
     });
 
-    c.bench_function("bench_muldiv_floor_naive", |b| {
-        b.iter(|| {
-            let (a, b, c) = testdata_iter.next()?;
-            let result = a.mul_div_floor_naive(b, c);
-            Some(result)
-        });
-    });
+    // c.bench_function("bench_muldiv_floor_naive", |b| {
+    //     b.iter(|| {
+    //         let (a, b, c) = testdata_iter.next()?;
+    //         let result = a.mul_div_floor_naive(b, c); // not pub anymore
+    //         Some(result)
+    //     });
+    // });
 
     c.bench_function("bench_muldiv_ceil", |b| {
         b.iter(|| {
@@ -46,13 +46,13 @@ pub(crate) fn bench_muldiv_nooverflow(c: &mut Criterion) {
         });
     });
 
-    c.bench_function("bench_muldiv_ceil_naive", |b| {
-        b.iter(|| {
-            let (a, b, c) = testdata_iter.next()?;
-            let result = a.mul_div_ceil_naive(b, c);
-            Some(result)
-        });
-    });
+    // c.bench_function("bench_muldiv_ceil_naive", |b| {
+    //     b.iter(|| {
+    //         let (a, b, c) = testdata_iter.next()?;
+    //         let result = a.mul_div_ceil_naive(b, c); // not pub anymore
+    //         Some(result)
+    //     });
+    // });
 }
 
 pub(crate) fn bench_muldiv_overflowing(c: &mut Criterion) {
@@ -82,13 +82,13 @@ pub(crate) fn bench_muldiv_overflowing(c: &mut Criterion) {
         });
     });
 
-    c.bench_function("bench_muldiv_floor_naive_large", |b| {
-        b.iter(|| {
-            let (a, b, c) = testdata_iter.next()?;
-            let result = a.mul_div_floor_naive(b, c);
-            Some(result)
-        });
-    });
+    // c.bench_function("bench_muldiv_floor_naive_large", |b| {
+    //     b.iter(|| {
+    //         let (a, b, c) = testdata_iter.next()?;
+    //         let result = a.mul_div_floor_naive(b, c); // not pub anymore
+    //         Some(result)
+    //     });
+    // });
 
     c.bench_function("bench_muldiv_ceil_large", |b| {
         b.iter(|| {
@@ -98,11 +98,11 @@ pub(crate) fn bench_muldiv_overflowing(c: &mut Criterion) {
         });
     });
 
-    c.bench_function("bench_muldiv_ceil_naive_large", |b| {
-        b.iter(|| {
-            let (a, b, c) = testdata_iter.next()?;
-            let result = a.mul_div_ceil_naive(b, c);
-            Some(result)
-        });
-    });
+    // c.bench_function("bench_muldiv_ceil_naive_large", |b| {
+    //     b.iter(|| {
+    //         let (a, b, c) = testdata_iter.next()?;
+    //         let result = a.mul_div_ceil_naive(b, c); // not pub anymore
+    //         Some(result)
+    //     });
+    // });
 }
