@@ -33,8 +33,9 @@ pub fn sqrt_binary_system<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> 
     while bit != T::zero() {
         let result_with_bit = result | bit;
         result = result.checked_shr(1)?;
-        if n >= result_with_bit {
-            n = n.checked_sub(&result_with_bit)?;
+
+        if let Some(new_n) = n.checked_sub(&result_with_bit) {
+            n = new_n;
             result = result | bit;
         }
         bit = bit.checked_shr(2)?;
