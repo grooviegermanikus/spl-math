@@ -419,7 +419,7 @@ macro_rules! define_precise_number {
 
                     result = pow2;
                 } else {
-                    // x >= T::one()
+                    // x >= 1
                     while pow2.checked_pow(2)?.value <= x.value {
                         pow2 = pow2.mul2()?;
                     }
@@ -427,16 +427,31 @@ macro_rules! define_precise_number {
                     result = pow2.div2();
                 }
 
+                // naiv version using PreciseNumber operations
+                // for _ in 0..Self::NUM_BITS {
+                //     pow2 = pow2.div2();
+                //     let next_result = result.checked_add(&pow2)?;
+                //     if next_result.checked_pow(2)?.value <= x.value {
+                //         result = next_result;
+                //     }
+                // }
+                // Some(result)
 
+                // optimized version using inner values directly (45us vs 116us)
+                let mut pow2_inner = pow2.value;
+                let mut result_inner = result.value;
                 for _ in 0..Self::NUM_BITS {
-                    pow2 = pow2.div2();
-                    let next_result = result.checked_add(&pow2)?;
-                    if next_result.checked_pow(2)?.value <= x.value {
-                        result = next_result;
+                    pow2_inner = pow2_inner / 2;
+                    let next_result_inner = result_inner
+                        .checked_add(pow2_inner)?;
+                    if next_result_inner.checked_mul(next_result_inner)?  // FIXME  will overflow
+                        <= x.value.checked_mul(Self::FP_ONE)? { // note: pow(2) is not avaiable here
+                        result_inner = next_result_inner;
                     }
                 }
 
-                Some(result)
+                Some(Self { value: result_inner } )
+
             }
 
 
