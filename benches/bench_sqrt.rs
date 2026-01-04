@@ -23,8 +23,7 @@ fn calc_sqrt2() {
 fn bench_sqrt_binary_system(c: &mut Criterion) {
     const SAMPLES: u128 = 1_000_000_000_000;
 
-    let testdata = (0..SAMPLES).step_by(1_000_000)
-        .collect_vec();
+    let testdata = (0..SAMPLES).step_by(1_000_000).collect_vec();
 
     let mut testdata_iter = testdata.clone().into_iter().cycle();
 
@@ -38,12 +37,13 @@ fn bench_sqrt_binary_system(c: &mut Criterion) {
     let mut testdata_iter = testdata.into_iter().cycle();
     c.bench_function("bench_sqrt_binary_system_naiv", |b| {
         b.iter(|| {
-            let root = spl_math_evolved::approximations::sqrt_binary_system_naiv(testdata_iter.next().unwrap());
+            let root = spl_math_evolved::approximations::sqrt_binary_system_naiv(
+                testdata_iter.next().unwrap(),
+            );
             Some(root)
         });
     });
 }
-
 
 fn bench_newton(c: &mut Criterion) {
     c.bench_function("bench_newton", |b| {
