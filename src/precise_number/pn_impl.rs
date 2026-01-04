@@ -411,38 +411,24 @@ macro_rules! define_precise_number {
 
                 let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
-                // let mut pow2 = Self::one();
                 let mut pow2_inner = Self::FP_ONE;
 
                 let mut result_inner = if x.value < Self::FP_ONE {
                     while x_shifted <= pow2_inner.checked_mul(pow2_inner)? { // TODO maybe we want to use pow2.checked_mul(&pow2)? or shl(1)
                         pow2_inner = pow2_inner / 2;
                     }
-
                     pow2_inner
                 } else {
                     // x >= 1
                     while pow2_inner.checked_mul(pow2_inner)? <= x_shifted {
                         pow2_inner = pow2_inner * 2;
                     }
-
                     pow2_inner / 2
                 };
 
-                // naiv version using PreciseNumber operations
-                // for _ in 0..Self::NUM_BITS {
-                //     pow2 = pow2.div2();
-                //     let next_result = result.checked_add(&pow2)?;
-                //     if next_result.checked_pow(2)?.value <= x.value {
-                //         result = next_result;
-                //     }
-                // }
-                // Some(result)
-
                 for _ in 0..Self::NUM_BITS {
                     pow2_inner = pow2_inner / 2;
-                    let next_result_inner = result_inner
-                        .checked_add(pow2_inner)?;
+                    let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if next_result_inner.checked_mul(next_result_inner)?  // FIXME  will overflow
                         <= x_shifted { // note: pow(2) is not avaiable here
                         result_inner = next_result_inner;
@@ -451,6 +437,44 @@ macro_rules! define_precise_number {
 
                 Some(Self { value: result_inner } )
 
+            }
+
+            fn cordic_root_approximation_naiv(
+                &self
+            ) -> Option<Self> {
+                let x = *self;
+                if x == Self::zero() || x == Self::one() {
+                    return Some(x);
+                }
+
+                let mut pow2 = Self::one();
+                let mut result;
+
+                if x.value < Self::FP_ONE {
+                    while x.value <= pow2.checked_pow(2)?.value { // TODO maybe we want to use pow2.checked_mul(&pow2)? or shl(1)
+                        pow2 = pow2.div2();
+                    }
+
+                    result = pow2;
+                } else {
+                    // x >= T::one()
+                    while pow2.checked_pow(2)?.value <= x.value {
+                        pow2 = pow2.mul2()?;
+                    }
+
+                    result = pow2.div2();
+                }
+
+
+                for _ in 0..Self::NUM_BITS {
+                    pow2 = pow2.div2();
+                    let next_result = result.checked_add(&pow2)?;
+                    if next_result.checked_pow(2)?.value <= x.value {
+                        result = next_result;
+                    }
+                }
+
+                Some(result)
             }
 
 
