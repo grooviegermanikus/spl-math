@@ -7,6 +7,7 @@
 #![allow(clippy::manual_range_contains)]
 #![allow(missing_docs)]
 
+use num_traits::CheckedShl;
 use uint::construct_uint;
 
 construct_uint! {
@@ -48,6 +49,34 @@ impl TryFrom<U512> for U256 {
     }
 }
 
+impl CheckedShl for U512 {
+    fn checked_shl(&self, shift: u32) -> Option<Self> {
+        if shift > self.leading_zeros() {
+            return None;
+        }
+        Some(self << shift)
+    }
+}
+
+impl CheckedShl for U256 {
+    fn checked_shl(&self, shift: u32) -> Option<Self> {
+        if shift > self.leading_zeros() {
+            return None;
+        }
+        Some(self << shift)
+    }
+}
+
+impl CheckedShl for U192 {
+    fn checked_shl(&self, shift: u32) -> Option<Self> {
+        if shift > self.leading_zeros() {
+            return None;
+        }
+        Some(self << shift)
+    }
+}
+
+
 #[test]
 fn test_u256_to_u512() {
     let u256 = U256::from(1_000_000_000_000u128);
@@ -69,4 +98,26 @@ fn test_u512_to_u256_overflow() {
     let u512 = U512::max_value();
     let u256: Result<U256, ()> = U256::try_from(u512);
     assert!(u256.is_err());
+}
+
+#[test]
+fn test_u256_checked_shl() {
+    let one = U256::from(1u128);
+
+    let shifted = one.checked_shl(10).unwrap();
+    let expected = U256::from(1024u128);
+    assert_eq!(shifted, expected);
+
+    let max_shift = 256 - 1;
+    let shifted_max = one.checked_shl(max_shift).unwrap();
+    let expected_max = U256::from(1u128) << max_shift;
+    assert_eq!(shifted_max, expected_max);
+
+    let overflow_shift = 257;
+    let shifted_overflow = one.checked_shl(overflow_shift);
+    assert!(shifted_overflow.is_none());
+
+    let large = one.checked_shl(250).unwrap();
+    assert!(large.checked_shl(5).is_some());
+    assert!(large.checked_shl(6).is_none());
 }
