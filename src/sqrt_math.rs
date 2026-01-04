@@ -82,7 +82,11 @@ mod tests {
         assert_eq!(root_naiv, root_optimized, "compare optimized vs naiv");
 
         let lower_bound = root_optimized.saturating_sub(1).checked_pow(2).unwrap();
-        let upper_bound = root_optimized.checked_add(1).unwrap().checked_pow(2).unwrap();
+        let upper_bound = root_optimized
+            .checked_add(1)
+            .unwrap()
+            .checked_pow(2)
+            .unwrap();
         assert!(radicand <= upper_bound);
         assert!(radicand >= lower_bound);
     }

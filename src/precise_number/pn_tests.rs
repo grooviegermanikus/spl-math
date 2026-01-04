@@ -4,11 +4,11 @@ mod tests {
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::{U256, U512};
     use bigdecimal_rs::BigDecimal;
+    use num_traits::real::Real;
     use num_traits::{abs, ToPrimitive};
     use proptest::prelude::*;
     use std::ops::Div;
     use std::str::FromStr;
-    use num_traits::real::Real;
 
     type InnerUint = U256;
 
@@ -261,7 +261,6 @@ mod tests {
         assert_eq!(root, 3); // actually 3.46572422
     }
 
-
     #[test]
     fn test_cordic_approximation() {
         let test = PreciseNumber::new(0).unwrap();
@@ -309,7 +308,6 @@ mod tests {
             .to_imprecise()
             .unwrap();
         assert_eq!(root, 10); // actually 10.049875
-
     }
 
     #[test]
@@ -394,7 +392,8 @@ mod tests {
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
                                                                      // need to convert via string as BigDecimal::from_u128 does not work
-        let fx_x = BigDecimal::from_str(&i.to_string()).unwrap_or_else(|_| panic!("convert from {}", i))
+        let fx_x = BigDecimal::from_str(&i.to_string())
+            .unwrap_or_else(|_| panic!("convert from {}", i))
             / fx_one.clone();
         let fx_sqrt = fx_x.sqrt().unwrap();
         let fx_sqrt_pn = fx_sqrt;
@@ -537,10 +536,8 @@ mod tests {
     #[test]
     fn test_fixed_vs_pn() {
         let small_values = (1_000..2_000).step_by(100);
-        let around2 = (1_800_000_000_000u128..2_200_000_000_000u128)
-            .step_by(10_000_000_000);
-        let large_values = ((u128::MAX - 1_000_000)..u128::MAX)
-            .step_by(10_000);
+        let around2 = (1_800_000_000_000u128..2_200_000_000_000u128).step_by(10_000_000_000);
+        let large_values = ((u128::MAX - 1_000_000)..u128::MAX).step_by(10_000);
 
         // i is in scaled by 1e12
         for i in small_values.chain(around2).chain(large_values) {

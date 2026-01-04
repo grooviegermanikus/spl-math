@@ -5,7 +5,10 @@ use spl_math_evolved::uint::U256;
 
 #[inline(never)]
 fn calc_sqrt_roots(testdata: u128) -> PreciseNumber {
-    let a = PreciseNumber::new(10u128 + testdata).unwrap().sqrt().unwrap();
+    let a = PreciseNumber::new(10u128 + testdata)
+        .unwrap()
+        .sqrt()
+        .unwrap();
     let b = PreciseNumber::new(50_000_000_000_000u128 + testdata)
         .unwrap()
         .sqrt()
@@ -19,10 +22,12 @@ fn calc_sqrt_roots(testdata: u128) -> PreciseNumber {
         .sqrt()
         .unwrap();
 
-    a
-        .checked_add(&b).unwrap()
-        .checked_add(&c).unwrap()
-        .checked_add(&d).unwrap()
+    a.checked_add(&b)
+        .unwrap()
+        .checked_add(&c)
+        .unwrap()
+        .checked_add(&d)
+        .unwrap()
 }
 
 #[inline(never)]

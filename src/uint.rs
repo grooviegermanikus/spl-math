@@ -76,7 +76,6 @@ impl CheckedShl for U192 {
     }
 }
 
-
 #[test]
 fn test_u256_to_u512() {
     let u256 = U256::from(1_000_000_000_000u128);
