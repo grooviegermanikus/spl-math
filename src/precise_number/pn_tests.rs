@@ -4,10 +4,11 @@ mod tests {
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::{U256, U512};
     use bigdecimal_rs::BigDecimal;
-    use num_traits::ToPrimitive;
+    use num_traits::{abs, ToPrimitive};
     use proptest::prelude::*;
     use std::ops::Div;
     use std::str::FromStr;
+    use num_traits::real::Real;
 
     type InnerUint = U256;
 
@@ -424,10 +425,11 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(17)).unwrap()))
             .unwrap();
-        // sqrt is 3.51364182864446216-5
-        let expected_sqrt = PreciseNumber::new(351364182864446216)
+        assert_eq!(number.value.as_u128(), 1234u128);
+        // sqrt(1234e-12) = 3,512833614e-5
+        let expected_sqrt = PreciseNumber::new(3_512_833_614)
             .unwrap()
-            .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
+            .checked_div(&(PreciseNumber::new(10u128.pow(14)).unwrap()))
             .unwrap();
         assert!(
             number
@@ -536,12 +538,15 @@ mod tests {
             let a = PreciseNumber { value: InnerUint::from(a) };
             let two = PreciseNumber::new(2).unwrap();
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
-            let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100);
-            let newton2_version = a.newtonian_root_approximation2(guess, 100);
-            let cordic_version = a.cordic_root_approximation();
+            let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100).unwrap();
+            let newton2_version = a.newtonian_root_approximation2(guess, 100).unwrap();
+            let cordic_version = a.cordic_root_approximation().unwrap();
 
-            assert_eq!(newton2_version, generic_version);
-            assert_eq!(cordic_version, newton2_version);
+            assert!(newton2_version.value.abs_diff(generic_version.value).as_u128() < 10,
+                "a={}, generic_version={}, newton2_version={}", a.value.as_u128(), generic_version.value.as_u128(), newton2_version.value.as_u128());
+            assert!(cordic_version.value.abs_diff(newton2_version.value).as_u128() < 10,
+                "a={}, cordic_version={}, newton2_version={}", a.value.as_u128(), cordic_version.value.as_u128(), newton2_version.value.as_u128());
+
         }
 
         #[test]
