@@ -10,3 +10,8 @@ pub fn sqrt(radicand: u128) -> Option<u128> {
     super::sqrt_math::sqrt_binary_system(radicand)
 }
 
+// FIXME visibility
+#[inline]
+pub fn sqrt_binary_system_naiv(radicand: u128) -> Option<u128> {
+    super::sqrt_math::sqrt_binary_system_naiv(radicand)
+}
