@@ -317,11 +317,12 @@ macro_rules! define_precise_number {
                 precise_whole.checked_mul(&precise_remainder)
             }
 
+            // note: not used anymore
             /// Approximate the nth root of a number using Newton's method
             /// Adoption of python example in https://en.wikipedia.org/wiki/Newton%27s_method#Code
             /// NOTE: this function is private because its accurate range and precision
             /// have not been established.
-            fn newtonian_root_approximation(
+            fn newtonian_root_approximation_generic(
                 &self,
                 root: &Self,
                 mut guess: Self,

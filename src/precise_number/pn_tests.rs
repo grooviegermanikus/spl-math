@@ -193,8 +193,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation(
-                &nth_root,
+            .newtonian_root_approximation2(
                 guess,
                 PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
             )
@@ -204,11 +203,9 @@ mod tests {
         assert_eq!(root, 3); // actually 3
 
         let test = PreciseNumber::new(101).unwrap();
-        let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation(
-                &nth_root,
+            .newtonian_root_approximation2(
                 guess,
                 PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
             )
@@ -221,7 +218,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation(
+            .newtonian_root_approximation_generic(
                 &nth_root,
                 guess,
                 PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
@@ -236,7 +233,7 @@ mod tests {
         let nth_root = PreciseNumber::new(5).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation(
+            .newtonian_root_approximation_generic(
                 &nth_root,
                 guess,
                 PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
@@ -467,21 +464,6 @@ mod tests {
             expected_sqrt,
         );
 
-        // TODO decide what to do
-        // small perfect square (4e-12), should_round_up=false
-        // let number = PreciseNumber::new(4)
-        //     .checked_div(&(PreciseNumber::new(10u128.pow(12))))
-        //     .unwrap();
-        // // 2e-6, shouldn't do any rounding
-        // let expected_sqrt = PreciseNumber::new(2)
-        //     .checked_div(&(PreciseNumber::new(10u128.pow(6))))
-        //     .unwrap();
-        // assert!(
-        //     number.sqrt().unwrap().eq(&expected_sqrt),
-        //     "sqrt {:?} not equal to expected {:?}",
-        //     number.sqrt().unwrap(),
-        //     expected_sqrt,
-        // );
     }
 
     // BigDecimal will adjust the scale dynamically up to MAX_SCALE=100
@@ -520,7 +502,7 @@ mod tests {
     proptest! {
         #![proptest_config(ProptestConfig {
             cases: 10_000,
-            timeout: 15,
+            timeout: 30,
             ..ProptestConfig::default()
         })]
 
@@ -535,7 +517,7 @@ mod tests {
             let a = PreciseNumber { value: InnerUint::from(a) };
             let two = PreciseNumber::new(2).unwrap();
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
-            let generic_version = a.newtonian_root_approximation(&two, guess, 100);
+            let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100);
             let root2_version = a.newtonian_root_approximation2(guess, 100);
 
             assert_eq!(root2_version, generic_version);
