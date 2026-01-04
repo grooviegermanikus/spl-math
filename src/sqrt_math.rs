@@ -78,6 +78,8 @@ mod tests {
 
     fn check_square_root(radicand: u128) {
         let root = sqrt_binary_system(radicand).unwrap();
+        let root_naiv = sqrt_binary_system_naiv(radicand).unwrap();
+        assert_eq!(root, root_naiv, "compare optimized vs naiv");
         let lower_bound = root.saturating_sub(1).checked_pow(2).unwrap();
         let upper_bound = root.checked_add(1).unwrap().checked_pow(2).unwrap();
         assert!(radicand <= upper_bound);
