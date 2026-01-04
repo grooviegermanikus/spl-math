@@ -35,7 +35,7 @@ macro_rules! define_precise_number {
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
-            pub const BITS: usize = size_of::<$FPInner>() * 8;
+            pub const NUM_BITS: usize = size_of::<$FPInner>() * 8;
 
             fn zero() -> Self {
                 Self {
@@ -154,6 +154,11 @@ macro_rules! define_precise_number {
                 use std::ops::Shr;
                 let value = self.value.shr(1);
                 Self { value }
+            }
+
+            pub fn mul2(&self) -> Option<Self> {
+                let value = self.value.checked_add(self.value)?;
+                Some(Self { value })
             }
 
             /// Performs a multiplication on two precise numbers
@@ -400,8 +405,39 @@ macro_rules! define_precise_number {
                 &self,
                 iterations: u32,
             ) -> Option<Self> {
+                let x = *self;
+                if x == Self::zero() || x == Self::one() {
+                    return Some(x);
+                }
 
-                todo!()
+                let mut pow2 = Self::one();
+                let mut result;
+
+                if x.value < Self::FP_ONE {
+                    while x.value <= pow2.checked_pow(2)?.value { // TODO maybe we want to use pow2.checked_mul(&pow2)? or shl(1)
+                        pow2 = pow2.div2();
+                    }
+
+                    result = pow2;
+                } else {
+                    // x >= T::one()
+                    while pow2.checked_pow(2)?.value <= x.value {
+                        pow2 = pow2.mul2()?;
+                    }
+
+                    result = pow2.div2();
+                }
+
+
+                for _ in 0..Self::NUM_BITS {
+                    pow2 = pow2.div2();
+                    let next_result = result.checked_add(&pow2)?;
+                    if next_result.checked_pow(2)?.value <= x.value {
+                        result = next_result;
+                    }
+                }
+
+                Some(result)
             }
 
 
