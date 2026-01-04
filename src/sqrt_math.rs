@@ -1,7 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Approximation calculations
 
-use num_traits::Zero;
 use {
     num_traits::{CheckedShl, CheckedShr, PrimInt},
     std::cmp::Ordering,

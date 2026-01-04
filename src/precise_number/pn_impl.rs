@@ -219,7 +219,7 @@ macro_rules! define_precise_number {
                 // only push to the result on odd exponents, like a binary decomposition
                 // of the exponent.
                 let mut squared_base = self.clone();
-                let mut current_exponent = exponent.checked_div(2)?;
+                let mut current_exponent = exponent.checked_div(2)?; // TODO might want to use div2()
                 while current_exponent != 0 {
                     squared_base = squared_base.checked_mul(&squared_base)?;
 
@@ -368,11 +368,17 @@ macro_rules! define_precise_number {
                 if *a == zero {
                     return Some(zero);
                 }
+                // precalc first part of checked_div
+                let a_scaled = a.value.checked_mul(Self::FP_ONE)?.checked_add(Self::ROUNDING_CORRECTION)?;
                 for _ in 0..iterations {
                     // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
                     // .. with n=2
                     // x_k+1 = (x_k + A / x_k) / 2
-                    let next_guess = guess.checked_add(&a.checked_div(&guess)?)?.div2();
+                    // let next_guess = guess.checked_add(&a.checked_div(&guess)?)?.div2();
+                    let next_guess_inner = (guess.value.checked_add(a_scaled.checked_div(guess.value)?)?) / 2;
+                    let next_guess = Self {
+                        value: next_guess_inner,
+                    };
                     // note: reference algo uses "<="
                     if guess.almost_eq(&next_guess, Self::PRECISION) {
                         guess = next_guess;
