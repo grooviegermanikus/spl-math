@@ -1,11 +1,19 @@
 [package]
-name = "spl-math"
+name = "spl-math-evolved"
 version = "0.3.0"
-description = "Solana Program Library Math"
+description = "Solana Program Library Math evolved from spl-math"
 authors = ["Solana Labs Maintainers <maintainers@solanalabs.com>"]
 repository = "https://github.com/solana-labs/solana-program-library"
 license = "Apache-2.0"
 edition = "2021"
+
+[features]
+default = ["from_f64"]
+from_f64 = []
+
+[[bench]]
+name = "bench_sqrt"
+harness = false
 
 [[bench]]
 name = "benches_precision_number"
@@ -16,11 +24,14 @@ num-traits = "0.2"
 uint = "0.10"
 
 [dev-dependencies]
-proptest = { version = "1.6.0", features = ["timeout"] }
+proptest = { version = "1.8", features = ["timeout"] }
+quickcheck = "1"
+quickcheck_macros = "1"
 libm = "0.2.11"
 criterion = "0.6.0"
 itertools = "0.14"
 bigdecimal-rs = "0.2.1"
+fixed = "1.29"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
