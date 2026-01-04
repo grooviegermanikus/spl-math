@@ -182,6 +182,7 @@ mod tests {
         ); // 8.629769290
     }
 
+    // note used ATM
     #[test]
     fn test_newtonian_approximation() {
         let test = PreciseNumber::new(0).unwrap();

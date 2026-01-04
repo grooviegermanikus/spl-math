@@ -156,9 +156,14 @@ macro_rules! define_precise_number {
                 Self { value }
             }
 
-            pub fn mul2(&self) -> Option<Self> {
+            fn mul2(&self) -> Option<Self> {
                 let value = self.value.checked_add(self.value)?;
                 Some(Self { value })
+            }
+
+            #[inline(always)]
+            fn pow2(value: $FPInner) -> Option<$FPInner> {
+                value.checked_mul(value)
             }
 
             /// Performs a multiplication on two precise numbers
@@ -362,6 +367,7 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
+            // not used ATM
             // optimized version for root==2
             fn newtonian_root_approximation2(
                 &self,
@@ -401,6 +407,7 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
+            // optmized version
             fn cordic_root_approximation(
                 &self
             ) -> Option<Self> {
@@ -414,13 +421,13 @@ macro_rules! define_precise_number {
                 let mut pow2_inner = Self::FP_ONE;
 
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    while x_shifted <= pow2_inner.checked_mul(pow2_inner)? { // TODO maybe we want to use pow2.checked_mul(&pow2)? or shl(1)
+                    while x_shifted <= Self::pow2(pow2_inner)? { // TODO maybe we want to use pow2.checked_mul(&pow2)?
                         pow2_inner = pow2_inner / 2;
                     }
                     pow2_inner
                 } else {
                     // x >= 1
-                    while pow2_inner.checked_mul(pow2_inner)? <= x_shifted {
+                    while Self::pow2(pow2_inner)? <= x_shifted {
                         pow2_inner = pow2_inner * 2;
                     }
                     pow2_inner / 2
@@ -432,7 +439,7 @@ macro_rules! define_precise_number {
                         break;
                     }
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
-                    if next_result_inner.checked_mul(next_result_inner)?  // FIXME  will overflow
+                    if Self::pow2(next_result_inner)?  // FIXME  will overflow
                         <= x_shifted { // note: pow(2) is not avaiable here
                         result_inner = next_result_inner;
                     }
