@@ -329,8 +329,8 @@ macro_rules! define_precise_number {
                 iterations: u32,
             ) -> Option<Self> {
                 let zero = Self::zero();
-                if *self == zero {
-                    return Some(zero);
+                if *self == zero || *self == Self::one() {
+                    return Some(*self);
                 }
                 if *root == zero {
                     return None;
@@ -365,8 +365,8 @@ macro_rules! define_precise_number {
             ) -> Option<Self> {
                 let a = self;
                 let zero = Self::zero();
-                if *a == zero {
-                    return Some(zero);
+                if *a == zero || *a == Self::one() {
+                    return Some(*a);
                 }
                 // precalc first part of checked_div
                 let a_scaled = a
@@ -395,6 +395,16 @@ macro_rules! define_precise_number {
                 }
                 Some(guess)
             }
+
+            fn cordic_root_approximation(
+                &self,
+                iterations: u32,
+            ) -> Option<Self> {
+
+                todo!()
+            }
+
+
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
             fn minimum_sqrt_base() -> Self {
