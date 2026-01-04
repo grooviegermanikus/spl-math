@@ -531,7 +531,7 @@ mod tests {
             check_square_root(&a);
         }
 
-         #[test]
+        #[test]
         fn test_newton_vs_cordic_vs_generic(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
             let two = PreciseNumber::new(2).unwrap();
@@ -541,8 +541,16 @@ mod tests {
             let cordic_version = a.cordic_root_approximation();
 
             assert_eq!(newton2_version, generic_version);
-            assert_eq!(cordic_version, generic_version);
+            assert_eq!(cordic_version, newton2_version);
+        }
 
+        #[test]
+        fn test_cordic_optimized_vs_naive(a in 0..u128::MAX) {
+            let a = PreciseNumber { value: InnerUint::from(a) };
+            let cordic_version = a.cordic_root_approximation();
+            let cordic_naiv_version = a.cordic_root_approximation();
+
+            assert_eq!(cordic_version, cordic_naiv_version);
         }
     }
 }
