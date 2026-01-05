@@ -450,6 +450,7 @@ macro_rules! define_precise_number {
 
             }
 
+            // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
             fn cordic_root_approximation_naiv(
                 &self
             ) -> Option<Self> {
