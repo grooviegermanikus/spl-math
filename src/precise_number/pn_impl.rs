@@ -368,7 +368,6 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
-            // not used ATM
             // optimized version for root==2
             fn newtonian_root_approximation2(
                 &self,
@@ -552,26 +551,31 @@ macro_rules! define_precise_number {
             /// Approximate the square root using Newton's method.  Based on testing,
             /// this provides a precision of 11 digits for inputs between 0 and
             /// u128::MAX
-            pub fn sqrt(&self) -> Option<Self> {
+            /// /// newton vs cordic: newton is faster on SBF but slower on ARM
+            pub fn sqrt_newton(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
                     return None;
                 }
-                // let one = Self::one();
-                // let two = one.checked_add(&one)?;
+
+                let one = Self::one();
+                let two = one.checked_add(&one)?;
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
-                // let guess = self.checked_add(&one)?.checked_div(&two)?;
-                // 11us
-                // self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
-                // 11us
-                // let  optim1 = self.cordic_root_approximation1();
-                // 8us
-                let  optim2 = self.cordic_root_approximation2();
-                // assert_eq!(optim1, optim2);
-                optim2
+                let guess = self.checked_add(&one)?.checked_div(&two)?;
+                self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+            }
 
+            /// Approximate the square root using CORDIC's method.
+            /// newton vs cordic: newton is faster on SBF but slower on ARM
+            pub fn sqrt_cordic(&self) -> Option<Self> {
+                if self.less_than(&Self::minimum_sqrt_base())
+                    || self.greater_than(&Self::maximum_sqrt_base())
+                {
+                    return None;
+                }
+                self.cordic_root_approximation2()
             }
 
             #[cfg(feature = "from_f64")]
