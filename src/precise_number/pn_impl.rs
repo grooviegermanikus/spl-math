@@ -548,6 +548,11 @@ macro_rules! define_precise_number {
                 }
             }
 
+
+            pub fn sqrt(&self) -> Option<Self> {
+                self.sqrt_cordic()
+            }
+
             /// Approximate the square root using Newton's method.  Based on testing,
             /// this provides a precision of 11 digits for inputs between 0 and
             /// u128::MAX
