@@ -355,7 +355,7 @@ mod tests {
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
         let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
-        let approximate_root = check.sqrt_newton().unwrap();
+        let approximate_root = check.sqrt().unwrap();
         let lower_bound = approximate_root
             .checked_mul(&one_minus_epsilon)
             .unwrap()
@@ -374,7 +374,7 @@ mod tests {
             value: InnerUint::from(i),
         };
 
-        let pn_sqrt = pn.sqrt_newton().unwrap();
+        let pn_sqrt = pn.sqrt().unwrap();
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
                                                                      // need to convert via string as BigDecimal::from_u128 does not work
@@ -470,12 +470,12 @@ mod tests {
             .unwrap();
         assert!(
             number
-                .sqrt_cordic()
+                .sqrt()
                 .unwrap()
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt_cordic().unwrap(),
+            number.sqrt().unwrap(),
             expected_sqrt,
         );
 
@@ -493,12 +493,12 @@ mod tests {
             .unwrap();
         assert!(
             number
-                .sqrt_newton()
+                .sqrt()
                 .unwrap()
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt_newton().unwrap(),
+            number.sqrt().unwrap(),
             expected_sqrt,
         );
 
@@ -508,12 +508,12 @@ mod tests {
         let expected_sqrt = PreciseNumber::new(1).unwrap();
         assert!(
             number
-                .sqrt_newton()
+                .sqrt()
                 .unwrap()
                 // precise to first 12 decimals
                 .almost_eq(&expected_sqrt, precision(12)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt_newton().unwrap(),
+            number.sqrt().unwrap(),
             expected_sqrt,
         );
     }
