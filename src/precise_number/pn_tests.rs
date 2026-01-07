@@ -181,9 +181,7 @@ mod tests {
         ); // 8.629769290
     }
 
-    // note used ATM
     #[test]
-    #[ignore]
     fn test_newtonian_approximation() {
         let test = PreciseNumber::new(0).unwrap();
         let nth_root = PreciseNumber::new(0).unwrap();
@@ -357,7 +355,7 @@ mod tests {
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
         let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
-        let approximate_root = check.sqrt().unwrap();
+        let approximate_root = check.sqrt_newton().unwrap();
         let lower_bound = approximate_root
             .checked_mul(&one_minus_epsilon)
             .unwrap()
@@ -376,7 +374,7 @@ mod tests {
             value: InnerUint::from(i),
         };
 
-        let pn_sqrt = pn.sqrt().unwrap();
+        let pn_sqrt = pn.sqrt_newton().unwrap();
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
                                                                      // need to convert via string as BigDecimal::from_u128 does not work
@@ -472,12 +470,12 @@ mod tests {
             .unwrap();
         assert!(
             number
-                .sqrt()
+                .sqrt_cordic()
                 .unwrap()
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt().unwrap(),
+            number.sqrt_cordic().unwrap(),
             expected_sqrt,
         );
 
@@ -495,12 +493,12 @@ mod tests {
             .unwrap();
         assert!(
             number
-                .sqrt()
+                .sqrt_newton()
                 .unwrap()
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt().unwrap(),
+            number.sqrt_newton().unwrap(),
             expected_sqrt,
         );
 
@@ -510,12 +508,12 @@ mod tests {
         let expected_sqrt = PreciseNumber::new(1).unwrap();
         assert!(
             number
-                .sqrt()
+                .sqrt_newton()
                 .unwrap()
                 // precise to first 12 decimals
                 .almost_eq(&expected_sqrt, precision(12)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt().unwrap(),
+            number.sqrt_newton().unwrap(),
             expected_sqrt,
         );
     }
