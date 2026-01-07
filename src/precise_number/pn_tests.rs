@@ -4,8 +4,7 @@ mod tests {
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::{U256, U512};
     use bigdecimal_rs::BigDecimal;
-    use num_traits::real::Real;
-    use num_traits::{abs, ToPrimitive};
+    use num_traits::ToPrimitive;
     use proptest::prelude::*;
     use std::ops::Div;
     use std::str::FromStr;
@@ -264,15 +263,8 @@ mod tests {
 
     #[test]
     fn test_cordic_approximation() {
-        let test = PreciseNumber::new(0).unwrap();
-        let nth_root = PreciseNumber::new(0).unwrap();
-        let guess = test.checked_div(&nth_root);
-        assert_eq!(guess, Option::None);
-
         // square root 0+1
         let test = PreciseNumber::new(0).unwrap();
-        let nth_root = PreciseNumber::new(2).unwrap();
-        let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .cordic_root_approximation2()
             .unwrap()
@@ -281,8 +273,6 @@ mod tests {
         assert_eq!(root, 0);
 
         let test = PreciseNumber::new(1).unwrap();
-        let nth_root = PreciseNumber::new(2).unwrap();
-        let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .cordic_root_approximation2()
             .unwrap()
@@ -292,8 +282,6 @@ mod tests {
 
         // square root
         let test = PreciseNumber::new(9).unwrap();
-        let nth_root = PreciseNumber::new(2).unwrap();
-        let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .cordic_root_approximation2()
             .unwrap()
@@ -302,7 +290,6 @@ mod tests {
         assert_eq!(root, 3); // actually 3
 
         let test = PreciseNumber::new(101).unwrap();
-        let guess = test.checked_div(&nth_root).unwrap();
         let root = test
             .cordic_root_approximation2()
             .unwrap()

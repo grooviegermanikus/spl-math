@@ -1,7 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
 
-
 #[macro_export]
 macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
@@ -560,11 +559,11 @@ macro_rules! define_precise_number {
                 {
                     return None;
                 }
-                let one = Self::one();
-                let two = one.checked_add(&one)?;
+                // let one = Self::one();
+                // let two = one.checked_add(&one)?;
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
-                let guess = self.checked_add(&one)?.checked_div(&two)?;
+                // let guess = self.checked_add(&one)?.checked_div(&two)?;
                 // 11us
                 // self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
                 // 11us
