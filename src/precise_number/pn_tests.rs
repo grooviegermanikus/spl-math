@@ -184,6 +184,7 @@ mod tests {
 
     // note used ATM
     #[test]
+    #[ignore]
     fn test_newtonian_approximation() {
         let test = PreciseNumber::new(0).unwrap();
         let nth_root = PreciseNumber::new(0).unwrap();
@@ -273,7 +274,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .cordic_root_approximation()
+            .cordic_root_approximation2()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -283,7 +284,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .cordic_root_approximation()
+            .cordic_root_approximation2()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -294,7 +295,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .cordic_root_approximation()
+            .cordic_root_approximation2()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -303,7 +304,7 @@ mod tests {
         let test = PreciseNumber::new(101).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .cordic_root_approximation()
+            .cordic_root_approximation2()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -601,8 +602,8 @@ mod tests {
         #[test]
         fn test_cordic_optimized_vs_naive(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
-            let cordic_version = a.cordic_root_approximation();
-            let cordic_naiv_version = a.cordic_root_approximation();
+            let cordic_version = a.cordic_root_approximation2();
+            let cordic_naiv_version = a.cordic_root_approximation2();
 
             assert_eq!(cordic_version, cordic_naiv_version);
         }

@@ -1,6 +1,7 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
 
+
 #[macro_export]
 macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
@@ -408,8 +409,8 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
-            // optmized version
-            fn cordic_root_approximation(
+            // optimized version1 - slower than version2
+            fn cordic_root_approximation1(
                 &self
             ) -> Option<Self> {
                 let x = *self;
@@ -422,7 +423,7 @@ macro_rules! define_precise_number {
                 let mut pow2_inner = Self::FP_ONE;
 
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    while x_shifted <= Self::pow2(pow2_inner)? { // TODO maybe we want to use pow2.checked_mul(&pow2)?
+                    while x_shifted <= Self::pow2(pow2_inner)? {
                         pow2_inner = pow2_inner / 2;
                     }
                     pow2_inner
@@ -442,6 +443,52 @@ macro_rules! define_precise_number {
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)?  // FIXME  will overflow
                         <= x_shifted { // note: pow(2) is not avaiable here
+                        result_inner = next_result_inner;
+                    }
+                }
+
+                Some(Self { value: result_inner } )
+
+            }
+
+            // optimized version2 - faster than version1
+            fn cordic_root_approximation2(
+                &self
+            ) -> Option<Self> {
+                let x = *self;
+                if x == Self::zero() || x == Self::one() {
+                    return Some(x);
+                }
+
+                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
+
+                // TODO wrap in type
+                let mut pow2_inner = Self::FP_ONE;
+                let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
+
+                let mut result_inner = if x.value < Self::FP_ONE {
+                    while x_shifted <= pow2_inner_squared {
+                        pow2_inner = pow2_inner / 2;
+                        pow2_inner_squared = pow2_inner_squared / 4;
+                    }
+                    pow2_inner
+                } else {
+                    // x >= 1
+                    while pow2_inner_squared <= x_shifted {
+                        pow2_inner = pow2_inner * 2;
+                        pow2_inner_squared = pow2_inner_squared * 4;
+                    }
+                    pow2_inner / 2
+                };
+
+                for _ in 0..Self::NUM_BITS {
+                    pow2_inner = pow2_inner / 2;
+                    if pow2_inner == Self::FP_ZERO {
+                        break;
+                    }
+                    // we can stop if pow2_inner is zero as further iterations won't change result
+                    let next_result_inner = result_inner.checked_add(pow2_inner)?;
+                    if Self::pow2(next_result_inner)? <= x_shifted {
                         result_inner = next_result_inner;
                     }
                 }
@@ -521,7 +568,12 @@ macro_rules! define_precise_number {
                 // 11us
                 // self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
                 // 11us
-                self.cordic_root_approximation()
+                // let  optim1 = self.cordic_root_approximation1();
+                // 8us
+                let  optim2 = self.cordic_root_approximation2();
+                // assert_eq!(optim1, optim2);
+                optim2
+
             }
 
             #[cfg(feature = "from_f64")]
