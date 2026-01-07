@@ -590,12 +590,14 @@ mod tests {
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
             let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100).unwrap();
             let newton2_version = a.newtonian_root_approximation2(guess, 100).unwrap();
-            let cordic_version = a.cordic_root_approximation().unwrap();
+            let cordic1_version = a.cordic_root_approximation1().unwrap();
+            let cordic2_version = a.cordic_root_approximation2().unwrap();
 
             assert!(newton2_version.value.abs_diff(generic_version.value).as_u128() < 10,
                 "a={}, generic_version={}, newton2_version={}", a.value.as_u128(), generic_version.value.as_u128(), newton2_version.value.as_u128());
-            assert!(cordic_version.value.abs_diff(newton2_version.value).as_u128() < 10,
-                "a={}, cordic_version={}, newton2_version={}", a.value.as_u128(), cordic_version.value.as_u128(), newton2_version.value.as_u128());
+            assert_eq!(cordic1_version, cordic2_version, "a={}", a.value.as_u128());
+            assert!(cordic1_version.value.abs_diff(newton2_version.value).as_u128() < 10,
+                "a={}, cordic_version={}, newton2_version={}", a.value.as_u128(), cordic1_version.value.as_u128(), newton2_version.value.as_u128());
 
         }
 
