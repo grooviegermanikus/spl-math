@@ -423,19 +423,19 @@ macro_rules! define_precise_number {
 
                 let mut result_inner = if x.value < Self::FP_ONE {
                     while x_shifted <= Self::pow2(pow2_inner)? {
-                        pow2_inner = pow2_inner / 2;
+                        pow2_inner /= 2;
                     }
                     pow2_inner
                 } else {
                     // x >= 1
                     while Self::pow2(pow2_inner)? <= x_shifted {
-                        pow2_inner = pow2_inner * 2;
+                       pow2_inner *= 2;
                     }
                     pow2_inner / 2
                 };
 
                 for _ in 0..Self::NUM_BITS {
-                    pow2_inner = pow2_inner / 2;
+                   pow2_inner /= 2;
                     if pow2_inner == Self::FP_ZERO {
                         break;
                     }
@@ -461,27 +461,26 @@ macro_rules! define_precise_number {
 
                 let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
-                // TODO wrap in type
                 let mut pow2_inner = Self::FP_ONE;
                 let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
                 let mut result_inner = if x.value < Self::FP_ONE {
                     while x_shifted <= pow2_inner_squared {
-                        pow2_inner = pow2_inner / 2;
-                        pow2_inner_squared = pow2_inner_squared / 4;
+                       pow2_inner /= 2;
+                        pow2_inner_squared /= 4;
                     }
                     pow2_inner
                 } else {
                     // x >= 1
                     while pow2_inner_squared <= x_shifted {
-                        pow2_inner = pow2_inner * 2;
-                        pow2_inner_squared = pow2_inner_squared * 4;
+                       pow2_inner *= 2;
+                        pow2_inner_squared *= 4;
                     }
                     pow2_inner / 2
                 };
 
                 for _ in 0..Self::NUM_BITS {
-                    pow2_inner = pow2_inner / 2;
+                   pow2_inner /= 2;
                     if pow2_inner == Self::FP_ZERO {
                         break;
                     }
