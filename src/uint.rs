@@ -120,3 +120,17 @@ fn test_u256_checked_shl() {
     assert!(large.checked_shl(5).is_some());
     assert!(large.checked_shl(6).is_none());
 }
+
+
+#[inline(never)]
+pub fn sbf_can_do_bitshift(input: u128) -> u128 {
+    let input = U256::from(input);
+    let a= input >> 1;
+    a.as_u128()
+}
+
+#[inline(never)]
+pub fn sbf_can_do_div(input: u128) -> u128 {
+    let input = U256::from(input);
+    input.as_u128() / 3
+}
