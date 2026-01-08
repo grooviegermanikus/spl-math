@@ -463,23 +463,24 @@ macro_rules! define_precise_number {
                 let mut pow2_inner = Self::FP_ONE;
                 let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
+                // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
                     while x_shifted <= pow2_inner_squared {
-                       pow2_inner /= 2;
-                        pow2_inner_squared /= 4;
+                        pow2_inner >>= 1;
+                        pow2_inner_squared >>= 2;
                     }
                     pow2_inner
                 } else {
                     // x >= 1
                     while pow2_inner_squared <= x_shifted {
-                       pow2_inner *= 2;
-                        pow2_inner_squared *= 4;
+                        pow2_inner <<= 1;
+                        pow2_inner_squared <<= 2;
                     }
-                    pow2_inner / 2
+                    pow2_inner >> 1
                 };
 
                 for _ in 0..Self::NUM_BITS {
-                   pow2_inner /= 2;
+                   pow2_inner >>= 1;
                     if pow2_inner == Self::FP_ZERO {
                         break;
                     }
