@@ -1,7 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 // note that uint crate does not (yet) support div_ceil; remove that and other clippy allow when it does
 #![allow(clippy::manual_div_ceil)]
-// required for clippy
 #![allow(clippy::assign_op_pattern)]
 #![allow(clippy::ptr_offset_with_cast)]
 #![allow(clippy::manual_range_contains)]
@@ -19,6 +18,8 @@ construct_uint! {
 construct_uint! {
     pub struct U192(3);
 }
+
+// caution: do not replace shl(1) with mul(2) and shr(1) with div(2) because compiler cannot optimize that
 
 impl From<U256> for U512 {
     fn from(value: U256) -> Self {
