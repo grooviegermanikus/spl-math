@@ -146,19 +146,19 @@ mod tests {
 
 
     fn check_square_root(check: &PreciseNumber) {
-        let (lower_bound, upper_bound) = calc_square_root_bounds(check);
+        let approximate_root = check.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
+        let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root);
         assert!(check.less_than_or_equal(&upper_bound));
         assert!(check.greater_than_or_equal(&lower_bound));
     }
 
-    fn calc_square_root_bounds(check: &PreciseNumber) -> (PreciseNumber, PreciseNumber) {
+    fn calc_square_root_bounds(approximate_root: &PreciseNumber) -> (PreciseNumber, PreciseNumber) {
         let epsilon = PreciseNumber {
             value: precision(11),
         };
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
         let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
-        let approximate_root = check.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
         let lower_bound = approximate_root
             .checked_mul(&one_minus_epsilon)
             .unwrap()
@@ -216,7 +216,8 @@ mod tests {
             let radicand = PreciseNumber {
                 value: InnerUint::from(i),
             };
-            let (lower_bound, upper_bound) = calc_square_root_bounds(&radicand);
+            let approximate_root = radicand.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
+            let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root);
             assert!(radicand.less_than_or_equal(&upper_bound));
             assert!(radicand.greater_than_or_equal(&lower_bound));
         }
