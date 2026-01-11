@@ -75,7 +75,10 @@ mod tests {
 
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
-    fn test_square_root_precision() {
+    fn test_sqrt_cordic_precision() {
+        // TODO we need to tune down this parameter to make algo fast and precise enough
+        const SPEED_FACTOR: u32 = PreciseNumber::NUM_BITS;
+
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
             .unwrap()
@@ -86,14 +89,13 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
+        let cordic_sqrt = number.sqrt_cordic(SPEED_FACTOR).unwrap();
         assert!(
-            number
-                .sqrt()
-                .unwrap()
+            cordic_sqrt
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt().unwrap(),
+            cordic_sqrt,
             expected_sqrt,
         );
 
@@ -108,14 +110,14 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
+        // TODO replace speed_factor with something better
+        let cordic_sqrt = number.sqrt_cordic(SPEED_FACTOR).unwrap();
         assert!(
-            number
-                .sqrt()
-                .unwrap()
+            cordic_sqrt
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap(), // TODO replace speed_factor with something better
+            cordic_sqrt,
             expected_sqrt,
         );
 
@@ -123,31 +125,15 @@ mod tests {
         let number = PreciseNumber::new(1).unwrap();
         // sqrt is 1
         let expected_sqrt = PreciseNumber::new(1).unwrap();
+        let cordic_sqrt = number.sqrt_cordic(SPEED_FACTOR).unwrap();
         assert!(
-            number
-                .sqrt()
-                .unwrap()
+            cordic_sqrt
                 // precise to first 12 decimals
                 .almost_eq(&expected_sqrt, precision(12)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt().unwrap(),
+            cordic_sqrt,
             expected_sqrt,
         );
-
-        // TODO decide what to do
-        // small perfect square (4e-12), should_round_up=false
-        // let number = PreciseNumber::new(4)
-        //     .checked_div(&(PreciseNumber::new(10u128.pow(12))))
-        //     .unwrap();
-        // // 2e-6, shouldn't do any rounding
-        // let expected_sqrt = PreciseNumber::new(2)
-        //     .checked_div(&(PreciseNumber::new(10u128.pow(6))))
-        //     .unwrap();
-        // assert!(
-        //     number.sqrt().unwrap().eq(&expected_sqrt),
-        //     "sqrt {:?} not equal to expected {:?}",
-        //     number.sqrt().unwrap(),
-        //     expected_sqrt,
-        // );
     }
+
 }
