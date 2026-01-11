@@ -193,7 +193,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -203,7 +203,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -214,7 +214,7 @@ mod tests {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -223,7 +223,7 @@ mod tests {
         let test = PreciseNumber::new(101).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation2(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -264,7 +264,7 @@ mod tests {
         // square root 0+1
         let test = PreciseNumber::new(0).unwrap();
         let root = test
-            .cordic_root_approximation2()
+            .sqrt()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -272,7 +272,7 @@ mod tests {
 
         let test = PreciseNumber::new(1).unwrap();
         let root = test
-            .cordic_root_approximation2()
+            .sqrt()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -281,7 +281,7 @@ mod tests {
         // square root
         let test = PreciseNumber::new(9).unwrap();
         let root = test
-            .cordic_root_approximation2()
+            .sqrt()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -289,7 +289,7 @@ mod tests {
 
         let test = PreciseNumber::new(101).unwrap();
         let root = test
-            .cordic_root_approximation2()
+            .sqrt()
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -355,7 +355,7 @@ mod tests {
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
         let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
-        let approximate_root = check.sqrt().unwrap();
+        let approximate_root = check.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
         let lower_bound = approximate_root
             .checked_mul(&one_minus_epsilon)
             .unwrap()
@@ -493,7 +493,7 @@ mod tests {
             .unwrap();
         assert!(
             number
-                .sqrt()
+                .sqrt_cordic(PreciseNumber::NUM_BITS) // TODO replace speed_factor with something better
                 .unwrap()
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
@@ -574,23 +574,21 @@ mod tests {
             let two = PreciseNumber::new(2).unwrap();
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
             let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100).unwrap();
-            let newton2_version = a.newtonian_root_approximation2(guess, 100).unwrap();
-            let cordic1_version = a.cordic_root_approximation1().unwrap();
-            let cordic2_version = a.cordic_root_approximation2().unwrap();
+            let newton2_version = a.newtonian_root_approximation_fast(guess, 100).unwrap();
+            let cordic2_version = a.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
 
             assert!(newton2_version.value.abs_diff(generic_version.value).as_u128() < 10,
                 "a={}, generic_version={}, newton2_version={}", a.value.as_u128(), generic_version.value.as_u128(), newton2_version.value.as_u128());
-            assert_eq!(cordic1_version, cordic2_version, "a={}", a.value.as_u128());
-            assert!(cordic1_version.value.abs_diff(newton2_version.value).as_u128() < 10,
-                "a={}, cordic_version={}, newton2_version={}", a.value.as_u128(), cordic1_version.value.as_u128(), newton2_version.value.as_u128());
+            assert!(cordic2_version.value.abs_diff(newton2_version.value).as_u128() < 10,
+                "a={}, cordic2_version={}, newton2_version={}", a.value.as_u128(), cordic2_version.value.as_u128(), newton2_version.value.as_u128());
 
         }
 
         #[test]
         fn test_cordic_optimized_vs_naive(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
-            let cordic_version = a.cordic_root_approximation2();
-            let cordic_naiv_version = a.cordic_root_approximation2();
+            let cordic_version = a.cordic_root_approximation_fast(PreciseNumber::NUM_BITS);
+            let cordic_naiv_version = a.cordic_root_approximation_naiv();
 
             assert_eq!(cordic_version, cordic_naiv_version);
         }
