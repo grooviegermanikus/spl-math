@@ -1,5 +1,3 @@
-use crate::define_precise_number;
-
 #[cfg(test)]
 mod tests {
     use std::ops::Div;
