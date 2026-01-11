@@ -35,7 +35,7 @@ macro_rules! define_precise_number {
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
-            pub const NUM_BITS: usize = size_of::<$FPInner>() * 8;
+            pub const NUM_BITS: u32 = size_of::<$FPInner>() as u32 * 8;
 
             pub const fn zero() -> Self {
                 Self {
@@ -369,7 +369,7 @@ macro_rules! define_precise_number {
             }
 
             // optimized version for root==2
-            fn newtonian_root_approximation2(
+            fn newtonian_root_approximation_fast(
                 &self,
                 mut guess: Self,
                 iterations: u32,
@@ -407,51 +407,9 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
-            // optimized version1 - slower than version2
-            fn cordic_root_approximation1(
-                &self
-            ) -> Option<Self> {
-                let x = *self;
-                if x == Self::zero() || x == Self::one() {
-                    return Some(x);
-                }
-
-                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
-
-                let mut pow2_inner = Self::FP_ONE;
-
-                let mut result_inner = if x.value < Self::FP_ONE {
-                    while x_shifted <= Self::pow2(pow2_inner)? {
-                        pow2_inner /= 2;
-                    }
-                    pow2_inner
-                } else {
-                    // x >= 1
-                    while Self::pow2(pow2_inner)? <= x_shifted {
-                       pow2_inner *= 2;
-                    }
-                    pow2_inner / 2
-                };
-
-                for _ in 0..Self::NUM_BITS {
-                   pow2_inner /= 2;
-                    if pow2_inner == Self::FP_ZERO {
-                        break;
-                    }
-                    let next_result_inner = result_inner.checked_add(pow2_inner)?;
-                    if Self::pow2(next_result_inner)?  // FIXME  will overflow
-                        <= x_shifted { // note: pow(2) is not avaiable here
-                        result_inner = next_result_inner;
-                    }
-                }
-
-                Some(Self { value: result_inner } )
-
-            }
-
-            // optimized version2 - faster than version1
-            fn cordic_root_approximation2(
-                &self
+            // optimized version
+            fn cordic_root_approximation_fast(
+                &self, speed_factor: u32,
             ) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
@@ -481,8 +439,8 @@ macro_rules! define_precise_number {
 
                 // FIXME use a better value for max iterations
                 // limit iterations, see https://github.com/Max-Gulda/Cordic-Math/blob/9309c134a220f63ed67358d8fb813c6d4f506ba5/lib/cordicMath/src/cordic-math.c#L443
-                // const CORDIC_SPEED_FACTOR: usize = 15;
-                let speed_factor: usize = Self::NUM_BITS;
+                // const CORDIC_SPEED_FACTOR: u32 = 15;
+                // let speed_factor: u32 = Self::NUM_BITS;
                 // for _ in 0..Self::NUM_BITS {
                 for _ in 0..speed_factor {
                    pow2_inner >>= 1;
@@ -513,7 +471,7 @@ macro_rules! define_precise_number {
                 let mut result;
 
                 if x.value < Self::FP_ONE {
-                    while x.value <= pow2.checked_pow(2)?.value { // TODO maybe we want to use pow2.checked_mul(&pow2)? or shl(1)
+                    while x.value <= pow2.checked_pow(2)?.value {
                         pow2 = pow2.div2();
                     }
 
@@ -554,16 +512,19 @@ macro_rules! define_precise_number {
                 }
             }
 
-
+            /// Approximate the square root using recommended method.
+            ///
+            /// For specific needs use sqrt_newton or sqrt_cordic directly.
             pub fn sqrt(&self) -> Option<Self> {
-                self.sqrt_cordic()
+                // TODO make a parameter
+                const CORDIC_SPEED_FACTOR: u32 = 15;
+                self.sqrt_cordic(CORDIC_SPEED_FACTOR)
             }
 
             /// Approximate the square root using Newton's method.  Based on testing,
             /// this provides a precision of 11 digits for inputs between 0 and
-            /// u128::MAX
-            /// /// newton vs cordic: newton is faster on SBF but slower on ARM
-            pub fn sqrt_newton(&self) -> Option<Self> {
+            /// u128::MAX if MAX_APPROXIMATION_ITERATION
+            pub fn sqrt_newton(&self, max_approximation_iterations: u32) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
@@ -571,22 +532,21 @@ macro_rules! define_precise_number {
                 }
 
                 let one = Self::one();
-                let two = one.checked_add(&one)?;
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
-                let guess = self.checked_add(&one)?.checked_div(&two)?;
-                self.newtonian_root_approximation2(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                let guess = self.checked_add(&one)?.div2();
+                self.newtonian_root_approximation_fast(guess, max_approximation_iterations)
             }
 
             /// Approximate the square root using CORDIC's method.
             /// newton vs cordic: newton is faster on SBF but slower on ARM
-            pub fn sqrt_cordic(&self) -> Option<Self> {
+            pub fn sqrt_cordic(&self, speed_factor: u32) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
                     return None;
                 }
-                self.cordic_root_approximation2()
+                self.cordic_root_approximation_fast(speed_factor)
             }
 
             #[cfg(feature = "from_f64")]

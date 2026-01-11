@@ -115,7 +115,7 @@ mod tests {
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),
             "sqrt {:?} not equal to expected {:?}",
-            number.sqrt().unwrap(),
+            number.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap(), // TODO replace speed_factor with something better
             expected_sqrt,
         );
 
