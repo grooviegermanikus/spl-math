@@ -525,6 +525,10 @@ macro_rules! define_precise_number {
             /// this provides a precision of 11 digits for inputs between 0 and
             /// u128::MAX if MAX_APPROXIMATION_ITERATION
             pub fn sqrt_newton(&self, max_approximation_iterations: u32) -> Option<Self> {
+                debug_assert!(
+                    max_approximation_iterations > 0,
+                    "max_approximation_iterations must be greater than zero"
+                );
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
@@ -541,6 +545,8 @@ macro_rules! define_precise_number {
             /// Approximate the square root using CORDIC's method.
             /// newton vs cordic: newton is faster on SBF but slower on ARM
             pub fn sqrt_cordic(&self, speed_factor: u32) -> Option<Self> {
+                debug_assert!(speed_factor > 0, "speed_factor must be greater than zero");
+                debug_assert!(speed_factor <= Self::NUM_BITS, "speed_factor too large");
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
