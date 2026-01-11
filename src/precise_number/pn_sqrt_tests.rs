@@ -153,8 +153,8 @@ mod tests {
 
     fn calc_square_root_bounds(check: &PreciseNumber) -> (PreciseNumber, PreciseNumber) {
         let epsilon = PreciseNumber {
-            value: InnerUint::from(10),
-        }; // correct within 11 decimals
+            value: precision(11),
+        };
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
         let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
