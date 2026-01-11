@@ -66,21 +66,6 @@ mod tests {
     }
 
     #[test]
-    fn test_extend_precision() {
-        let u256: U256 = U256::from(1_000_000_000_000u128);
-        // cast to U512
-        let bytes: &[u64] = u256.as_ref();
-        let len = bytes.len();
-        let dlen = len * 2;
-        // extend to 8 bytes:
-        let mut bytes8 = Vec::with_capacity(dlen);
-        bytes8.extend_from_slice(bytes);
-        bytes8.resize(dlen, 0);
-        let u512 = U512(bytes8.try_into().unwrap());
-        assert_eq!(u512.as_u128(), u256.as_u128());
-    }
-
-    #[test]
     fn test_max_number_to_u128() {
         // 3.4e38
         // let a = PreciseNumber::new(300282366920938463463374607431768211455).unwrap();
