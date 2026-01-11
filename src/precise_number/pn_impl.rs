@@ -37,13 +37,13 @@ macro_rules! define_precise_number {
 
             pub const BITS: usize = size_of::<$FPInner>() * 8;
 
-            fn zero() -> Self {
+            pub const fn zero() -> Self {
                 Self {
                     value: Self::FP_ZERO,
                 }
             }
 
-            fn one() -> Self {
+            pub const fn one() -> Self {
                 Self {
                     value: Self::FP_ONE,
                 }
