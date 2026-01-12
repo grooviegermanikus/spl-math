@@ -83,7 +83,8 @@ mod tests {
     #[test]
     fn test_square_root_precision() {
         // TODO we need to tune down this parameter to make algo fast and precise enough
-        const SPEED_FACTOR: u32 = crate::precise_number::pn_256_128_d18::PreciseNumber::NUM_BITS;
+        // const SPEED_FACTOR: u32 = crate::precise_number::pn_256_128_d18::PreciseNumber::NUM_BITS;
+        const SPEED_FACTOR: u32 =  35;
 
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
@@ -100,7 +101,7 @@ mod tests {
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
-                .almost_eq(&expected_sqrt, precision(9)),
+                .almost_eq(&expected_sqrt, precision_in_inner(9)),
             "sqrt {:?} not equal to expected {:?}",
             number.sqrt().unwrap(),
             expected_sqrt,
@@ -122,7 +123,7 @@ mod tests {
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
-                .almost_eq(&expected_sqrt, precision(9)),
+                .almost_eq(&expected_sqrt, precision_in_inner(9)),
             "sqrt {:?} not equal to expected {:?}",
             number.sqrt().unwrap(),
             expected_sqrt,
@@ -136,24 +137,56 @@ mod tests {
         assert!(
             cordic_sqrt
                 // precise to first 12 decimals
-                .almost_eq(&expected_sqrt, precision(12)),
+                .almost_eq(&expected_sqrt, precision_in_inner(12)),
             "sqrt {:?} not equal to expected {:?}",
             number.sqrt().unwrap(),
             expected_sqrt,
         );
     }
 
+    #[test]
+    fn test_bruteforce_precision() {
 
-    fn check_square_root(check: &PreciseNumber) {
-        let approximate_root = check.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
-        let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root);
-        assert!(check.less_than_or_equal(&upper_bound));
-        assert!(check.greater_than_or_equal(&lower_bound));
+        let number = PreciseNumber {
+            value: InnerUint::from(1234),
+        };
+
+        println!("Testing number: {}", number.to_str_pretty());
+        let approximate_root = number.sqrt_cordic(15).unwrap();
+        println!("Approximate root: {}", approximate_root.to_str_pretty());
+        assert_eq!(find_max_precision(approximate_root, number), 99);
+        // 0,00003512833614
+        // 0,000035127622 <approx root> 0,00000000123395
+
     }
 
-    fn calc_square_root_bounds(approximate_root: &PreciseNumber) -> (PreciseNumber, PreciseNumber) {
+    fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
+        let mut best_precision = 0u32;
+        for (precision, eps) in precisions_enumerated() {
+
+            let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, precision);
+            if radicand.less_than_or_equal(&upper_bound)
+                && radicand.greater_than_or_equal(&lower_bound)
+            {
+                best_precision = precision;
+            } else {
+                break;
+            }
+        }
+        best_precision
+    }
+
+    fn check_square_root(radicand: &PreciseNumber) {
+        let approximate_root = radicand.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
+        let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
+        assert!(radicand.less_than_or_equal(&upper_bound));
+        assert!(radicand.greater_than_or_equal(&lower_bound));
+    }
+
+    // this accounts for the absolute error - in contract to relative error
+    fn calc_square_root_bounds(approximate_root: &PreciseNumber, precision: u32) -> (PreciseNumber, PreciseNumber) {
         let epsilon = PreciseNumber {
-            value: precision(11),
+            value: precision_in_inner(precision),
         };
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
@@ -216,7 +249,7 @@ mod tests {
                 value: InnerUint::from(i),
             };
             let approximate_root = radicand.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
-            let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root);
+            let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
             assert!(radicand.less_than_or_equal(&upper_bound));
             assert!(radicand.greater_than_or_equal(&lower_bound));
         }
@@ -263,14 +296,28 @@ mod tests {
 
     // returns 10**(-digits) in InnerUint
     // for testing only, neither fast not beautiful
-    pub fn precision(digits: u8) -> InnerUint {
+    pub fn precision_in_inner(digits: u32) -> InnerUint {
         let ten = InnerUint::from(10);
         let mut result = ONE_CONST;
         for _ in 0..digits {
             result = result.checked_div(ten).unwrap();
         }
-        assert!(!result.is_zero(), "precision underflow");
+        assert!(!result.is_zero(), "precision underflow, digits={}", digits);
         result
+    }
+
+    pub fn precisions_enumerated() -> Vec<(u32, InnerUint)> {
+        let mut out = Vec::new();
+        let ten = InnerUint::from(10);
+        let mut cur = ONE_CONST;
+        for precision in 0..1000 {
+            out.push((precision, cur));
+            cur = cur.checked_div(ten).unwrap();
+            if cur.is_zero() {
+                break;
+            }
+        }
+        out
     }
 
 }
