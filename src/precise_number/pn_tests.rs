@@ -337,5 +337,4 @@ mod tests {
         assert_eq!(a.checked_mul(b), None);
     }
 
-
 }

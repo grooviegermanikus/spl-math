@@ -52,6 +52,9 @@ macro_rules! define_precise_number {
             /// Maximum number iterations to apply on checked_pow_approximation.
             const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
 
+            /// Limit the bitshifts incordic
+            const CORDIC_SPEED_FACTOR: u32 = 15;
+
             /// Minimum base (excl) allowed when calculating exponents in checked_pow_fraction
             /// and checked_pow_approximation.  This simply avoids 0 as a base.
             fn min_pow_base_excl() -> $FPInner {
@@ -441,7 +444,8 @@ macro_rules! define_precise_number {
                 // limit iterations, see https://github.com/Max-Gulda/Cordic-Math/blob/9309c134a220f63ed67358d8fb813c6d4f506ba5/lib/cordicMath/src/cordic-math.c#L443
                 // const CORDIC_SPEED_FACTOR: u32 = 15;
                 // let speed_factor: u32 = Self::NUM_BITS;
-                // for _ in 0..Self::NUM_BITS {
+
+                // if speed_factor is larger than NUM_BITS, the loop will terminate automatically
                 for _ in 0..speed_factor {
                    pow2_inner >>= 1;
                     if pow2_inner == Self::FP_ZERO {
@@ -516,19 +520,13 @@ macro_rules! define_precise_number {
             ///
             /// For specific needs use sqrt_newton or sqrt_cordic directly.
             pub fn sqrt(&self) -> Option<Self> {
-                // TODO make a parameter
-                const CORDIC_SPEED_FACTOR: u32 = 15;
-                self.sqrt_cordic(CORDIC_SPEED_FACTOR)
+                self.sqrt_cordic()
             }
 
             /// Approximate the square root using Newton's method.  Based on testing,
             /// this provides a precision of 11 digits for inputs between 0 and
-            /// u128::MAX if MAX_APPROXIMATION_ITERATION
-            pub fn sqrt_newton(&self, max_approximation_iterations: u32) -> Option<Self> {
-                debug_assert!(
-                    max_approximation_iterations > 0,
-                    "max_approximation_iterations must be greater than zero"
-                );
+            /// u128::MAX
+            pub fn sqrt_newton(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
@@ -539,20 +537,18 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.div2();
-                self.newtonian_root_approximation_fast(guess, max_approximation_iterations)
+                self.newtonian_root_approximation_fast(guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
 
             /// Approximate the square root using CORDIC's method.
             /// newton vs cordic: newton is faster on SBF but slower on ARM
-            pub fn sqrt_cordic(&self, speed_factor: u32) -> Option<Self> {
-                debug_assert!(speed_factor > 0, "speed_factor must be greater than zero");
-                debug_assert!(speed_factor <= Self::NUM_BITS, "speed_factor too large");
+            pub fn sqrt_cordic(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
                     return None;
                 }
-                self.cordic_root_approximation_fast(speed_factor)
+                self.cordic_root_approximation_fast(Self::CORDIC_SPEED_FACTOR)
             }
 
             #[cfg(feature = "from_f64")]
