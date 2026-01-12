@@ -2,7 +2,7 @@
 mod tests {
     use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
-    use crate::uint::{U256, U512};
+    use crate::uint::{U256};
     use bigdecimal_rs::BigDecimal;
     use num_traits::ToPrimitive;
     use proptest::prelude::*;
@@ -340,7 +340,7 @@ mod tests {
         let one = PreciseNumber::one();
         let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
         let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
-        let approximate_root = check.sqrt_cordic(PreciseNumber::NUM_BITS).unwrap();
+        let approximate_root = check.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
         let lower_bound = approximate_root
             .checked_mul(&one_minus_epsilon)
             .unwrap()
@@ -478,7 +478,7 @@ mod tests {
             .unwrap();
         assert!(
             number
-                .sqrt_cordic(PreciseNumber::NUM_BITS) // TODO replace speed_factor with something better
+                .cordic_root_approximation_fast(PreciseNumber::NUM_BITS) // TODO replace speed_factor with something better
                 .unwrap()
                 // precise to first 9 decimals
                 .almost_eq(&expected_sqrt, precision(9)),

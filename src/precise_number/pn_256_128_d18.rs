@@ -77,7 +77,6 @@ mod tests {
     #[test]
     fn test_sqrt_cordic_precision() {
         // TODO we need to tune down this parameter to make algo fast and precise enough
-        const SPEED_FACTOR: u32 = PreciseNumber::NUM_BITS;
 
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
@@ -89,7 +88,7 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
-        let cordic_sqrt = number.sqrt_cordic(SPEED_FACTOR).unwrap();
+        let cordic_sqrt = number.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
@@ -111,7 +110,7 @@ mod tests {
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         // TODO replace speed_factor with something better
-        let cordic_sqrt = number.sqrt_cordic(SPEED_FACTOR).unwrap();
+        let cordic_sqrt = number.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
@@ -125,7 +124,7 @@ mod tests {
         let number = PreciseNumber::new(1).unwrap();
         // sqrt is 1
         let expected_sqrt = PreciseNumber::new(1).unwrap();
-        let cordic_sqrt = number.sqrt_cordic(SPEED_FACTOR).unwrap();
+        let cordic_sqrt = number.sqrt_cordic().unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 12 decimals
