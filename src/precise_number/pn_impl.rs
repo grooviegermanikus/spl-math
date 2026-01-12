@@ -565,6 +565,20 @@ macro_rules! define_precise_number {
             pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
+
+            #[cfg(test)]
+            // very hacky and slow implementation for testing purposes only
+            pub fn to_str_pretty(&self) -> String {
+                use bigdecimal_rs::BigDecimal;
+                use std::str::FromStr;
+                use std::ops::Div;
+                let bd = BigDecimal::from_str(&format!("{}", self.value))
+                .unwrap()
+                .div(BigDecimal::from_str(&format!("{}", Self::FP_ONE)).unwrap());
+                format!("{}", bd)
+            }
+
+
         }
     };
 } // -- macro
