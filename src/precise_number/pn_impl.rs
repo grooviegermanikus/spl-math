@@ -53,7 +53,7 @@ macro_rules! define_precise_number {
             const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
 
             /// Limit the bitshifts incordic
-            const CORDIC_SPEED_FACTOR: u32 = 15;
+            const CORDIC_SPEED_FACTOR: u32 = 40; // 12 digits precision (same as neewton)
 
             /// Minimum base (excl) allowed when calculating exponents in checked_pow_fraction
             /// and checked_pow_approximation.  This simply avoids 0 as a base.
@@ -414,6 +414,34 @@ macro_rules! define_precise_number {
             fn cordic_root_approximation_fast(
                 &self, speed_factor: u32,
             ) -> Option<Self> {
+                lazy_static::lazy_static! {
+                    static ref POW2_TABLE: Vec<$FPInner> = {
+                        let mut table = Vec::new();
+                        for i in 0..=(2*$Precise::NUM_BITS+1) {
+                            let shift = i as i32 - $Precise::NUM_BITS as i32 - 1;
+                            let pow2 = if shift < 0 {
+                                $FP_ONE >> -shift
+                            } else {
+                                $FP_ONE << shift
+                            };
+                            table.push(pow2);
+
+                        }
+                        table
+                    };
+                }
+                // calc FP_ONE * 2^n
+                fn one_pow2(n: i32) -> $FPInner {
+                    debug_assert!(n <= $Precise::NUM_BITS as i32);
+                    debug_assert!(n >= -($Precise::NUM_BITS as i32));
+                    let shift = n + $Precise::NUM_BITS as i32 + 1;
+                    return POW2_TABLE[shift as usize];
+                }
+
+                // assert_eq!(one_pow2(0), Self::FP_ONE);
+                // assert_eq!(one_pow2(3), Self::FP_ONE * 8);
+                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
+
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
