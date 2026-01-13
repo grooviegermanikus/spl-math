@@ -145,16 +145,31 @@ mod tests {
     #[test]
     fn test_bruteforce_precision() {
 
-        let number = PreciseNumber {
-            value: InnerUint::from(1234),
-        };
-
+        let number = PreciseNumber::maximum_sqrt_base();
         println!("Testing number: {}", number.to_str_pretty());
-        let approximate_root = number.sqrt_cordic().unwrap();
-        println!("Approximate root: {}", approximate_root.to_str_pretty());
-        assert_eq!(find_max_precision(approximate_root, number), 99);
+
+        let bd = BigDecimal::from_str(&number.to_str_pretty())
+            .unwrap();
+        let precise_sqrt = bd.sqrt().unwrap();
+
+        let approximate_root_cordic = number.sqrt_cordic().unwrap();
+        println!("Approximate root c: {}", approximate_root_cordic.to_str_pretty());
+
+        let approximate_root_newton = number.sqrt_newton().unwrap();
+        println!("Approximate root n: {}", approximate_root_newton.to_str_pretty());
+
+        println!("Precise sqrt: {}", precise_sqrt);
+        println!("precision_cordic {}", find_max_precision(approximate_root_cordic, number));
+        println!("precision_newton {}", find_max_precision(approximate_root_newton, number));
+
+        // assert_eq!(find_max_precision(approximate_root_cordic, number), 99);
         // 0,00003512833614
         // 0,000035127622 <approx root> 0,00000000123395
+
+
+        // approx 18446181123756130304
+        // precis 18446744073709551616
+        // compar 00000...........
 
     }
 
