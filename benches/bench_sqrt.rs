@@ -7,19 +7,19 @@ use spl_math_evolved::uint::U256;
 fn calc_sqrt_roots(testdata: u128) -> PreciseNumber {
     let a = PreciseNumber::new(10u128 + testdata)
         .unwrap()
-        .sqrt()
+        .sqrt_cordic()
         .unwrap();
     let b = PreciseNumber::new(50_000_000_000_000u128 + testdata)
         .unwrap()
-        .sqrt()
+        .sqrt_cordic()
         .unwrap();
     let c = PreciseNumber::new(50_000_000_000_000_000_000_000u128 + testdata)
         .unwrap()
-        .sqrt()
+        .sqrt_cordic()
         .unwrap();
     let d = PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128 - testdata)
         .unwrap()
-        .sqrt()
+        .sqrt_cordic()
         .unwrap();
 
     a.checked_add(&b)

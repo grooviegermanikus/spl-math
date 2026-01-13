@@ -152,7 +152,7 @@ mod tests {
             .unwrap();
         let precise_sqrt = bd.sqrt().unwrap();
 
-        let approximate_root_cordic = number.sqrt_cordic().unwrap();
+        let approximate_root_cordic = number.cordic_root_approximation_fast(40).unwrap();
         println!("Approximate root c: {}", approximate_root_cordic.to_str_pretty());
 
         let approximate_root_newton = number.sqrt_newton().unwrap();
