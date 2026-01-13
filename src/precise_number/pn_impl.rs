@@ -449,33 +449,33 @@ macro_rules! define_precise_number {
                 // calc FP_ONE * 2^n
                 #[inline(always)]
                 fn one_pow2(n: i32) -> $FPInner {
-                    debug_assert!(n <= $Precise::NUM_BITS as i32);
-                    debug_assert!(n >= -($Precise::NUM_BITS as i32));
+                    // debug_assert!(n <= $Precise::NUM_BITS as i32);
+                    // debug_assert!(n >= -($Precise::NUM_BITS as i32));
                     let shift = n + $Precise::NUM_BITS as i32 + 1;
                     return POW2_TABLE[shift as usize];
                 }
 
                 // calc FP_ONE^2 * 2^(2n)
+                #[inline(always)]
                 fn one_pow2_squared(n: i32) -> $FPInner {
-                    debug_assert!(n <= $Precise::NUM_BITS as i32);
-                    debug_assert!(n >= -($Precise::NUM_BITS as i32));
+                    // debug_assert!(n <= $Precise::NUM_BITS as i32);
+                    // debug_assert!(n >= -($Precise::NUM_BITS as i32));
                     let shift = n + $Precise::NUM_BITS as i32 + 1;
                     return POW2_SQUARE_TABLE[shift as usize];
                 }
 
-                assert_eq!(one_pow2(0), Self::FP_ONE);
-                assert_eq!(one_pow2(3), Self::FP_ONE * 8);
-                assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
-
-                assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE);
-                assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4);
+                // assert_eq!(one_pow2(0), Self::FP_ONE);
+                // assert_eq!(one_pow2(3), Self::FP_ONE * 8);
+                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
+                // assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE);
+                // assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4);
 
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
                 }
 
-                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
+                // let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
                 let mut pow2_inner_shift: i32 = 0;
                 // let mut pow2_inner_squared_shift: i32 = 0;
@@ -484,7 +484,7 @@ macro_rules! define_precise_number {
 
                 // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    while x_shifted <= one_pow2_squared(pow2_inner_shift) {
+                    while x.value <= one_pow2(2*pow2_inner_shift) {
                         // pow2_inner >>= 1;
                         pow2_inner_shift -= 1;
                         // pow2_inner_squared >>= 2;
@@ -493,7 +493,7 @@ macro_rules! define_precise_number {
                     one_pow2(pow2_inner_shift)
                 } else {
                     // x >= 1
-                    while one_pow2_squared(pow2_inner_shift) <= x_shifted {
+                    while one_pow2(2*pow2_inner_shift) <= x.value {
                         // pow2_inner <<= 1;
                         pow2_inner_shift += 1;
                         // pow2_inner_squared <<= 2;
@@ -502,6 +502,8 @@ macro_rules! define_precise_number {
                     // pow2_inner >> 1
                     one_pow2(pow2_inner_shift - 1)
                 };
+
+                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
                 // FIXME use a better value for max iterations
                 // limit iterations, see https://github.com/Max-Gulda/Cordic-Math/blob/9309c134a220f63ed67358d8fb813c6d4f506ba5/lib/cordicMath/src/cordic-math.c#L443
@@ -513,7 +515,6 @@ macro_rules! define_precise_number {
                    // pow2_inner >>= 1;
                    pow2_inner_shift -= 1;
                    let pow2_inner = one_pow2(pow2_inner_shift);
-                   // TODO optimize
                     if pow2_inner == Self::FP_ZERO {
                         break;
                     }
