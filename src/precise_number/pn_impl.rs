@@ -429,8 +429,25 @@ macro_rules! define_precise_number {
                         }
                         table
                     };
+                    static ref POW2_SQUARE_TABLE: Vec<$FPInner> = {
+                        let mut table = Vec::new();
+                        for i in 0..=(2*$Precise::NUM_BITS+1) {
+                            let shift = i as i32 - $Precise::NUM_BITS as i32 - 1;
+
+                            let one_square = $Precise::FP_ONE.checked_mul($Precise::FP_ONE).unwrap();
+                            let pow2 = if shift < 0 {
+                                one_square >> -2*shift
+                            } else {
+                                one_square << 2*shift
+                            };
+                            table.push(pow2);
+
+                        }
+                        table
+                    };
                 }
                 // calc FP_ONE * 2^n
+                #[inline(always)]
                 fn one_pow2(n: i32) -> $FPInner {
                     debug_assert!(n <= $Precise::NUM_BITS as i32);
                     debug_assert!(n >= -($Precise::NUM_BITS as i32));
@@ -438,9 +455,20 @@ macro_rules! define_precise_number {
                     return POW2_TABLE[shift as usize];
                 }
 
-                // assert_eq!(one_pow2(0), Self::FP_ONE);
-                // assert_eq!(one_pow2(3), Self::FP_ONE * 8);
-                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
+                // calc FP_ONE^2 * 2^(2n)
+                fn one_pow2_squared(n: i32) -> $FPInner {
+                    debug_assert!(n <= $Precise::NUM_BITS as i32);
+                    debug_assert!(n >= -($Precise::NUM_BITS as i32));
+                    let shift = n + $Precise::NUM_BITS as i32 + 1;
+                    return POW2_SQUARE_TABLE[shift as usize];
+                }
+
+                assert_eq!(one_pow2(0), Self::FP_ONE);
+                assert_eq!(one_pow2(3), Self::FP_ONE * 8);
+                assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
+
+                assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE);
+                assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4);
 
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
@@ -449,23 +477,30 @@ macro_rules! define_precise_number {
 
                 let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
-                let mut pow2_inner = Self::FP_ONE;
-                let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
+                let mut pow2_inner_shift: i32 = 0;
+                // let mut pow2_inner_squared_shift: i32 = 0;
+                // let mut pow2_inner = Self::FP_ONE;
+                // let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
                 // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    while x_shifted <= pow2_inner_squared {
-                        pow2_inner >>= 1;
-                        pow2_inner_squared >>= 2;
+                    while x_shifted <= one_pow2_squared(pow2_inner_shift) {
+                        // pow2_inner >>= 1;
+                        pow2_inner_shift -= 1;
+                        // pow2_inner_squared >>= 2;
+                        // pow2_inner_squared_shift -= 2;
                     }
-                    pow2_inner
+                    one_pow2(pow2_inner_shift)
                 } else {
                     // x >= 1
-                    while pow2_inner_squared <= x_shifted {
-                        pow2_inner <<= 1;
-                        pow2_inner_squared <<= 2;
+                    while one_pow2_squared(pow2_inner_shift) <= x_shifted {
+                        // pow2_inner <<= 1;
+                        pow2_inner_shift += 1;
+                        // pow2_inner_squared <<= 2;
+                        // pow2_inner_squared_shift += 2;
                     }
-                    pow2_inner >> 1
+                    // pow2_inner >> 1
+                    one_pow2(pow2_inner_shift - 1)
                 };
 
                 // FIXME use a better value for max iterations
@@ -475,7 +510,10 @@ macro_rules! define_precise_number {
 
                 // if speed_factor is larger than NUM_BITS, the loop will terminate automatically
                 for _ in 0..speed_factor {
-                   pow2_inner >>= 1;
+                   // pow2_inner >>= 1;
+                   pow2_inner_shift -= 1;
+                   let pow2_inner = one_pow2(pow2_inner_shift);
+                   // TODO optimize
                     if pow2_inner == Self::FP_ZERO {
                         break;
                     }
