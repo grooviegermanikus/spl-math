@@ -418,7 +418,7 @@ macro_rules! define_precise_number {
                     static ref POW2_TABLE: Vec<$FPInner> = {
                         let mut table = Vec::new();
                         for i in 0..=(2*$Precise::NUM_BITS+1) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32 - 1;
+                            let shift = i as i32 - $Precise::NUM_BITS as i32;
                             let pow2 = if shift < 0 {
                                 $FP_ONE >> -shift
                             } else {
@@ -431,8 +431,8 @@ macro_rules! define_precise_number {
                     };
                     static ref POW2_SQUARE_TABLE: Vec<$FPInner> = {
                         let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS+1) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32 - 1;
+                        for i in 0..=(2*$Precise::NUM_BITS) {
+                            let shift = i as i32 - $Precise::NUM_BITS as i32;
 
                             let one_square = $Precise::FP_ONE.checked_mul($Precise::FP_ONE).unwrap();
                             let pow2 = if shift < 0 {
@@ -451,7 +451,7 @@ macro_rules! define_precise_number {
                 fn one_pow2(n: i32) -> $FPInner {
                     // debug_assert!(n <= $Precise::NUM_BITS as i32);
                     // debug_assert!(n >= -($Precise::NUM_BITS as i32));
-                    let shift = n + $Precise::NUM_BITS as i32 + 1;
+                    let shift = n + $Precise::NUM_BITS as i32;
                     return POW2_TABLE[shift as usize];
                 }
 
@@ -460,7 +460,7 @@ macro_rules! define_precise_number {
                 fn one_pow2_squared(n: i32) -> $FPInner {
                     // debug_assert!(n <= $Precise::NUM_BITS as i32);
                     // debug_assert!(n >= -($Precise::NUM_BITS as i32));
-                    let shift = n + $Precise::NUM_BITS as i32 + 1;
+                    let shift = n + $Precise::NUM_BITS as i32;
                     return POW2_SQUARE_TABLE[shift as usize];
                 }
 
