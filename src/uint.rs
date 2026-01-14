@@ -6,7 +6,7 @@
 #![allow(clippy::manual_range_contains)]
 #![allow(missing_docs)]
 
-use num_traits::CheckedShl;
+use num_traits::{CheckedShl, CheckedShr};
 use uint::construct_uint;
 
 construct_uint! {
@@ -74,6 +74,33 @@ impl CheckedShl for U192 {
             return None;
         }
         Some(self << shift)
+    }
+}
+
+impl CheckedShr for U256 {
+    fn checked_shr(&self, shift: u32) -> Option<Self> {
+        if shift > 256 {
+            return None;
+        }
+        Some(self >> shift)
+    }
+}
+
+impl CheckedShr for U192 {
+    fn checked_shr(&self, shift: u32) -> Option<Self> {
+        if shift > 192 {
+            return None;
+        }
+        Some(self >> shift)
+    }
+}
+
+impl CheckedShr for U512 {
+    fn checked_shr(&self, shift: u32) -> Option<Self> {
+        if shift > 512 {
+            return None;
+        }
+        Some(self >> shift)
     }
 }
 
