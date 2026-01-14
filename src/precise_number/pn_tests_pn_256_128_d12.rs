@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod tests_pn_256_128_d12 {
     use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
@@ -13,61 +13,19 @@ mod tests {
     const MAXIMUM_SQRT_BASE: U256 =
         U256([18446743073709551616, 18446744073709551615, 999999999999, 0]); // u128::MAX
 
+    define_precise_number!(
+        PreciseNumber,
+        u128,
+        U256,
+        ONE_CONST,
+        1e12f64,
+        U256::zero(),
+        ROUNDING_CORRECTION,
+        PRECISION,
+        MAXIMUM_SQRT_BASE,
+        |value| u256_from_f64_bits(value)
+    );
 
-    pub mod pn_256_128_d12 {
-        use super::*;
-
-        define_precise_number!(
-            PreciseNumber,
-            u128,
-            U256,
-            ONE_CONST,
-            1e12f64,
-            U256::zero(),
-            ROUNDING_CORRECTION,
-            PRECISION,
-            MAXIMUM_SQRT_BASE,
-            |value| u256_from_f64_bits(value)
-        );
-    }
-
-
-    pub mod pn8_8_d1 {
-        use super::*;
-        define_precise_number!(
-            TestPreciseNumber8,
-            u8,
-            u8,
-            10u8,
-            1e1f64,
-            0u8,
-            5u8,
-            1u8,
-            10u8,
-            |value| value.to_u8()
-        );
-    }
-
-    pub mod pn32_32_d1 {
-        use super::*;
-        define_precise_number!(
-            TestPreciseNumber32,
-            u32,
-            u32,
-            1_000u32,
-            1e3f64,
-            0u32,
-            500u32,
-            1u32,
-            1_000u32,
-            |value| value.to_u32()
-        ); // MAXIMUM_SQRT_BASE is likely incorrect
-    }
-
-
-    use pn_256_128_d12::PreciseNumber as PreciseNumber;
-    use pn8_8_d1::TestPreciseNumber8 as TestPreciseNumber8;
-    use pn32_32_d1::TestPreciseNumber32 as TestPreciseNumber32;
 
     fn check_pow_approximation(base: InnerUint, exponent: InnerUint, expected: InnerUint) {
         let precision = InnerUint::from(5_000_000); // correct to at least 3 decimal places
@@ -91,30 +49,6 @@ mod tests {
         // max 3,4028236692×10³²
 
         a.checked_mul(&b).unwrap();
-    }
-
-    #[test]
-    fn test_max_int_val() {
-        // 2^32 / 1000 // 4294967296 / 1000 = 4294967.296
-        let _ = pn32_32_d1::TestPreciseNumber32::new(4294967);
-    }
-
-    #[test]
-    fn test_to_imprecise_rounding() {
-        fn calc(a: u8, b: u8) -> u8 {
-            let a = pn8_8_d1::TestPreciseNumber8::new(a).unwrap();
-            // println!("a: {}", a.value);
-            let b = pn8_8_d1::TestPreciseNumber8::new(b).unwrap();
-            // println!("b: {}", b.value);
-            let c = a.checked_div(&b).unwrap();
-            // println!("c: {}", c.value);
-            c.to_imprecise().unwrap()
-        }
-
-        // rounding mode HALF_DOWN
-        assert_eq!(calc(11, 2), 5);
-        assert_eq!(calc(5, 2), 2);
-        assert_eq!(calc(4, 3), 1);
     }
 
     #[test]
@@ -327,23 +261,6 @@ mod tests {
         let expected_fp2: InnerUint = PreciseNumber::new(2).unwrap().value;
         assert_eq!(ceiling.value, expected_fp2);
         assert_eq!(ceiling_again.value, expected_fp2);
-    }
-
-    #[test]
-    fn test_ceiling_all() {
-        for value in 0..=246 {
-            let a = TestPreciseNumber8 { value };
-
-            let ceil_expected = (value as f64 / 10.0).ceil() as u8;
-            let ceiling = a.ceiling().unwrap();
-
-            assert_eq!(ceiling.value, ceil_expected * 10);
-        }
-
-        for value in 247..=255 {
-            let a = TestPreciseNumber8 { value };
-            assert!(a.ceiling().is_none(), "will overflow");
-        }
     }
 
     #[test]
