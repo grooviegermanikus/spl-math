@@ -125,6 +125,48 @@ mod tests {
         );
     }
 
+    // makes sure that both sqrt methods have similar precision
+    // see MAX_APPROXIMATION_ITERATIONS and CORDIC_SPEED_FACTOR for details
+    #[test]
+    fn test_sqrt_precision_tuner() {
+        fn compare_newton_vs_cordic_precision(
+            radicand: u128
+        ) -> (u32, u32) {
+            let radicand = PreciseNumber::new(radicand)
+                .unwrap();
+
+            let precision_newton = find_max_precision(radicand.sqrt_newton().unwrap(), radicand);
+            let precision_cordic = find_max_precision(radicand.sqrt_cordic().unwrap(), radicand);
+
+            (precision_newton, precision_cordic)
+        }
+
+        const TARGET_PRECISION: (u32, u32) = (12, 12);
+
+        // same values as in benchmarks
+
+        assert_eq!(
+            compare_newton_vs_cordic_precision(10u128),
+            TARGET_PRECISION);
+
+        assert_eq!(
+            compare_newton_vs_cordic_precision(50_000_000_000_000u128),
+            TARGET_PRECISION);
+
+        assert_eq!(
+            compare_newton_vs_cordic_precision(50_000_000_000_000_000_000_000u128),
+            TARGET_PRECISION);
+
+        assert_eq!(
+            compare_newton_vs_cordic_precision(110_359_921_541_836_653_504_517_256_210_928_999_005u128),
+            TARGET_PRECISION);
+
+        assert_eq!(
+            compare_newton_vs_cordic_precision(PreciseNumber::maximum_sqrt_base().to_imprecise().unwrap()),
+            TARGET_PRECISION);
+        
+    }
+
     #[test]
     fn test_bruteforce_precision() {
         let number = PreciseNumber::maximum_sqrt_base();
@@ -163,6 +205,8 @@ mod tests {
         // precis 18446744073709551616
         // compar 00000...........
     }
+
+
 
     fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
         let mut best_precision = 0u32;
