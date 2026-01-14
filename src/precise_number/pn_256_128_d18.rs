@@ -14,7 +14,7 @@ define_precise_number!(
     u128,
     U256,
     ONE_CONST,
-    1e12f64,
+    1e18f64,
     U256::zero(),
     ROUNDING_CORRECTION,
     PRECISION,
@@ -68,6 +68,9 @@ mod tests {
 
     #[test]
     fn test_from_f64() {
+        let pn_from_inner = PreciseNumber::new_from_inner_f64(1e17).unwrap();
+        assert_eq!(pn_from_inner.to_str_pretty(), "0.1");
+
         let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
         assert_eq!(pn.to_str_pretty(), "0.000001");
     }
