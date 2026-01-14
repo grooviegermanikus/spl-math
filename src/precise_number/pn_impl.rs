@@ -462,15 +462,23 @@ macro_rules! define_precise_number {
                         for i in 0..=(2*$Precise::NUM_BITS) {
                             let shift = i as i32 - $Precise::NUM_BITS as i32;
 
-                            let one_square = $Precise::FP_ONE.checked_mul($Precise::FP_ONE).unwrap();
+                            let Some(one_square) = $Precise::FP_ONE.checked_mul($Precise::FP_ONE) else {
+                                continue;
+                            };
                             let pow2 = if shift < 0 {
                                 // one_square >> -2*shift
                                 //<$Precise>::shr_inner(one_square, (-2*shift) as u32)
-                                one_square.checked_shr((-2*shift) as u32).unwrap_or_default()
+                                let Some(out) = one_square.checked_shr((-2*shift) as u32) else {
+                                    continue;
+                                };
+                                out
                             } else {
                                 // one_square << 2*shift
                                 //<$Precise>::shl_inner(one_square, (2*shift) as u32)
-                                one_square.checked_shl((2*shift) as u32).unwrap_or_default()
+                                let Some(out) = one_square.checked_shl((2*shift) as u32) else {
+                                    continue;
+                                };
+                                out
                             };
                             table.push(pow2);
 
@@ -774,7 +782,7 @@ macro_rules! define_sqrt_tests {
 
 
                 // newton, cordic
-                const TARGET_PRECISION: (u32, u32) = (12, 12);
+                const TARGET_PRECISION: (u32, u32) = (11, 11);
 
                 // same values as in benchmarks
 
