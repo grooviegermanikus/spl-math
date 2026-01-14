@@ -1,6 +1,6 @@
 /// Decimal fix-point number with 12 decimal places backed by u64
 ///
-use crate::{define_muldiv, define_precise_number};
+use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
 use num_traits::ToPrimitive;
 
 const ONE_CONST: u64 = 10_000;
@@ -20,6 +20,7 @@ define_precise_number!(
     |value| value.to_u64()
 );
 define_muldiv!(PreciseNumber, u32, u64, u128);
+define_sqrt_tests!(PreciseNumber, u32, u64, u128);
 
 #[cfg(test)]
 mod tests {
