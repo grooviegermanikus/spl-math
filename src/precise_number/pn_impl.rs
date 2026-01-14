@@ -49,12 +49,6 @@ macro_rules! define_precise_number {
                 }
             }
 
-            fn ten() -> $FPInner {
-                <$FPInner>::from(10u8)
-            }
-
-
-
             /// Maximum number iterations to apply on checked_pow_approximation.
             /// use test_sqrt_precision_tuner to adjust this value
             const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
@@ -65,7 +59,7 @@ macro_rules! define_precise_number {
 
             /// Minimum base (excl) allowed when calculating exponents in checked_pow_fraction
             /// and checked_pow_approximation.  This simply avoids 0 as a base.
-            fn min_pow_base_excl() -> $FPInner {
+            pub(crate) fn min_pow_base_excl() -> $FPInner {
                 Self::FP_ZERO
             }
 
@@ -74,7 +68,7 @@ macro_rules! define_precise_number {
             /// approximation around 1, which converges for bases between 0 and 2.  See
             /// https://en.wikipedia.org/wiki/Binomial_series#Conditions_for_convergence
             /// for more information.
-            fn max_pow_base() -> $FPInner {
+            pub(crate) fn max_pow_base() -> $FPInner {
                 Self::FP_ONE + Self::FP_ONE
             }
 
@@ -161,19 +155,30 @@ macro_rules! define_precise_number {
                 }
             }
 
-            fn div2(&self) -> Self {
+            /// divide PreciseNumber by inner type
+            pub fn checked_div_inner(&self, rhs: &$FPInner) -> Option<Self> {
+                if *rhs == $FP_ZERO {
+                    return None;
+                }
+
+                self.value.checked_add(Self::ROUNDING_CORRECTION)?
+                    .checked_div(*rhs)
+                    .map(|value| Self { value })
+            }
+
+            pub(crate) fn div2(&self) -> Self {
                 use std::ops::Shr;
                 let value = self.value.shr(1);
                 Self { value }
             }
 
-            fn mul2(&self) -> Option<Self> {
+            pub(crate) fn mul2(&self) -> Option<Self> {
                 let value = self.value.checked_add(self.value)?;
                 Some(Self { value })
             }
 
             #[inline(always)]
-            fn pow2(value: $FPInner) -> Option<$FPInner> {
+            pub(crate) fn pow2(value: $FPInner) -> Option<$FPInner> {
                 // 33% faster than checked_pow
                 value.checked_mul(value)
             }
@@ -593,13 +598,13 @@ macro_rules! define_precise_number {
 
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
-            fn minimum_sqrt_base() -> Self {
+            pub(crate) fn minimum_sqrt_base() -> Self {
                 Self::zero()
             }
 
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon of 11 digits
-            fn maximum_sqrt_base() -> Self {
+            pub(crate) fn maximum_sqrt_base() -> Self {
                 Self {
                     value: Self::MAXIMUM_SQRT_BASE,
                 }
@@ -754,13 +759,14 @@ macro_rules! define_sqrt_tests {
 
         #[cfg(test)]
         mod sqrt_tests {
+            use crate::precise_number::PreciseNumber;
             use super::*;
 
 
             // makes sure that both sqrt methods have similar precision
             // see MAX_APPROXIMATION_ITERATIONS and CORDIC_SPEED_FACTOR for details
             #[test]
-            fn test_sqrt_precision_tuner_all_types() {
+            fn test_sqrt_precision_tuner() {
 
 
                 // newton, cordic
@@ -786,7 +792,15 @@ macro_rules! define_sqrt_tests {
 
                 assert_eq!(
                     compare_newton_vs_cordic_precision(PreciseNumber::maximum_sqrt_base()),
-                    TARGET_PRECISION);
+                    TARGET_PRECISION, "precision at maximum_sqrt_base failed");
+
+                assert_eq!(
+                    compare_newton_vs_cordic_precision(PreciseNumber::maximum_sqrt_base().div2()),
+                    TARGET_PRECISION, "precision at maximum_sqrt_base/2 failed");
+
+                assert_eq!(
+                    compare_newton_vs_cordic_precision((PreciseNumber::one().checked_add(&PreciseNumber::one()).unwrap().checked_add(&PreciseNumber::one()).unwrap()).div2()),
+                    TARGET_PRECISION, "precision at 1.5 failed");
 
             }
 
@@ -805,6 +819,21 @@ macro_rules! define_sqrt_tests {
                 best_precision
             }
 
+            fn precisions_enumerated() -> Vec<(u32, $FPInner)> {
+                let ten: $FPInner = <$FPInner>::from(10u8);
+                let mut out = Vec::new();
+                let mut cur = Self::FP_ONE;
+                let zero = <$Precise>::zero().value;
+                for precision in 0..1000 {
+                    out.push((precision, cur));
+                    cur = cur.checked_div(ten).unwrap();
+                    if cur == zero {
+                        break;
+                    }
+                }
+                out
+            }
+
             fn compare_newton_vs_cordic_precision(
                 radicand: PreciseNumber
             ) -> (u32, u32) {
@@ -813,19 +842,6 @@ macro_rules! define_sqrt_tests {
                 let precision_cordic = find_max_precision(radicand.sqrt_cordic().unwrap(), radicand);
 
                 (precision_newton, precision_cordic)
-            }
-
-            fn precisions_enumerated() -> Vec<(u32, $FPInner)> {
-                let mut out = Vec::new();
-                let mut cur = ONE_CONST;
-                for precision in 0..1000 {
-                    out.push((precision, cur));
-                    cur = cur.checked_div(<$Precise>::ten()).unwrap();
-                    if cur == <$Precise>::FP_ZERO {
-                        break;
-                    }
-                }
-                out
             }
 
             // this accounts for the absolute error - in contract to relative error
@@ -856,8 +872,9 @@ macro_rules! define_sqrt_tests {
             // for testing only, neither fast not beautiful
             fn precision_in_inner(digits: u32) -> $FPInner {
                 let mut result = ONE_CONST;
+                let ten = <$FPInner>::from(10u8);
                 for _ in 0..digits {
-                    result = result.checked_div(<$Precise>::ten()).unwrap();
+                    result = result.checked_div(ten).unwrap();
                 }
                 assert!(result != <$Precise>::FP_ZERO, "precision underflow, digits={}", digits);
                 result

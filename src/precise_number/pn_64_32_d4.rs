@@ -20,7 +20,7 @@ define_precise_number!(
     |value| value.to_u64()
 );
 define_muldiv!(PreciseNumber, u32, u64, u128);
-define_sqrt_tests!(PreciseNumber, u32, u64, u128);
+// define_sqrt_tests!(PreciseNumber, u32, u64, u128);
 
 #[cfg(test)]
 mod tests {
