@@ -2,7 +2,7 @@
 mod tests {
     use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
-    use crate::uint::{U256};
+    use crate::uint::U256;
     use num_traits::ToPrimitive;
 
     type InnerUint = U256;
@@ -240,7 +240,6 @@ mod tests {
         assert_eq!(root, 3); // actually 3.46572422
     }
 
-
     #[test]
     fn test_checked_div() {
         let one_tenth = PreciseNumber::new(1)
@@ -336,5 +335,4 @@ mod tests {
         // u256 overflows at 1e77
         assert_eq!(a.checked_mul(b), None);
     }
-
 }
