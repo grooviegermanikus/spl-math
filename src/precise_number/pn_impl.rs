@@ -172,6 +172,11 @@ macro_rules! define_precise_number {
                 Self { value }
             }
 
+            pub(crate) fn div10(&self) -> Self {
+                let value = self.value.checked_div(10u8.into()).unwrap();
+                Self { value }
+            }
+
             pub(crate) fn mul2(&self) -> Option<Self> {
                 let value = self.value.checked_add(self.value)?;
                 Some(Self { value })
@@ -759,7 +764,6 @@ macro_rules! define_sqrt_tests {
 
         #[cfg(test)]
         mod sqrt_tests {
-            use crate::precise_number::PreciseNumber;
             use super::*;
 
 
@@ -791,20 +795,20 @@ macro_rules! define_sqrt_tests {
                 //     TARGET_PRECISION);
 
                 assert_eq!(
-                    compare_newton_vs_cordic_precision(PreciseNumber::maximum_sqrt_base()),
+                    compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base()),
                     TARGET_PRECISION, "precision at maximum_sqrt_base failed");
 
                 assert_eq!(
-                    compare_newton_vs_cordic_precision(PreciseNumber::maximum_sqrt_base().div2()),
+                    compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base().div2()),
                     TARGET_PRECISION, "precision at maximum_sqrt_base/2 failed");
 
                 assert_eq!(
-                    compare_newton_vs_cordic_precision((PreciseNumber::one().checked_add(&PreciseNumber::one()).unwrap().checked_add(&PreciseNumber::one()).unwrap()).div2()),
+                    compare_newton_vs_cordic_precision((<$Precise>::one().checked_add(&<$Precise>::one()).unwrap().checked_add(&<$Precise>::one()).unwrap()).div2()),
                     TARGET_PRECISION, "precision at 1.5 failed");
 
             }
 
-            fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
+            fn find_max_precision(approximate_root: $Precise, radicand: $Precise) -> u32 {
                 let mut best_precision = 0u32;
                 for (precision, eps) in precisions_enumerated() {
                     let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, precision);
@@ -820,13 +824,12 @@ macro_rules! define_sqrt_tests {
             }
 
             fn precisions_enumerated() -> Vec<(u32, $FPInner)> {
-                let ten: $FPInner = <$FPInner>::from(10u8);
                 let mut out = Vec::new();
-                let mut cur = Self::FP_ONE;
-                let zero = <$Precise>::zero().value;
+                let mut cur = $Precise::one();
+                let zero = <$Precise>::zero();
                 for precision in 0..1000 {
-                    out.push((precision, cur));
-                    cur = cur.checked_div(ten).unwrap();
+                    out.push((precision, cur.value));
+                    cur = cur.div10();
                     if cur == zero {
                         break;
                     }
@@ -835,7 +838,7 @@ macro_rules! define_sqrt_tests {
             }
 
             fn compare_newton_vs_cordic_precision(
-                radicand: PreciseNumber
+                radicand: $Precise
             ) -> (u32, u32) {
 
                 let precision_newton = find_max_precision(radicand.sqrt_newton().unwrap(), radicand);
@@ -846,13 +849,13 @@ macro_rules! define_sqrt_tests {
 
             // this accounts for the absolute error - in contract to relative error
             fn calc_square_root_bounds(
-                approximate_root: &PreciseNumber,
+                approximate_root: &$Precise,
                 precision: u32,
-            ) -> (PreciseNumber, PreciseNumber) {
-                let epsilon = PreciseNumber {
+            ) -> ($Precise, $Precise) {
+                let epsilon = $Precise {
                     value: precision_in_inner(precision),
                 };
-                let one = PreciseNumber::one();
+                let one = <$Precise>::one();
                 let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
                 let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
                 let lower_bound = approximate_root
