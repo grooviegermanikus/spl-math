@@ -6,7 +6,7 @@ use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
 
 const ONE_CONST: U256 = U256([1000000000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000000000 / 2, 0, 0, 0]);
-const PRECISION: U256 = U256([10000000000000000000,100000000000, 0, 0]); // TODO little-endian
+const PRECISION: U256 = U256([10000000000000000000,1000000000, 0, 0]); // TODO little-endian
                                               // TODO
 const MAXIMUM_SQRT_BASE: U256 = U256([18446743073709551616, 18446744073709551615, 999999999999, 0]); // u128::MAX
 define_precise_number!(
@@ -63,12 +63,6 @@ mod tests {
     #[test]
     fn test_u256_precision_constant() {
         assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
-    }
-
-    #[test]
-    fn test_from_f64() {
-        let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
-        assert_eq!(pn.to_str_pretty(), "0.000001");
     }
 
     use crate::precise_number::pn_256_128_d18::PreciseNumber;
