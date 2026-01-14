@@ -1,9 +1,13 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
+//! Important: put this makro inside an unique module to avoid name clashes
 
 #[macro_export]
 macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
+
+        mod foobar {}
+
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
         #[derive(Clone, Copy, Debug, PartialEq)]
@@ -14,9 +18,9 @@ macro_rules! define_precise_number {
 
         #[allow(dead_code)]
         impl $Precise {
-            const FP_ONE: $FPInner = $FP_ONE;
+            pub(crate) const FP_ONE: $FPInner = $FP_ONE;
             const FP_ONE_F64: f64 = $FP_ONE_F64;
-            const FP_ZERO: $FPInner = $FP_ZERO;
+            pub(crate) const FP_ZERO: $FPInner = $FP_ZERO;
             const CONVERT_FROM_F64: fn(f64) -> Option<$FPInner> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
@@ -51,7 +55,7 @@ macro_rules! define_precise_number {
 
             /// Maximum number iterations to apply on checked_pow_approximation.
             /// use test_sqrt_precision_tuner to adjust this value
-            const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
+            pub(crate) const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
 
             /// Limit the bitshifts in cordic
             /// use test_sqrt_precision_tuner to adjust this value
@@ -283,7 +287,7 @@ macro_rules! define_precise_number {
             /// where a = 1, n = power, x = precise_num
             /// NOTE: this function is private because its accurate range and precision
             /// have not been estbalished.
-            fn checked_pow_approximation(
+            pub(crate) fn checked_pow_approximation(
                 &self,
                 exponent: &Self,
                 max_iterations: u32,
@@ -428,10 +432,13 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
+
+
             // optimized version
             fn cordic_root_approximation_fast(
                 &self, speed_factor: u32,
             ) -> Option<Self> {
+
                 lazy_static::lazy_static! {
                     static ref POW2_TABLE: Vec<$FPInner> = {
                         use num_traits::{CheckedShl, CheckedShr};
@@ -463,20 +470,20 @@ macro_rules! define_precise_number {
                             let shift = i as i32 - $Precise::NUM_BITS as i32;
 
                             let Some(one_square) = $Precise::FP_ONE.checked_mul($Precise::FP_ONE) else {
-                                continue;
+                                panic!("error builing pow2_table");
                             };
                             let pow2 = if shift < 0 {
                                 // one_square >> -2*shift
                                 //<$Precise>::shr_inner(one_square, (-2*shift) as u32)
                                 let Some(out) = one_square.checked_shr((-2*shift) as u32) else {
-                                    continue;
+                                    panic!("error builing pow2_table");
                                 };
                                 out
                             } else {
                                 // one_square << 2*shift
                                 //<$Precise>::shl_inner(one_square, (2*shift) as u32)
                                 let Some(out) = one_square.checked_shl((2*shift) as u32) else {
-                                    continue;
+                                    panic!("error builing pow2_table");
                                 };
                                 out
                             };
@@ -486,29 +493,34 @@ macro_rules! define_precise_number {
                         table
                     };
                 }
+
                 // calc FP_ONE * 2^n
-                #[inline(always)]
+                // #[inline(always)]
                 fn one_pow2(n: i32) -> $FPInner {
-                    // debug_assert!(n <= $Precise::NUM_BITS as i32);
-                    // debug_assert!(n >= -($Precise::NUM_BITS as i32));
+                    // TODO change to debug_assert!
+                    assert!(n <= $Precise::NUM_BITS as i32, "error in one_pow2");
+                    assert!(n >= -($Precise::NUM_BITS as i32), "error in one_pow2");
                     let shift = n + $Precise::NUM_BITS as i32;
+                    panic!("one_pow2({}) len={}", n, POW2_TABLE.len());
                     return POW2_TABLE[shift as usize];
                 }
 
                 // calc FP_ONE^2 * 2^(2n)
-                #[inline(always)]
-                fn one_pow2_squared(n: i32) -> $FPInner {
-                    // debug_assert!(n <= $Precise::NUM_BITS as i32);
-                    // debug_assert!(n >= -($Precise::NUM_BITS as i32));
-                    let shift = n + $Precise::NUM_BITS as i32;
-                    return POW2_SQUARE_TABLE[shift as usize];
-                }
+                // #[inline(always)]
+                // TODO unused?
+                // fn one_pow2_squared(n: i32) -> $FPInner {
+                //     // TODO change to debug_assert!
+                //     assert!(n <= $Precise::NUM_BITS as i32, "error2");
+                //     assert!(n >= -($Precise::NUM_BITS as i32), "error3");
+                //     let shift = n + $Precise::NUM_BITS as i32;
+                //     return POW2_SQUARE_TABLE[shift as usize];
+                // }
 
-                // assert_eq!(one_pow2(0), Self::FP_ONE);
-                // assert_eq!(one_pow2(3), Self::FP_ONE * 8);
-                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
-                // assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE);
-                // assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4);
+                // assert_eq!(one_pow2(0), Self::FP_ONE, "error at one_pow2 a");
+                // assert_eq!(one_pow2(3), Self::FP_ONE * 8, "error at one_pow2 b");
+                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8, "error at one_pow2 c");
+                // assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE, "error at one_pow2_squared a");
+                // assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4, "error at one_pow2_squared b");
 
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
@@ -522,26 +534,37 @@ macro_rules! define_precise_number {
                 // let mut pow2_inner = Self::FP_ONE;
                 // let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
+                // panic!("CHECKPOINT2");
                 // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
+                    panic!("CHECK BAR");
                     while x.value <= one_pow2(2*pow2_inner_shift) {
                         // pow2_inner >>= 1;
+                        panic!("CHECKPOINTz pow2_inner_shift={}", pow2_inner_shift);
                         pow2_inner_shift -= 1;
                         // pow2_inner_squared >>= 2;
                         // pow2_inner_squared_shift -= 2;
                     }
+                    panic!("CHECKPOINT pow2_inner_shift={}", pow2_inner_shift);
                     one_pow2(pow2_inner_shift)
                 } else {
+                    // panic!("CHECK FOO pow2_inner_shift={}", pow2_inner_shift);
+                    let _ = one_pow2(2*pow2_inner_shift);
+                    panic!("CHECK FOO_after");
                     // x >= 1
                     while one_pow2(2*pow2_inner_shift) <= x.value {
                         // pow2_inner <<= 1;
+                         panic!("CHECKPOINTy pow2_inner_shift={}", pow2_inner_shift);
                         pow2_inner_shift += 1;
                         // pow2_inner_squared <<= 2;
                         // pow2_inner_squared_shift += 2;
                     }
                     // pow2_inner >> 1
+                    panic!("CHECKPOINT pow2_inner_shift={}", pow2_inner_shift);
                     one_pow2(pow2_inner_shift - 1)
                 };
+
+                panic!("CHECKPOINT3");
 
                 let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
@@ -780,27 +803,8 @@ macro_rules! define_sqrt_tests {
             #[test]
             fn test_sqrt_precision_tuner() {
 
-
                 // newton, cordic
                 const TARGET_PRECISION: (u32, u32) = (11, 11);
-
-                // same values as in benchmarks
-
-                // assert_eq!(
-                //     compare_newton_vs_cordic_precision(10u128),
-                //     TARGET_PRECISION);
-                //
-                // assert_eq!(
-                //     compare_newton_vs_cordic_precision(50_000_000_000_000u128),
-                //     TARGET_PRECISION);
-                //
-                // assert_eq!(
-                //     compare_newton_vs_cordic_precision(50_000_000_000_000_000_000_000u128),
-                //     TARGET_PRECISION);
-                //
-                // assert_eq!(
-                //     compare_newton_vs_cordic_precision(110_359_921_541_836_653_504_517_256_210_928_999_005u128),
-                //     TARGET_PRECISION);
 
                 assert_eq!(
                     compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base()),
