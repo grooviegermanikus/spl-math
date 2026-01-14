@@ -6,8 +6,6 @@
 macro_rules! define_precise_number {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $FP_ONE:expr, $FP_ONE_F64:expr, $FP_ZERO:expr, $ROUNDING_CORRECTION:expr, $PRECISION:expr, $MAXIMUM_SQRT_BASE:expr, $CONVERT_F64:expr) => {
 
-        mod foobar {}
-
         /// Struct encapsulating a fixed-point number that allows for decimal
         /// calculations
         #[derive(Clone, Copy, Debug, PartialEq)]
@@ -705,6 +703,37 @@ macro_rules! define_precise_number {
             }
 
         }
+
+        // mod precomputed_tables {
+        //     use super::$Precise as PN;
+        //
+        //     lazy_static::lazy_static! {
+        //         static ref POW2_TABLE: Vec<$FPInner> = {
+        //             use num_traits::{CheckedShl, CheckedShr};
+        //             let mut table = Vec::new();
+        //             for i in 0..=(2*$Precise::NUM_BITS+1) {
+        //                 let shift = i as i32 - $Precise::NUM_BITS as i32;
+        //                 let pow2 = if shift < 0 {
+        //                     //$FP_ONE >> -shift
+        //                     let Some(out) = PN::FP_ONE.checked_shr((-shift) as u32) else {
+        //                         continue;
+        //                     };
+        //                     out
+        //                 } else {
+        //                     //$FP_ONE << shift
+        //                     let Some(out) = PN::FP_ONE.checked_shl(shift as u32) else {
+        //                         continue;
+        //                     };
+        //                     out
+        //                 };
+        //                 table.push(pow2);
+        //
+        //             }
+        //             table
+        //         };
+        //     }
+        //
+        // } // -- mod precomputed_tables
     };
 } // -- macro
 
@@ -796,6 +825,7 @@ macro_rules! define_sqrt_tests {
         #[cfg(test)]
         mod sqrt_tests {
             use super::*;
+            use super::$Precise;
 
 
             // makes sure that both sqrt methods have similar precision
@@ -894,7 +924,6 @@ macro_rules! define_sqrt_tests {
                 assert!(result != <$Precise>::FP_ZERO, "precision underflow, digits={}", digits);
                 result
             }
-
 
         }
 

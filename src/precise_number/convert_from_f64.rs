@@ -88,13 +88,12 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_f64 {
     use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
-    use crate::precise_number::PreciseNumber;
-    use crate::uint::U256;
     use num_traits::ToPrimitive;
     use proptest::proptest;
+    use crate::uint::U256;
 
     define_precise_number!(
         TestPreciseNumber8,
@@ -109,11 +108,18 @@ mod tests {
         |value| value.to_u8()
     );
 
-    #[test]
-    fn test_u256_small() {
-        // U256 is little-endian
-        assert_eq!(U256([1, 0, 0, 0]).as_u128(), 1u128);
-    }
+    define_precise_number!(
+        PreciseNumber,
+        u128,
+        U256,
+        U256([1000000000000, 0, 0, 0]),
+        1e12f64,
+        U256::zero(),
+        U256([1000000000000 / 2, 0, 0, 0]),
+        U256([100, 0, 0, 0]),
+        U256([18446743073709551616, 18446744073709551615, 999999999999, 0]),
+        |value| u256_from_f64_bits(value)
+    );
 
     #[test]
     fn test_pn_from_f64() {
