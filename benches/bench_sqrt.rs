@@ -4,24 +4,14 @@ use spl_math_evolved::precise_number::PreciseNumber;
 use spl_math_evolved::uint::U256;
 
 #[inline(never)]
-fn calc_newton_sqrt_roots(testdata: u128) -> PreciseNumber {
-    let a = PreciseNumber::new(10u128 + testdata)
-        .unwrap()
-        .sqrt_newton()
-        .unwrap();
-    let b = PreciseNumber::new(50_000_000_000_000u128 + testdata)
-        .unwrap()
-        .sqrt_newton()
-        .unwrap();
-    let c = PreciseNumber::new(50_000_000_000_000_000_000_000u128 + testdata)
-        .unwrap()
-        .sqrt_newton()
-        .unwrap();
-    let d = PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128 - testdata)
-        .unwrap()
-        .sqrt_newton()
-        .unwrap();
+fn calc_newton_sqrt_roots((a, b, c, d): (PreciseNumber, PreciseNumber, PreciseNumber, PreciseNumber)) -> PreciseNumber {
 
+    let a = a.sqrt_newton().unwrap();
+    let b = b.sqrt_newton().unwrap();
+    let c = c.sqrt_newton().unwrap();
+    let d = d.sqrt_newton().unwrap();
+
+    // perform (cheap) addition to prevent compiler optimizations
     a.checked_add(&b)
         .unwrap()
         .checked_add(&c)
@@ -31,24 +21,14 @@ fn calc_newton_sqrt_roots(testdata: u128) -> PreciseNumber {
 }
 
 #[inline(never)]
-fn calc_cordic_sqrt_roots(testdata: u128) -> PreciseNumber {
-    let a = PreciseNumber::new(10u128 + testdata)
-        .unwrap()
-        .sqrt_cordic()
-        .unwrap();
-    let b = PreciseNumber::new(50_000_000_000_000u128 + testdata)
-        .unwrap()
-        .sqrt_cordic()
-        .unwrap();
-    let c = PreciseNumber::new(50_000_000_000_000_000_000_000u128 + testdata)
-        .unwrap()
-        .sqrt_cordic()
-        .unwrap();
-    let d = PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128 - testdata)
-        .unwrap()
-        .sqrt_cordic()
-        .unwrap();
+fn calc_cordic_sqrt_roots((a, b, c, d): (PreciseNumber, PreciseNumber, PreciseNumber, PreciseNumber)) -> PreciseNumber {
 
+    let a = a.sqrt_cordic().unwrap();
+    let b = b.sqrt_cordic().unwrap();
+    let c = c.sqrt_cordic().unwrap();
+    let d = d.sqrt_cordic().unwrap();
+
+    // perform (cheap) addition to prevent compiler optimizations
     a.checked_add(&b)
         .unwrap()
         .checked_add(&c)
@@ -85,7 +65,19 @@ fn bench_sqrt_binary_system(c: &mut Criterion) {
 
 fn bench_fast_newton_sqrt(c: &mut Criterion) {
     const SAMPLES: u128 = 1_000_000;
-    let testdata = (0..SAMPLES).step_by(13).collect_vec();
+    let testdata = (0..SAMPLES).step_by(13)
+        .map(|i| {
+            let a = PreciseNumber::new(10u128 + i)
+                .unwrap();
+            let b = PreciseNumber::new(50_000_000_000_000u128 + i)
+                .unwrap();
+            let c = PreciseNumber::new(50_000_000_000_000_000_000_000u128 + i)
+                .unwrap();
+            let d = PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128 - i)
+                .unwrap();
+            (a, b, c, d)
+        })
+        .collect_vec();
     let mut testdata_iter = testdata.into_iter().cycle();
     c.bench_function("bench_fast_newton_sqrt", |b| {
         b.iter(|| {
@@ -97,7 +89,19 @@ fn bench_fast_newton_sqrt(c: &mut Criterion) {
 
 fn bench_fast_cordic_sqrt(c: &mut Criterion) {
     const SAMPLES: u128 = 1_000_000;
-    let testdata = (0..SAMPLES).step_by(13).collect_vec();
+    let testdata = (0..SAMPLES).step_by(13)
+        .map(|i| {
+            let a = PreciseNumber::new(10u128 + i)
+                .unwrap();
+            let b = PreciseNumber::new(50_000_000_000_000u128 + i)
+                .unwrap();
+            let c = PreciseNumber::new(50_000_000_000_000_000_000_000u128 + i)
+                .unwrap();
+            let d = PreciseNumber::new(110_359_921_541_836_653_504_517_256_210_928_999_005u128 - i)
+                .unwrap();
+            (a, b, c, d)
+        })
+        .collect_vec();
     let mut testdata_iter = testdata.into_iter().cycle();
     c.bench_function("bench_fast_coric_sqrt", |b| {
         b.iter(|| {
