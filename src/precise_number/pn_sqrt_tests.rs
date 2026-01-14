@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use std::ops::Div;
-    use std::str::FromStr;
+    use crate::define_precise_number;
+    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
+    use crate::uint::U256;
     use bigdecimal_rs::BigDecimal;
     use num_traits::ToPrimitive;
     use proptest::prelude::ProptestConfig;
     use proptest::proptest;
-    use crate::define_precise_number;
-    use crate::precise_number::convert_from_f64::u256_from_f64_bits;
-    use crate::uint::U256;
+    use std::ops::Div;
+    use std::str::FromStr;
 
     type InnerUint = U256;
 
@@ -45,39 +45,22 @@ mod tests {
     fn test_cordic_approximation() {
         // square root 0+1
         let test = PreciseNumber::new(0).unwrap();
-        let root = test
-            .sqrt()
-            .unwrap()
-            .to_imprecise()
-            .unwrap();
+        let root = test.sqrt().unwrap().to_imprecise().unwrap();
         assert_eq!(root, 0);
 
         let test = PreciseNumber::new(1).unwrap();
-        let root = test
-            .sqrt()
-            .unwrap()
-            .to_imprecise()
-            .unwrap();
+        let root = test.sqrt().unwrap().to_imprecise().unwrap();
         assert_eq!(root, 1);
 
         // square root
         let test = PreciseNumber::new(9).unwrap();
-        let root = test
-            .sqrt()
-            .unwrap()
-            .to_imprecise()
-            .unwrap();
+        let root = test.sqrt().unwrap().to_imprecise().unwrap();
         assert_eq!(root, 3); // actually 3
 
         let test = PreciseNumber::new(101).unwrap();
-        let root = test
-            .sqrt()
-            .unwrap()
-            .to_imprecise()
-            .unwrap();
+        let root = test.sqrt().unwrap().to_imprecise().unwrap();
         assert_eq!(root, 10); // actually 10.049875
     }
-
 
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
@@ -144,39 +127,46 @@ mod tests {
 
     #[test]
     fn test_bruteforce_precision() {
-
         let number = PreciseNumber::maximum_sqrt_base();
         println!("Testing number: {}", number.to_str_pretty());
 
-        let bd = BigDecimal::from_str(&number.to_str_pretty())
-            .unwrap();
+        let bd = BigDecimal::from_str(&number.to_str_pretty()).unwrap();
         let precise_sqrt = bd.sqrt().unwrap();
 
         let approximate_root_cordic = number.cordic_root_approximation_fast(40).unwrap();
-        println!("Approximate root c: {}", approximate_root_cordic.to_str_pretty());
+        println!(
+            "Approximate root c: {}",
+            approximate_root_cordic.to_str_pretty()
+        );
 
         let approximate_root_newton = number.sqrt_newton().unwrap();
-        println!("Approximate root n: {}", approximate_root_newton.to_str_pretty());
+        println!(
+            "Approximate root n: {}",
+            approximate_root_newton.to_str_pretty()
+        );
 
         println!("Precise sqrt: {}", precise_sqrt);
-        println!("precision_cordic {}", find_max_precision(approximate_root_cordic, number));
-        println!("precision_newton {}", find_max_precision(approximate_root_newton, number));
+        println!(
+            "precision_cordic {}",
+            find_max_precision(approximate_root_cordic, number)
+        );
+        println!(
+            "precision_newton {}",
+            find_max_precision(approximate_root_newton, number)
+        );
 
         // assert_eq!(find_max_precision(approximate_root_cordic, number), 99);
         // 0,00003512833614
         // 0,000035127622 <approx root> 0,00000000123395
 
-
         // approx 18446181123756130304
         // precis 18446744073709551616
         // compar 00000...........
-
     }
 
     fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
         let mut best_precision = 0u32;
         for (precision, eps) in precisions_enumerated() {
-
             let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, precision);
             if radicand.less_than_or_equal(&upper_bound)
                 && radicand.greater_than_or_equal(&lower_bound)
@@ -190,14 +180,19 @@ mod tests {
     }
 
     fn check_square_root(radicand: &PreciseNumber) {
-        let approximate_root = radicand.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
+        let approximate_root = radicand
+            .cordic_root_approximation_fast(PreciseNumber::NUM_BITS)
+            .unwrap();
         let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
         assert!(radicand.less_than_or_equal(&upper_bound));
         assert!(radicand.greater_than_or_equal(&lower_bound));
     }
 
     // this accounts for the absolute error - in contract to relative error
-    fn calc_square_root_bounds(approximate_root: &PreciseNumber, precision: u32) -> (PreciseNumber, PreciseNumber) {
+    fn calc_square_root_bounds(
+        approximate_root: &PreciseNumber,
+        precision: u32,
+    ) -> (PreciseNumber, PreciseNumber) {
         let epsilon = PreciseNumber {
             value: precision_in_inner(precision),
         };
@@ -225,7 +220,7 @@ mod tests {
         let pn_sqrt = pn.sqrt().unwrap();
 
         let fx_one = BigDecimal::from_str("1000000000000").unwrap(); // 1e12
-        // need to convert via string as BigDecimal::from_u128 does not work
+                                                                     // need to convert via string as BigDecimal::from_u128 does not work
         let fx_x = BigDecimal::from_str(&i.to_string())
             .unwrap_or_else(|_| panic!("convert from {}", i))
             / fx_one.clone();
@@ -239,7 +234,6 @@ mod tests {
         let float_sqrt_pn = fx_sqrt_pn.to_f64().unwrap();
         (fx_sqrt_pn - pn_sqrt_as_fixed).abs().to_f64().unwrap() / float_sqrt_pn
     }
-
 
     // BigDecimal will adjust the scale dynamically up to MAX_SCALE=100
     #[test]
@@ -261,7 +255,9 @@ mod tests {
             let radicand = PreciseNumber {
                 value: InnerUint::from(i),
             };
-            let approximate_root = radicand.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
+            let approximate_root = radicand
+                .cordic_root_approximation_fast(PreciseNumber::NUM_BITS)
+                .unwrap();
             let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
             assert!(radicand.less_than_or_equal(&upper_bound));
             assert!(radicand.greater_than_or_equal(&lower_bound));
@@ -332,5 +328,4 @@ mod tests {
         }
         out
     }
-
 }

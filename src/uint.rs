@@ -121,4 +121,3 @@ fn test_u256_checked_shl() {
     assert!(large.checked_shl(5).is_some());
     assert!(large.checked_shl(6).is_none());
 }
-

@@ -3,7 +3,6 @@ use itertools::Itertools;
 use spl_math_evolved::precise_number::PreciseNumber;
 use spl_math_evolved::uint::U256;
 
-
 #[inline(never)]
 fn calc_newton_sqrt_roots(testdata: u128) -> PreciseNumber {
     let a = PreciseNumber::new(10u128 + testdata)
@@ -108,5 +107,10 @@ fn bench_fast_cordic_sqrt(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches_sqrt, bench_fast_newton_sqrt, bench_fast_cordic_sqrt, bench_sqrt_binary_system,);
+criterion_group!(
+    benches_sqrt,
+    bench_fast_newton_sqrt,
+    bench_fast_cordic_sqrt,
+    bench_sqrt_binary_system,
+);
 criterion_main!(benches_sqrt);
