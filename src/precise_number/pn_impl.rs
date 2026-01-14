@@ -763,6 +763,7 @@ macro_rules! define_sqrt_tests {
             fn test_sqrt_precision_tuner_all_types() {
 
 
+                // newton, cordic
                 const TARGET_PRECISION: (u32, u32) = (12, 12);
 
                 // same values as in benchmarks
