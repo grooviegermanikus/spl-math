@@ -41,21 +41,6 @@ mod tests {
     }
 
     #[test]
-    fn test_sqrt_precision_constant() {
-        let pn = PreciseNumber { value: PRECISION };
-        println!("PRECISION128: {}", pn.value.as_u128());
-        println!("PRECISION: {}", pn.to_str_pretty());
-        // PRECISION: 0.0000000000000001
-
-        //
-        let pn = PreciseNumber { value: U256::from(1_000_000u128) };
-        println!("PRECISIONNEW: {}", pn.to_str_pretty());
-        println!("PRECISIONNEW bits: {:?}", pn.value.0);
-
-
-    }
-
-    #[test]
     fn test_u256_maximum_sqrt_base_constant() {
         // TODO
     }
