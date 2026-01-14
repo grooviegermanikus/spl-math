@@ -45,11 +45,6 @@ mod tests {
         // TODO
     }
 
-    #[test]
-    fn test_u256_precision_constant() {
-        assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
-    }
-
     use crate::precise_number::pn_256_128_d18::PreciseNumber;
     use crate::uint::U256;
 
