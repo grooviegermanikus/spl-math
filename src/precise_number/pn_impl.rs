@@ -52,7 +52,7 @@ macro_rules! define_precise_number {
             /// Maximum number iterations to apply on checked_pow_approximation.
             const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
 
-            /// Limit the bitshifts incordic
+            /// Limit the bitshifts in cordic
             const CORDIC_SPEED_FACTOR: u32 = 40; // 12 digits precision (same as neewton)
 
             /// Minimum base (excl) allowed when calculating exponents in checked_pow_fraction
