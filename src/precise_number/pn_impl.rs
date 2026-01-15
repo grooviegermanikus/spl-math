@@ -547,6 +547,9 @@ macro_rules! define_precise_number {
             /// Approximate the square root using Newton's method.  Based on testing,
             /// this provides a precision of 11 digits for inputs between 0 and
             /// u128::MAX
+            ///
+            /// Complexity: O(M(m) * log m) bit-operations, where M(m) is the complexity of multiplying two m-bit integers.
+            /// For large m, Newton with fast multiplication is asymptotically faster than Cordic.
             pub fn sqrt_newton(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
@@ -563,6 +566,9 @@ macro_rules! define_precise_number {
 
             /// Approximate the square root using CORDIC's method.
             /// newton vs cordic: newton is faster on SBF but slower on ARM
+            ///
+            /// Complexity: O(m^2) bit-operations
+            /// For small/medium m, cordic is simple and competitive.
             pub fn sqrt_cordic(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
