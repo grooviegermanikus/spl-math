@@ -431,94 +431,55 @@ macro_rules! define_precise_number {
             }
 
 
+            pub fn build_pow2_table() -> Vec<$FPInner> {
+                use num_traits::{CheckedShl, CheckedShr};
+                let mut table = Vec::new();
+                for i in 0..=(2*$Precise::NUM_BITS) {
+                    let shift = i as i32 - $Precise::NUM_BITS as i32;
+                    let pow2 = if shift < 0 {
+                        //$FP_ONE >> -shift
+                        let Some(out) = $FP_ONE.checked_shr((-shift) as u32) else {
+                            panic!("rshift too large: {}", -shift);
+                        };
+                        out
+                    } else {
+                        //$FP_ONE << shift
+                        $FP_ONE.checked_shl(shift as u32).unwrap_or(<$FPInner>::MAX)
+                    };
+                    table.push(pow2);
+
+                }
+                assert_eq!(table.len(), (2*$Precise::NUM_BITS+1) as usize);
+                table
+            }
+
+            fn cordic_root_approximation_fast(&self, speed_factor: u32) -> Option<Self> {
+                // UFIXME
+                self.cordic_root_approximation_naiv()
+            }
 
             // optimized version
-            fn cordic_root_approximation_fast(
+            pub fn cordic_root_approximation_fasttable(
                 &self, speed_factor: u32,
+                pow2_table: &[$FPInner]
             ) -> Option<Self> {
+                assert_eq!(pow2_table.len(), (2*$Precise::NUM_BITS+1) as usize);
 
-                lazy_static::lazy_static! {
-                    static ref POW2_TABLE: Vec<$FPInner> = {
-                        use num_traits::{CheckedShl, CheckedShr};
-                        let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS+1) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32;
-                            let pow2 = if shift < 0 {
-                                //$FP_ONE >> -shift
-                                let Some(out) = $FP_ONE.checked_shr((-shift) as u32) else {
-                                    continue;
-                                };
-                                out
-                            } else {
-                                //$FP_ONE << shift
-                                let Some(out) = $FP_ONE.checked_shl(shift as u32) else {
-                                    continue;
-                                };
-                                out
-                            };
-                            table.push(pow2);
-
-                        }
-                        table
-                    };
-                    static ref POW2_SQUARE_TABLE: Vec<$FPInner> = {
-                        use num_traits::{CheckedShl, CheckedShr};
-                        let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32;
-
-                            let Some(one_square) = $Precise::FP_ONE.checked_mul($Precise::FP_ONE) else {
-                                panic!("error builing pow2_table");
-                            };
-                            let pow2 = if shift < 0 {
-                                // one_square >> -2*shift
-                                //<$Precise>::shr_inner(one_square, (-2*shift) as u32)
-                                let Some(out) = one_square.checked_shr((-2*shift) as u32) else {
-                                    panic!("error builing pow2_table");
-                                };
-                                out
-                            } else {
-                                // one_square << 2*shift
-                                //<$Precise>::shl_inner(one_square, (2*shift) as u32)
-                                let Some(out) = one_square.checked_shl((2*shift) as u32) else {
-                                    panic!("error builing pow2_table");
-                                };
-                                out
-                            };
-                            table.push(pow2);
-
-                        }
-                        table
-                    };
-                }
+                let one_pow2 = |n: i32| -> $FPInner {
+                    debug_assert!(n <= $Precise::NUM_BITS as i32, "out of range: {}", n);
+                    debug_assert!(n >= -($Precise::NUM_BITS as i32), "out of range: {}", n);
+                    let shift = n + $Precise::NUM_BITS as i32;
+                    return pow2_table[shift as usize];
+                };
 
                 // calc FP_ONE * 2^n
                 // #[inline(always)]
-                fn one_pow2(n: i32) -> $FPInner {
-                    // TODO change to debug_assert!
-                    assert!(n <= $Precise::NUM_BITS as i32, "error in one_pow2");
-                    assert!(n >= -($Precise::NUM_BITS as i32), "error in one_pow2");
-                    let shift = n + $Precise::NUM_BITS as i32;
-                    panic!("one_pow2({}) len={}", n, POW2_TABLE.len());
-                    return POW2_TABLE[shift as usize];
-                }
-
-                // calc FP_ONE^2 * 2^(2n)
-                // #[inline(always)]
-                // TODO unused?
-                // fn one_pow2_squared(n: i32) -> $FPInner {
-                //     // TODO change to debug_assert!
-                //     assert!(n <= $Precise::NUM_BITS as i32, "error2");
-                //     assert!(n >= -($Precise::NUM_BITS as i32), "error3");
+                // fn one_pow2(n: i32) -> $FPInner {
+                //     debug_assert!(n <= $Precise::NUM_BITS as i32, "error in one_pow2");
+                //     debug_assert!(n >= -($Precise::NUM_BITS as i32), "error in one_pow2");
                 //     let shift = n + $Precise::NUM_BITS as i32;
-                //     return POW2_SQUARE_TABLE[shift as usize];
+                //     return pow2_table[shift as usize];
                 // }
-
-                // assert_eq!(one_pow2(0), Self::FP_ONE, "error at one_pow2 a");
-                // assert_eq!(one_pow2(3), Self::FP_ONE * 8, "error at one_pow2 b");
-                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8, "error at one_pow2 c");
-                // assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE, "error at one_pow2_squared a");
-                // assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4, "error at one_pow2_squared b");
 
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
@@ -532,37 +493,29 @@ macro_rules! define_precise_number {
                 // let mut pow2_inner = Self::FP_ONE;
                 // let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
-                // panic!("CHECKPOINT2");
+
                 // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    panic!("CHECK BAR");
                     while x.value <= one_pow2(2*pow2_inner_shift) {
                         // pow2_inner >>= 1;
-                        panic!("CHECKPOINTz pow2_inner_shift={}", pow2_inner_shift);
                         pow2_inner_shift -= 1;
                         // pow2_inner_squared >>= 2;
                         // pow2_inner_squared_shift -= 2;
                     }
-                    panic!("CHECKPOINT pow2_inner_shift={}", pow2_inner_shift);
                     one_pow2(pow2_inner_shift)
                 } else {
                     // panic!("CHECK FOO pow2_inner_shift={}", pow2_inner_shift);
                     let _ = one_pow2(2*pow2_inner_shift);
-                    panic!("CHECK FOO_after");
                     // x >= 1
                     while one_pow2(2*pow2_inner_shift) <= x.value {
                         // pow2_inner <<= 1;
-                         panic!("CHECKPOINTy pow2_inner_shift={}", pow2_inner_shift);
                         pow2_inner_shift += 1;
                         // pow2_inner_squared <<= 2;
                         // pow2_inner_squared_shift += 2;
                     }
                     // pow2_inner >> 1
-                    panic!("CHECKPOINT pow2_inner_shift={}", pow2_inner_shift);
                     one_pow2(pow2_inner_shift - 1)
                 };
-
-                panic!("CHECKPOINT3");
 
                 let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
@@ -705,34 +658,34 @@ macro_rules! define_precise_number {
         }
 
         // mod precomputed_tables {
-        //     use super::$Precise as PN;
-        //
-        //     lazy_static::lazy_static! {
-        //         static ref POW2_TABLE: Vec<$FPInner> = {
-        //             use num_traits::{CheckedShl, CheckedShr};
-        //             let mut table = Vec::new();
-        //             for i in 0..=(2*$Precise::NUM_BITS+1) {
-        //                 let shift = i as i32 - $Precise::NUM_BITS as i32;
-        //                 let pow2 = if shift < 0 {
-        //                     //$FP_ONE >> -shift
-        //                     let Some(out) = PN::FP_ONE.checked_shr((-shift) as u32) else {
-        //                         continue;
-        //                     };
-        //                     out
-        //                 } else {
-        //                     //$FP_ONE << shift
-        //                     let Some(out) = PN::FP_ONE.checked_shl(shift as u32) else {
-        //                         continue;
-        //                     };
-        //                     out
-        //                 };
-        //                 table.push(pow2);
-        //
-        //             }
-        //             table
-        //         };
-        //     }
-        //
+            // use super::$Precise as PN;
+
+            // lazy_static::lazy_static! {
+            //     static ref POW2_TABLE: Vec<$FPInner> = {
+            //         use num_traits::{CheckedShl, CheckedShr};
+            //         let mut table = Vec::new();
+            //         for i in 0..=(2*$Precise::NUM_BITS+1) {
+            //             let shift = i as i32 - $Precise::NUM_BITS as i32;
+            //             let pow2 = if shift < 0 {
+            //                 //$FP_ONE >> -shift
+            //                 let Some(out) = PN::FP_ONE.checked_shr((-shift) as u32) else {
+            //                     continue;
+            //                 };
+            //                 out
+            //             } else {
+            //                 //$FP_ONE << shift
+            //                 let Some(out) = PN::FP_ONE.checked_shl(shift as u32) else {
+            //                     continue;
+            //                 };
+            //                 out
+            //             };
+            //             table.push(pow2);
+            //
+            //         }
+            //         table
+            //     };
+            // }
+
         // } // -- mod precomputed_tables
     };
 } // -- macro

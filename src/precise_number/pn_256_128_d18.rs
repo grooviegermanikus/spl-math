@@ -26,6 +26,7 @@ define_sqrt_tests!(PreciseNumber, u128, U256, U512);
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
     use super::*;
 
     #[test]
@@ -76,6 +77,18 @@ mod tests {
         // 10^-9
         let precision_9 = precision(9);
         assert_eq!(precision_9, InnerUint::from(1000000000));
+    }
+
+    #[test]
+    fn test_build_pow2_table() {
+        let table = PreciseNumber::build_pow2_table();
+
+        let table = table.iter()
+            .map(|x| format!("U256({:?})", x.0))
+            .join(",");
+
+        println!("let pow2_table: Vec<U256> = vec![{}];", table);
+
     }
 
     // adopted from token-bonding-curve -> dfs_precise_number.rs
