@@ -430,141 +430,35 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
-
-
             // optimized version
             fn cordic_root_approximation_fast(
                 &self, speed_factor: u32,
             ) -> Option<Self> {
-
-                lazy_static::lazy_static! {
-                    static ref POW2_TABLE: Vec<$FPInner> = {
-                        use num_traits::{CheckedShl, CheckedShr};
-                        let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS+1) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32;
-                            let pow2 = if shift < 0 {
-                                //$FP_ONE >> -shift
-                                let Some(out) = $FP_ONE.checked_shr((-shift) as u32) else {
-                                    continue;
-                                };
-                                out
-                            } else {
-                                //$FP_ONE << shift
-                                let Some(out) = $FP_ONE.checked_shl(shift as u32) else {
-                                    continue;
-                                };
-                                out
-                            };
-                            table.push(pow2);
-
-                        }
-                        table
-                    };
-                    static ref POW2_SQUARE_TABLE: Vec<$FPInner> = {
-                        use num_traits::{CheckedShl, CheckedShr};
-                        let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32;
-
-                            let Some(one_square) = $Precise::FP_ONE.checked_mul($Precise::FP_ONE) else {
-                                panic!("error builing pow2_table");
-                            };
-                            let pow2 = if shift < 0 {
-                                // one_square >> -2*shift
-                                //<$Precise>::shr_inner(one_square, (-2*shift) as u32)
-                                let Some(out) = one_square.checked_shr((-2*shift) as u32) else {
-                                    panic!("error builing pow2_table");
-                                };
-                                out
-                            } else {
-                                // one_square << 2*shift
-                                //<$Precise>::shl_inner(one_square, (2*shift) as u32)
-                                let Some(out) = one_square.checked_shl((2*shift) as u32) else {
-                                    panic!("error builing pow2_table");
-                                };
-                                out
-                            };
-                            table.push(pow2);
-
-                        }
-                        table
-                    };
-                }
-
-                // calc FP_ONE * 2^n
-                // #[inline(always)]
-                fn one_pow2(n: i32) -> $FPInner {
-                    // TODO change to debug_assert!
-                    assert!(n <= $Precise::NUM_BITS as i32, "error in one_pow2");
-                    assert!(n >= -($Precise::NUM_BITS as i32), "error in one_pow2");
-                    let shift = n + $Precise::NUM_BITS as i32;
-                    panic!("one_pow2({}) len={}", n, POW2_TABLE.len());
-                    return POW2_TABLE[shift as usize];
-                }
-
-                // calc FP_ONE^2 * 2^(2n)
-                // #[inline(always)]
-                // TODO unused?
-                // fn one_pow2_squared(n: i32) -> $FPInner {
-                //     // TODO change to debug_assert!
-                //     assert!(n <= $Precise::NUM_BITS as i32, "error2");
-                //     assert!(n >= -($Precise::NUM_BITS as i32), "error3");
-                //     let shift = n + $Precise::NUM_BITS as i32;
-                //     return POW2_SQUARE_TABLE[shift as usize];
-                // }
-
-                // assert_eq!(one_pow2(0), Self::FP_ONE, "error at one_pow2 a");
-                // assert_eq!(one_pow2(3), Self::FP_ONE * 8, "error at one_pow2 b");
-                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8, "error at one_pow2 c");
-                // assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE, "error at one_pow2_squared a");
-                // assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4, "error at one_pow2_squared b");
-
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
                 }
 
-                // let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
+                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
-                let mut pow2_inner_shift: i32 = 0;
-                // let mut pow2_inner_squared_shift: i32 = 0;
-                // let mut pow2_inner = Self::FP_ONE;
-                // let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
+                let mut pow2_inner = Self::FP_ONE;
+                let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
-                // panic!("CHECKPOINT2");
                 // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    panic!("CHECK BAR");
-                    while x.value <= one_pow2(2*pow2_inner_shift) {
-                        // pow2_inner >>= 1;
-                        panic!("CHECKPOINTz pow2_inner_shift={}", pow2_inner_shift);
-                        pow2_inner_shift -= 1;
-                        // pow2_inner_squared >>= 2;
-                        // pow2_inner_squared_shift -= 2;
+                    while x_shifted <= pow2_inner_squared {
+                        pow2_inner >>= 1;
+                        pow2_inner_squared >>= 2;
                     }
-                    panic!("CHECKPOINT pow2_inner_shift={}", pow2_inner_shift);
-                    one_pow2(pow2_inner_shift)
+                    pow2_inner
                 } else {
-                    // panic!("CHECK FOO pow2_inner_shift={}", pow2_inner_shift);
-                    let _ = one_pow2(2*pow2_inner_shift);
-                    panic!("CHECK FOO_after");
                     // x >= 1
-                    while one_pow2(2*pow2_inner_shift) <= x.value {
-                        // pow2_inner <<= 1;
-                         panic!("CHECKPOINTy pow2_inner_shift={}", pow2_inner_shift);
-                        pow2_inner_shift += 1;
-                        // pow2_inner_squared <<= 2;
-                        // pow2_inner_squared_shift += 2;
+                    while pow2_inner_squared <= x_shifted {
+                        pow2_inner <<= 1;
+                        pow2_inner_squared <<= 2;
                     }
-                    // pow2_inner >> 1
-                    panic!("CHECKPOINT pow2_inner_shift={}", pow2_inner_shift);
-                    one_pow2(pow2_inner_shift - 1)
+                    pow2_inner >> 1
                 };
-
-                panic!("CHECKPOINT3");
-
-                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
                 // FIXME use a better value for max iterations
                 // limit iterations, see https://github.com/Max-Gulda/Cordic-Math/blob/9309c134a220f63ed67358d8fb813c6d4f506ba5/lib/cordicMath/src/cordic-math.c#L443
@@ -573,9 +467,7 @@ macro_rules! define_precise_number {
 
                 // if speed_factor is larger than NUM_BITS, the loop will terminate automatically
                 for _ in 0..speed_factor {
-                   // pow2_inner >>= 1;
-                   pow2_inner_shift -= 1;
-                   let pow2_inner = one_pow2(pow2_inner_shift);
+                   pow2_inner >>= 1;
                     if pow2_inner == Self::FP_ZERO {
                         break;
                     }
@@ -589,6 +481,7 @@ macro_rules! define_precise_number {
                 Some(Self { value: result_inner } )
 
             }
+
 
             // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
             fn cordic_root_approximation_naiv(
