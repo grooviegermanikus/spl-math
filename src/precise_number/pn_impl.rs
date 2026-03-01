@@ -360,7 +360,8 @@ macro_rules! define_precise_number {
                 &self,
                 root: &Self,
                 mut guess: Self,
-                iterations: u32,
+                // safety valve to avoid infinite loops
+                max_iterations: u32,
             ) -> Option<Self> {
                 let zero = Self::zero();
                 if *self == zero || *self == Self::one() {
@@ -373,7 +374,7 @@ macro_rules! define_precise_number {
                 let root_minus_one = root.checked_sub(&one)?;
                 let root_minus_one_whole = root_minus_one.to_imprecise()?;
                 let mut last_guess = guess.clone();
-                for _ in 0..iterations {
+                for _ in 0..max_iterations {
                     // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
                     let first_term = root_minus_one.checked_mul(&guess)?;
                     let power = guess.checked_pow(root_minus_one_whole.try_into().ok()?);
@@ -466,12 +467,12 @@ macro_rules! define_precise_number {
                 // let speed_factor: u32 = Self::NUM_BITS;
 
                 // if speed_factor is larger than NUM_BITS, the loop will terminate automatically
-                for _ in 0..speed_factor {
+                for i in 0.. Self::MAX_APPROXIMATION_ITERATIONS {
+                    println!("cordic iter {}: result_inner = {}", i, result_inner);
                    pow2_inner >>= 1;
-                    if pow2_inner == Self::FP_ZERO {
+                    if pow2_inner < Self::PRECISION {
                         break;
                     }
-                    // we can stop if pow2_inner is zero as further iterations won't change result
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
                         result_inner = next_result_inner;
