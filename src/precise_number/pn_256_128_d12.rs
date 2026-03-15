@@ -2,7 +2,7 @@
 /// backward-compatible with spl-math's PreciseNumber (12 decimal places)
 use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::{U256, U512};
-use crate::{define_muldiv, define_precise_number};
+use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
 
 const ONE_CONST: U256 = U256([1000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000 / 2, 0, 0, 0]);
@@ -21,6 +21,7 @@ define_precise_number!(
     |value| u256_from_f64_bits(value)
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
+define_sqrt_tests!(PreciseNumber, u128, U256, U512, (12, 11));
 
 #[cfg(test)]
 mod tests {
@@ -55,14 +56,14 @@ mod tests {
     }
 
     #[test]
-    fn test_u256_precision_constant() {
-        assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
+    fn test_from_f64() {
+        let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
+        assert_eq!(pn.pretty_string(), "0.000001");
     }
 
     #[test]
-    fn test_from_f64() {
-        let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
-        assert_eq!(pn.to_str_pretty(), "0.000001");
+    fn test_u256_precision_constant() {
+        assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
     }
 
     #[test]

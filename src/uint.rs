@@ -6,7 +6,7 @@
 #![allow(clippy::manual_range_contains)]
 #![allow(missing_docs)]
 
-use num_traits::CheckedShl;
+use num_traits::{CheckedShl, CheckedShr};
 use uint::construct_uint;
 
 construct_uint! {
@@ -77,6 +77,24 @@ impl CheckedShl for U192 {
     }
 }
 
+impl CheckedShr for U256 {
+    fn checked_shr(&self, shift: u32) -> Option<Self> {
+        Some(self >> shift)
+    }
+}
+
+impl CheckedShr for U192 {
+    fn checked_shr(&self, shift: u32) -> Option<Self> {
+        Some(self >> shift)
+    }
+}
+
+impl CheckedShr for U512 {
+    fn checked_shr(&self, shift: u32) -> Option<Self> {
+        Some(self >> shift)
+    }
+}
+
 #[test]
 fn test_u256_to_u512() {
     let u256 = U256::from(1_000_000_000_000u128);
@@ -120,4 +138,25 @@ fn test_u256_checked_shl() {
     let large = one.checked_shl(250).unwrap();
     assert!(large.checked_shl(5).is_some());
     assert!(large.checked_shl(6).is_none());
+}
+
+#[test]
+fn test_u256_checked_shr() {
+    let value = U256::from(4u128);
+    assert!(value.checked_shr(1).is_some());
+    assert_eq!(value.checked_shr(20), Some(U256::zero()));
+}
+
+#[test]
+fn test_u192_checked_shr() {
+    let value = U192::from(4u128);
+    assert!(value.checked_shr(1).is_some());
+    assert_eq!(value.checked_shr(20), Some(U192::zero()));
+}
+
+#[test]
+fn test_u512_checked_shr() {
+    let value = U512::from(4u128);
+    assert!(value.checked_shr(1).is_some());
+    assert_eq!(value.checked_shr(20), Some(U512::zero()));
 }

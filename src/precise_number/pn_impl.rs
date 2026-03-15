@@ -1,5 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
+//! Important: put this makro inside an unique module to avoid name clashes
 
 #[macro_export]
 macro_rules! define_precise_number {
@@ -14,9 +15,9 @@ macro_rules! define_precise_number {
 
         #[allow(dead_code)]
         impl $Precise {
-            const FP_ONE: $FPInner = $FP_ONE;
+            pub(crate) const FP_ONE: $FPInner = $FP_ONE;
             const FP_ONE_F64: f64 = $FP_ONE_F64;
-            const FP_ZERO: $FPInner = $FP_ZERO;
+            pub(crate) const FP_ZERO: $FPInner = $FP_ZERO;
             const CONVERT_FROM_F64: fn(f64) -> Option<$FPInner> = $CONVERT_F64;
 
             /// Correction to apply to avoid truncation errors on division.  Since
@@ -50,14 +51,12 @@ macro_rules! define_precise_number {
             }
 
             /// Maximum number iterations to apply on checked_pow_approximation.
-            const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
-
-            /// Limit the bitshifts in cordic
-            const CORDIC_SPEED_FACTOR: u32 = 40; // 12 digits precision (same as neewton)
+            /// use test_sqrt_precision_tuner to adjust this value
+            pub(crate) const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
 
             /// Minimum base (excl) allowed when calculating exponents in checked_pow_fraction
             /// and checked_pow_approximation.  This simply avoids 0 as a base.
-            fn min_pow_base_excl() -> $FPInner {
+            pub(crate) fn min_pow_base_excl() -> $FPInner {
                 Self::FP_ZERO
             }
 
@@ -66,7 +65,7 @@ macro_rules! define_precise_number {
             /// approximation around 1, which converges for bases between 0 and 2.  See
             /// https://en.wikipedia.org/wiki/Binomial_series#Conditions_for_convergence
             /// for more information.
-            fn max_pow_base() -> $FPInner {
+            pub(crate) fn max_pow_base() -> $FPInner {
                 Self::FP_ONE + Self::FP_ONE
             }
 
@@ -86,9 +85,20 @@ macro_rules! define_precise_number {
             }
 
             /// Checks that two PreciseNumbers are equal within some tolerance
-            pub fn almost_eq(&self, rhs: &Self, precision: $FPInner) -> bool {
+            #[inline(always)]
+            fn almost_eq(&self, rhs: &Self, precision: $FPInner) -> bool {
                 let (difference, _) = self.unsigned_sub(rhs);
                 difference.value <= precision
+            }
+
+            // caution: assumes that rhs is gt lhs
+            fn almost_eq_inner_monotonic(
+                lhs: $FPInner,
+                rhs: $FPInner,
+                precision: $FPInner,
+            ) -> bool {
+                debug_assert!(rhs >= lhs);
+                rhs - lhs <= precision
             }
 
             /// Checks that a number is less than another
@@ -153,19 +163,36 @@ macro_rules! define_precise_number {
                 }
             }
 
-            fn div2(&self) -> Self {
+            /// divide PreciseNumber by inner type
+            pub fn checked_div_inner(&self, rhs: &$FPInner) -> Option<Self> {
+                if *rhs == $FP_ZERO {
+                    return None;
+                }
+
+                self.value
+                    .checked_add(Self::ROUNDING_CORRECTION)?
+                    .checked_div(*rhs)
+                    .map(|value| Self { value })
+            }
+
+            pub(crate) fn div2(&self) -> Self {
                 use std::ops::Shr;
                 let value = self.value.shr(1);
                 Self { value }
             }
 
-            fn mul2(&self) -> Option<Self> {
+            pub(crate) fn div10(&self) -> Self {
+                let value = self.value.checked_div(10u8.into()).unwrap();
+                Self { value }
+            }
+
+            pub(crate) fn mul2(&self) -> Option<Self> {
                 let value = self.value.checked_add(self.value)?;
                 Some(Self { value })
             }
 
             #[inline(always)]
-            fn pow2(value: $FPInner) -> Option<$FPInner> {
+            pub(crate) fn pow2(value: $FPInner) -> Option<$FPInner> {
                 // 33% faster than checked_pow
                 value.checked_mul(value)
             }
@@ -265,7 +292,7 @@ macro_rules! define_precise_number {
             /// where a = 1, n = power, x = precise_num
             /// NOTE: this function is private because its accurate range and precision
             /// have not been estbalished.
-            fn checked_pow_approximation(
+            pub(crate) fn checked_pow_approximation(
                 &self,
                 exponent: &Self,
                 max_iterations: u32,
@@ -336,32 +363,35 @@ macro_rules! define_precise_number {
             /// Adoption of python example in https://en.wikipedia.org/wiki/Newton%27s_method#Code
             /// NOTE: this function is private because its accurate range and precision
             /// have not been established.
-            fn newtonian_root_approximation_generic(
+            fn newtonian_sqrt_approximation_generic(
                 &self,
-                root: &Self,
+                nth_root: &Self,
                 mut guess: Self,
-                iterations: u32,
+                // safety valve to avoid infinite loops
+                max_iterations: u32,
             ) -> Option<Self> {
                 let zero = Self::zero();
                 if *self == zero || *self == Self::one() {
                     return Some(*self);
                 }
-                if *root == zero {
+                if *nth_root == zero {
                     return None;
                 }
                 let one = Self::one();
-                let root_minus_one = root.checked_sub(&one)?;
-                let root_minus_one_whole = root_minus_one.to_imprecise()?;
+                let nth_root_minus_one = nth_root.checked_sub(&one)?;
+                let nth_root_minus_one_whole = nth_root_minus_one.to_imprecise()?;
                 let mut last_guess = guess.clone();
-                for _ in 0..iterations {
+                for _ in 0..max_iterations {
                     // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
-                    let first_term = root_minus_one.checked_mul(&guess)?;
-                    let power = guess.checked_pow(root_minus_one_whole.try_into().ok()?);
+                    let first_term = nth_root_minus_one.checked_mul(&guess)?;
+                    let power = guess.checked_pow(nth_root_minus_one_whole.try_into().ok()?);
                     let second_term = match power {
                         Some(num) => self.checked_div(&num)?,
                         None => Self::zero(),
                     };
-                    guess = first_term.checked_add(&second_term)?.checked_div(root)?;
+                    guess = first_term
+                        .checked_add(&second_term)?
+                        .checked_div(nth_root)?;
                     if last_guess.almost_eq(&guess, Self::PRECISION) {
                         break;
                     } else {
@@ -371,8 +401,8 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
-            // optimized version for root==2
-            fn newtonian_root_approximation_fast(
+            // optimized version for sqrt (n==2)
+            fn newtonian_sqrt_approximation_fast(
                 &self,
                 mut guess: Self,
                 iterations: u32,
@@ -411,128 +441,58 @@ macro_rules! define_precise_number {
             }
 
             // optimized version
-            fn cordic_root_approximation_fast(
-                &self, speed_factor: u32,
-            ) -> Option<Self> {
-                lazy_static::lazy_static! {
-                    static ref POW2_TABLE: Vec<$FPInner> = {
-                        let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS+1) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32;
-                            let pow2 = if shift < 0 {
-                                $FP_ONE >> -shift
-                            } else {
-                                $FP_ONE << shift
-                            };
-                            table.push(pow2);
-
-                        }
-                        table
-                    };
-                    static ref POW2_SQUARE_TABLE: Vec<$FPInner> = {
-                        let mut table = Vec::new();
-                        for i in 0..=(2*$Precise::NUM_BITS) {
-                            let shift = i as i32 - $Precise::NUM_BITS as i32;
-
-                            let one_square = $Precise::FP_ONE.checked_mul($Precise::FP_ONE).unwrap();
-                            let pow2 = if shift < 0 {
-                                one_square >> -2*shift
-                            } else {
-                                one_square << 2*shift
-                            };
-                            table.push(pow2);
-
-                        }
-                        table
-                    };
-                }
-                // calc FP_ONE * 2^n
-                #[inline(always)]
-                fn one_pow2(n: i32) -> $FPInner {
-                    // debug_assert!(n <= $Precise::NUM_BITS as i32);
-                    // debug_assert!(n >= -($Precise::NUM_BITS as i32));
-                    let shift = n + $Precise::NUM_BITS as i32;
-                    return POW2_TABLE[shift as usize];
-                }
-
-                // calc FP_ONE^2 * 2^(2n)
-                #[inline(always)]
-                fn one_pow2_squared(n: i32) -> $FPInner {
-                    // debug_assert!(n <= $Precise::NUM_BITS as i32);
-                    // debug_assert!(n >= -($Precise::NUM_BITS as i32));
-                    let shift = n + $Precise::NUM_BITS as i32;
-                    return POW2_SQUARE_TABLE[shift as usize];
-                }
-
-                // assert_eq!(one_pow2(0), Self::FP_ONE);
-                // assert_eq!(one_pow2(3), Self::FP_ONE * 8);
-                // assert_eq!(one_pow2(-3), Self::FP_ONE / 8);
-                // assert_eq!(one_pow2_squared(0), Self::FP_ONE * Self::FP_ONE);
-                // assert_eq!(one_pow2_squared(1), Self::FP_ONE.checked_mul(Self::FP_ONE).unwrap() * 4);
-
+            fn cordic_sqrt_approximation_fast(&self) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
                 }
 
-                // let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
+                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
 
-                let mut pow2_inner_shift: i32 = 0;
-                // let mut pow2_inner_squared_shift: i32 = 0;
-                // let mut pow2_inner = Self::FP_ONE;
-                // let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
+                let mut pow2_inner = Self::FP_ONE;
+                let mut pow2_inner_squared = Self::pow2(Self::FP_ONE)?;
 
                 // need to use bitshift instead of mul/div because it seems to make difference in performance with SBF
                 let mut result_inner = if x.value < Self::FP_ONE {
-                    while x.value <= one_pow2(2*pow2_inner_shift) {
-                        // pow2_inner >>= 1;
-                        pow2_inner_shift -= 1;
-                        // pow2_inner_squared >>= 2;
-                        // pow2_inner_squared_shift -= 2;
+                    while x_shifted <= pow2_inner_squared {
+                        pow2_inner >>= 1;
+                        pow2_inner_squared >>= 2;
                     }
-                    one_pow2(pow2_inner_shift)
+                    pow2_inner
                 } else {
                     // x >= 1
-                    while one_pow2(2*pow2_inner_shift) <= x.value {
-                        // pow2_inner <<= 1;
-                        pow2_inner_shift += 1;
-                        // pow2_inner_squared <<= 2;
-                        // pow2_inner_squared_shift += 2;
+                    while pow2_inner_squared <= x_shifted {
+                        pow2_inner <<= 1;
+                        pow2_inner_squared <<= 2;
                     }
-                    // pow2_inner >> 1
-                    one_pow2(pow2_inner_shift - 1)
+                    pow2_inner >> 1
                 };
 
-                let x_shifted = x.value.checked_mul(Self::FP_ONE)?;
-
-                // FIXME use a better value for max iterations
-                // limit iterations, see https://github.com/Max-Gulda/Cordic-Math/blob/9309c134a220f63ed67358d8fb813c6d4f506ba5/lib/cordicMath/src/cordic-math.c#L443
-                // const CORDIC_SPEED_FACTOR: u32 = 15;
-                // let speed_factor: u32 = Self::NUM_BITS;
-
-                // if speed_factor is larger than NUM_BITS, the loop will terminate automatically
-                for _ in 0..speed_factor {
-                   // pow2_inner >>= 1;
-                   pow2_inner_shift -= 1;
-                   let pow2_inner = one_pow2(pow2_inner_shift);
-                    if pow2_inner == Self::FP_ZERO {
-                        break;
-                    }
-                    // we can stop if pow2_inner is zero as further iterations won't change result
+                for _i in 0..Self::MAX_APPROXIMATION_ITERATIONS {
+                    // println!("cordic iter {}: result_inner = {}", i, result_inner);
+                    pow2_inner >>= 1;
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
-                        result_inner = next_result_inner;
+                        if Self::almost_eq_inner_monotonic(
+                            result_inner,
+                            next_result_inner,
+                            Self::PRECISION,
+                        ) {
+                            result_inner = next_result_inner;
+                            break;
+                        } else {
+                            result_inner = next_result_inner;
+                        }
                     }
                 }
 
-                Some(Self { value: result_inner } )
-
+                Some(Self {
+                    value: result_inner,
+                })
             }
 
             // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
-            fn cordic_root_approximation_naiv(
-                &self
-            ) -> Option<Self> {
+            fn cordic_sqrt_approximation_naiv(&self) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
@@ -556,28 +516,32 @@ macro_rules! define_precise_number {
                     result = pow2.div2();
                 }
 
-
-                for _ in 0..Self::NUM_BITS {
+                // oroginal algo used NUM_BITS
+                for _ in 0..Self::MAX_APPROXIMATION_ITERATIONS {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
                     if next_result.checked_pow(2)?.value <= x.value {
-                        result = next_result;
+                        if result.almost_eq(&next_result, Self::PRECISION) {
+                            result = next_result;
+                            break;
+                        } else {
+                            result = next_result;
+                        }
                     }
                 }
 
                 Some(result)
             }
 
-
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon 11 digits
-            fn minimum_sqrt_base() -> Self {
+            pub(crate) fn minimum_sqrt_base() -> Self {
                 Self::zero()
             }
 
             /// Based on testing around the limits, this base is the smallest value that
             /// provides an epsilon of 11 digits
-            fn maximum_sqrt_base() -> Self {
+            pub(crate) fn maximum_sqrt_base() -> Self {
                 Self {
                     value: Self::MAXIMUM_SQRT_BASE,
                 }
@@ -587,12 +551,15 @@ macro_rules! define_precise_number {
             ///
             /// For specific needs use sqrt_newton or sqrt_cordic directly.
             pub fn sqrt(&self) -> Option<Self> {
-                self.sqrt_cordic()
+                self.sqrt_newton()
             }
 
             /// Approximate the square root using Newton's method.  Based on testing,
             /// this provides a precision of 11 digits for inputs between 0 and
             /// u128::MAX
+            ///
+            /// Complexity: O(M(m) * log m) bit-operations, where M(m) is the complexity of multiplying two m-bit integers.
+            /// For large m, Newton with fast multiplication is asymptotically faster than Cordic.
             pub fn sqrt_newton(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
@@ -604,18 +571,21 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.div2();
-                self.newtonian_root_approximation_fast(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                self.newtonian_sqrt_approximation_fast(guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
 
             /// Approximate the square root using CORDIC's method.
             /// newton vs cordic: newton is faster on SBF but slower on ARM
+            ///
+            /// Complexity: O(m^2) bit-operations
+            /// For small/medium m, cordic is simple and competitive.
             pub fn sqrt_cordic(&self) -> Option<Self> {
                 if self.less_than(&Self::minimum_sqrt_base())
                     || self.greater_than(&Self::maximum_sqrt_base())
                 {
                     return None;
                 }
-                self.cordic_root_approximation_fast(Self::CORDIC_SPEED_FACTOR)
+                self.cordic_sqrt_approximation_fast()
             }
 
             #[cfg(feature = "from_f64")]
@@ -631,17 +601,15 @@ macro_rules! define_precise_number {
 
             #[cfg(test)]
             // very hacky and slow implementation for testing purposes only
-            pub fn to_str_pretty(&self) -> String {
+            pub fn pretty_string(&self) -> String {
                 use bigdecimal_rs::BigDecimal;
-                use std::str::FromStr;
                 use std::ops::Div;
+                use std::str::FromStr;
                 let bd = BigDecimal::from_str(&format!("{}", self.value))
-                .unwrap()
-                .div(BigDecimal::from_str(&format!("{}", Self::FP_ONE)).unwrap());
+                    .unwrap()
+                    .div(BigDecimal::from_str(&format!("{}", Self::FP_ONE)).unwrap());
                 format!("{}", bd)
             }
-
-
         }
     };
 } // -- macro
@@ -720,6 +688,136 @@ macro_rules! define_muldiv {
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! define_sqrt_tests {
+    // Struct, u128, U256, U512, (newton_precision, cordic_precision)
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty, $target_precision:expr) => {
+        #[cfg(test)]
+        mod sqrt_tests {
+            use super::$Precise;
+            use super::*;
+
+            // makes sure that both sqrt methods have similar precision
+            // see MAX_APPROXIMATION_ITERATIONS for details
+            #[test]
+            fn test_sqrt_precision_tuner() {
+                // (min_newton, min_cordic)
+                const TARGET_PRECISION: (u32, u32) = $target_precision;
+
+                let p1 = compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base());
+                assert!(
+                    p1.0 >= TARGET_PRECISION.0 && p1.1 >= TARGET_PRECISION.1,
+                    "precision at maximum_sqrt_base: {:?} < {:?}",
+                    p1,
+                    TARGET_PRECISION
+                );
+
+                let p2 = compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base().div2());
+                assert!(
+                    p2.0 >= TARGET_PRECISION.0 && p2.1 >= TARGET_PRECISION.1,
+                    "precision at maximum_sqrt_base/2: {:?} < {:?}",
+                    p2,
+                    TARGET_PRECISION
+                );
+
+                let p3 = compare_newton_vs_cordic_precision(
+                    (<$Precise>::one()
+                        .checked_add(&<$Precise>::one())
+                        .unwrap()
+                        .checked_add(&<$Precise>::one())
+                        .unwrap())
+                    .div2(),
+                );
+                assert!(
+                    p3.0 >= TARGET_PRECISION.0 && p3.1 >= TARGET_PRECISION.1,
+                    "precision at 1.5: {:?} < {:?}",
+                    p3,
+                    TARGET_PRECISION
+                );
+            }
+
+            fn find_max_precision(approximate_root: $Precise, radicand: $Precise) -> u32 {
+                let mut best_precision = 0u32;
+                for (precision, _eps) in precisions_enumerated() {
+                    let (lower_bound, upper_bound) =
+                        calc_square_root_bounds(&approximate_root, precision);
+                    if radicand.less_than_or_equal(&upper_bound)
+                        && radicand.greater_than_or_equal(&lower_bound)
+                    {
+                        best_precision = precision;
+                    } else {
+                        break;
+                    }
+                }
+                best_precision
+            }
+
+            fn precisions_enumerated() -> Vec<(u32, $FPInner)> {
+                let mut out = Vec::new();
+                let mut cur = $Precise::one();
+                let zero = <$Precise>::zero();
+                for precision in 0..1000 {
+                    out.push((precision, cur.value));
+                    cur = cur.div10();
+                    if cur == zero {
+                        break;
+                    }
+                }
+                out
+            }
+
+            fn compare_newton_vs_cordic_precision(radicand: $Precise) -> (u32, u32) {
+                let precision_newton =
+                    find_max_precision(radicand.sqrt_newton().unwrap(), radicand);
+                let precision_cordic =
+                    find_max_precision(radicand.sqrt_cordic().unwrap(), radicand);
+
+                (precision_newton, precision_cordic)
+            }
+
+            // this accounts for the absolute error - in contract to relative error
+            fn calc_square_root_bounds(
+                approximate_root: &$Precise,
+                precision: u32,
+            ) -> ($Precise, $Precise) {
+                let epsilon = $Precise {
+                    value: precision_in_inner(precision),
+                };
+                let one = <$Precise>::one();
+                let one_plus_epsilon = one.checked_add(&epsilon).unwrap();
+                let one_minus_epsilon = one.checked_sub(&epsilon).unwrap();
+                let lower_bound = approximate_root
+                    .checked_mul(&one_minus_epsilon)
+                    .unwrap()
+                    .checked_pow(2)
+                    .unwrap();
+                let upper_bound = approximate_root
+                    .checked_mul(&one_plus_epsilon)
+                    .unwrap()
+                    .checked_pow(2)
+                    .unwrap();
+                (lower_bound, upper_bound)
+            }
+
+            // returns 10**(-digits) in InnerUint
+            // for testing only, neither fast not beautiful
+            fn precision_in_inner(digits: u32) -> $FPInner {
+                let mut result = ONE_CONST;
+                let ten = <$FPInner>::from(10u8);
+                for _ in 0..digits {
+                    result = result.checked_div(ten).unwrap();
+                }
+                assert!(
+                    result != <$Precise>::FP_ZERO,
+                    "precision underflow, digits={}",
+                    digits
+                );
+                result
             }
         }
     };
