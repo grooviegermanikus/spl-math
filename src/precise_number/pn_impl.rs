@@ -516,7 +516,12 @@ macro_rules! define_precise_number {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
                     if next_result.checked_pow(2)?.value <= x.value {
-                        result = next_result;
+                        let last_guess = result;
+                        if result.almost_eq(&next_result, Self::PRECISION) {
+                            break;
+                        } else {
+                            result = next_result;
+                        }
                     }
                 }
 
