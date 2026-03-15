@@ -546,7 +546,7 @@ macro_rules! define_precise_number {
             ///
             /// For specific needs use sqrt_newton or sqrt_cordic directly.
             pub fn sqrt(&self) -> Option<Self> {
-                self.sqrt_cordic()
+                self.sqrt_newton()
             }
 
             /// Approximate the square root using Newton's method.  Based on testing,
