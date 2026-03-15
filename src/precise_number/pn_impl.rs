@@ -55,10 +55,6 @@ macro_rules! define_precise_number {
             /// use test_sqrt_precision_tuner to adjust this value
             pub(crate) const MAX_APPROXIMATION_ITERATIONS: u32 = 100;
 
-            /// Limit the bitshifts in cordic
-            /// use test_sqrt_precision_tuner to adjust this value
-            const CORDIC_SPEED_FACTOR: u32 = 41; // 12 digits precision (same as newton)
-
             /// Minimum base (excl) allowed when calculating exponents in checked_pow_fraction
             /// and checked_pow_approximation.  This simply avoids 0 as a base.
             pub(crate) fn min_pow_base_excl() -> $FPInner {
@@ -433,7 +429,7 @@ macro_rules! define_precise_number {
 
             // optimized version
             fn cordic_root_approximation_fast(
-                &self, speed_factor: u32,
+                &self,
             ) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
@@ -461,13 +457,7 @@ macro_rules! define_precise_number {
                     pow2_inner >> 1
                 };
 
-                // FIXME use a better value for max iterations
-                // limit iterations, see https://github.com/Max-Gulda/Cordic-Math/blob/9309c134a220f63ed67358d8fb813c6d4f506ba5/lib/cordicMath/src/cordic-math.c#L443
-                // const CORDIC_SPEED_FACTOR: u32 = 15;
-                // let speed_factor: u32 = Self::NUM_BITS;
-
-                // if speed_factor is larger than NUM_BITS, the loop will terminate automatically
-                for i in 0.. Self::MAX_APPROXIMATION_ITERATIONS {
+                for _i in 0.. Self::MAX_APPROXIMATION_ITERATIONS {
                     // println!("cordic iter {}: result_inner = {}", i, result_inner);
                    pow2_inner >>= 1;
                     if pow2_inner < Self::PRECISION {
@@ -576,7 +566,7 @@ macro_rules! define_precise_number {
                 {
                     return None;
                 }
-                self.cordic_root_approximation_fast(Self::CORDIC_SPEED_FACTOR)
+                self.cordic_root_approximation_fast()
             }
 
             #[cfg(feature = "from_f64")]
@@ -729,7 +719,7 @@ macro_rules! define_sqrt_tests {
 
 
             // makes sure that both sqrt methods have similar precision
-            // see MAX_APPROXIMATION_ITERATIONS and CORDIC_SPEED_FACTOR for details
+            // see MAX_APPROXIMATION_ITERATIONS for details
             #[test]
             fn test_sqrt_precision_tuner() {
 
