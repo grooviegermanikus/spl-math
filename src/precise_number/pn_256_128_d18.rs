@@ -2,13 +2,12 @@ use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::{U256, U512};
 /// Decimal fix-point number with 18 decimal places backed by U256
 /// 18 decimal places are recommended for most DeFi applications
-use crate::{define_muldiv, define_precise_number};
+use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
 
 const ONE_CONST: U256 = U256([1000000000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000000000 / 2, 0, 0, 0]);
-const PRECISION: U256 = U256([100, 0, 0, 0]); // TODO
-                                              // TODO
-const MAXIMUM_SQRT_BASE: U256 = U256([18446743073709551616, 18446744073709551615, 999999999999, 0]);
+const PRECISION: U256 = U256([10000000, 0, 0, 0]); // shoot for 11 digits
+const MAXIMUM_SQRT_BASE: U256 = U256([18446743073709551616, 18446744073709551615, 999999999999, 0]); // u128::MAX
 define_precise_number!(
     PreciseNumber,
     u128,
@@ -22,6 +21,7 @@ define_precise_number!(
     |value| u256_from_f64_bits(value)
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
+define_sqrt_tests!(PreciseNumber, u128, U256, U512, (18, 13));
 
 #[cfg(test)]
 mod tests {
@@ -40,13 +40,13 @@ mod tests {
     }
 
     #[test]
-    fn test_u256_maximum_sqrt_base_constant() {
-        // TODO
+    fn test_precision_constant() {
+        assert_eq!(format!("{}", PRECISION), "10000000");
     }
 
     #[test]
-    fn test_u256_precision_constant() {
-        assert_eq!(PRECISION, U256::from(100u128)); // 1e-10
+    fn test_u256_maximum_sqrt_base_constant() {
+        // TODO
     }
 
     use crate::precise_number::pn_256_128_d18::PreciseNumber;
@@ -69,10 +69,10 @@ mod tests {
     #[test]
     fn test_from_f64() {
         let pn_from_inner = PreciseNumber::new_from_inner_f64(1e17).unwrap();
-        assert_eq!(pn_from_inner.to_str_pretty(), "0.1");
+        assert_eq!(pn_from_inner.pretty_string(), "0.1");
 
         let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
-        assert_eq!(pn.to_str_pretty(), "0.000001");
+        assert_eq!(pn.pretty_string(), "0.000001");
     }
 
     #[test]
@@ -97,9 +97,7 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
-        let cordic_sqrt = number
-            .cordic_root_approximation_fast(PreciseNumber::NUM_BITS)
-            .unwrap();
+        let cordic_sqrt = number.cordic_sqrt_approximation_fast().unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
@@ -120,10 +118,7 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
-        // TODO replace speed_factor with something better
-        let cordic_sqrt = number
-            .cordic_root_approximation_fast(PreciseNumber::NUM_BITS)
-            .unwrap();
+        let cordic_sqrt = number.cordic_sqrt_approximation_fast().unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
