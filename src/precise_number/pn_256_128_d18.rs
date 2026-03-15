@@ -21,7 +21,7 @@ define_precise_number!(
     |value| u256_from_f64_bits(value)
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
-define_sqrt_tests!(PreciseNumber, u128, U256, U512);
+define_sqrt_tests!(PreciseNumber, u128, U256, U512, (11, 11));
 
 #[cfg(test)]
 mod tests {
