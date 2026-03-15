@@ -91,6 +91,14 @@ macro_rules! define_precise_number {
                 difference.value <= precision
             }
 
+            pub fn almost_eq_inner(lhs: $FPInner, rhs: $FPInner, precision: $FPInner) -> bool {
+                if lhs > rhs {
+                    return lhs - rhs <= precision;
+                } else {
+                    return rhs - lhs <= precision;
+                }
+            }
+
             /// Checks that a number is less than another
             pub fn less_than(&self, rhs: &Self) -> bool {
                 self.value < rhs.value
@@ -460,12 +468,13 @@ macro_rules! define_precise_number {
                 for _i in 0.. Self::MAX_APPROXIMATION_ITERATIONS {
                     // println!("cordic iter {}: result_inner = {}", i, result_inner);
                    pow2_inner >>= 1;
-                    if pow2_inner < Self::PRECISION {
-                        break;
-                    }
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
+                        let last_guess = result_inner;
                         result_inner = next_result_inner;
+                        if Self::almost_eq_inner(last_guess, result_inner, Self::PRECISION) {
+                            break;
+                        }
                     }
                 }
 
