@@ -709,8 +709,8 @@ macro_rules! define_muldiv {
 
 #[macro_export]
 macro_rules! define_sqrt_tests {
-    // Struct, u128, U256, U512
-    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty) => {
+    // Struct, u128, U256, U512, (newton_precision, cordic_precision)
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $FPInnerDoublePrecision:ty, $target_precision:expr) => {
 
         #[cfg(test)]
         mod sqrt_tests {
@@ -724,7 +724,7 @@ macro_rules! define_sqrt_tests {
             fn test_sqrt_precision_tuner() {
 
                 // newton, cordic
-                const TARGET_PRECISION: (u32, u32) = (11, 11);
+                const TARGET_PRECISION: (u32, u32) = $target_precision;
 
                 assert_eq!(
                     compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base()),
