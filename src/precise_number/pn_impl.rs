@@ -470,8 +470,8 @@ macro_rules! define_precise_number {
                    pow2_inner >>= 1;
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
-                        let last_guess = result_inner;
-                        if Self::almost_eq_inner(last_guess, result_inner, Self::PRECISION) {
+                        if Self::almost_eq_inner(result_inner, next_result_inner, Self::PRECISION) {
+                            result_inner = next_result_inner;
                             break;
                         } else {
                             result_inner = next_result_inner;
@@ -516,8 +516,8 @@ macro_rules! define_precise_number {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
                     if next_result.checked_pow(2)?.value <= x.value {
-                        let last_guess = result;
                         if result.almost_eq(&next_result, Self::PRECISION) {
+                            result = next_result;
                             break;
                         } else {
                             result = next_result;
