@@ -511,8 +511,8 @@ macro_rules! define_precise_number {
                     result = pow2.div2();
                 }
 
-
-                for _ in 0..Self::NUM_BITS {
+                // oroginal algo used NUM_BITS
+                for _ in 0..Self::MAX_APPROXIMATION_ITERATIONS {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
                     if next_result.checked_pow(2)?.value <= x.value {
