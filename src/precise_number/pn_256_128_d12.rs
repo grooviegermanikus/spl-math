@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn test_from_f64() {
         let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
-        assert_eq!(pn.to_str_pretty(), "0.000001");
+        assert_eq!(pn.pretty_string(), "0.000001");
     }
 
     #[test]
