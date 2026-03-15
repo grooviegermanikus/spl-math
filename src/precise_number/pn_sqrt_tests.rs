@@ -164,8 +164,6 @@ mod tests {
         // compar 00000...........
     }
 
-
-
     fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
         let mut best_precision = 0u32;
         for (precision, _eps) in precisions_enumerated() {
@@ -182,9 +180,7 @@ mod tests {
     }
 
     fn check_square_root(radicand: &PreciseNumber) {
-        let approximate_root = radicand
-            .cordic_sqrt_approximation_fast()
-            .unwrap();
+        let approximate_root = radicand.cordic_sqrt_approximation_fast().unwrap();
         let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
         assert!(radicand.less_than_or_equal(&upper_bound));
         assert!(radicand.greater_than_or_equal(&lower_bound));
@@ -257,9 +253,7 @@ mod tests {
             let radicand = PreciseNumber {
                 value: InnerUint::from(i),
             };
-            let approximate_root = radicand
-                .cordic_sqrt_approximation_fast()
-                .unwrap();
+            let approximate_root = radicand.cordic_sqrt_approximation_fast().unwrap();
             let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 10);
             assert!(radicand.less_than_or_equal(&upper_bound));
             assert!(radicand.greater_than_or_equal(&lower_bound));
@@ -331,5 +325,3 @@ mod tests {
         out
     }
 }
-
-

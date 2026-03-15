@@ -147,14 +147,12 @@ fn test_u256_checked_shr() {
     assert_eq!(value.checked_shr(20), Some(U256::zero()));
 }
 
-
 #[test]
 fn test_u192_checked_shr() {
     let value = U192::from(4u128);
     assert!(value.checked_shr(1).is_some());
     assert_eq!(value.checked_shr(20), Some(U192::zero()));
 }
-
 
 #[test]
 fn test_u512_checked_shr() {
