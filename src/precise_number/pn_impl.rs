@@ -471,9 +471,10 @@ macro_rules! define_precise_number {
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
                         let last_guess = result_inner;
-                        result_inner = next_result_inner;
                         if Self::almost_eq_inner(last_guess, result_inner, Self::PRECISION) {
                             break;
+                        } else {
+                            result_inner = next_result_inner;
                         }
                     }
                 }
