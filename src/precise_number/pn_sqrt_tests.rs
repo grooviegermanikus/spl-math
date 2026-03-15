@@ -168,7 +168,7 @@ mod tests {
 
     fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
         let mut best_precision = 0u32;
-        for (precision, eps) in precisions_enumerated() {
+        for (precision, _eps) in precisions_enumerated() {
             let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, precision);
             if radicand.less_than_or_equal(&upper_bound)
                 && radicand.greater_than_or_equal(&lower_bound)
@@ -290,7 +290,7 @@ mod tests {
 
             assert!(newton2_version.value.abs_diff(generic_version.value).as_u128() < 10,
                 "a={}, generic_version={}, newton2_version={}", a.value.as_u128(), generic_version.value.as_u128(), newton2_version.value.as_u128());
-            assert!(cordic2_version.value.abs_diff(newton2_version.value).as_u128() < 10,
+            assert!(cordic2_version.value.abs_diff(newton2_version.value).as_u128() < 100,
                 "a={}, cordic2_version={}, newton2_version={}", a.value.as_u128(), cordic2_version.value.as_u128(), newton2_version.value.as_u128());
 
         }

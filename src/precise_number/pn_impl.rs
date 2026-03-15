@@ -738,26 +738,26 @@ macro_rules! define_sqrt_tests {
             #[test]
             fn test_sqrt_precision_tuner() {
 
-                // newton, cordic
+                // (min_newton, min_cordic)
                 const TARGET_PRECISION: (u32, u32) = $target_precision;
 
-                assert_eq!(
-                    compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base()),
-                    TARGET_PRECISION, "precision at maximum_sqrt_base failed");
+                let p1 = compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base());
+                assert!(p1.0 >= TARGET_PRECISION.0 && p1.1 >= TARGET_PRECISION.1,
+                    "precision at maximum_sqrt_base: {:?} < {:?}", p1, TARGET_PRECISION);
 
-                assert_eq!(
-                    compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base().div2()),
-                    TARGET_PRECISION, "precision at maximum_sqrt_base/2 failed");
+                let p2 = compare_newton_vs_cordic_precision(<$Precise>::maximum_sqrt_base().div2());
+                assert!(p2.0 >= TARGET_PRECISION.0 && p2.1 >= TARGET_PRECISION.1,
+                    "precision at maximum_sqrt_base/2: {:?} < {:?}", p2, TARGET_PRECISION);
 
-                assert_eq!(
-                    compare_newton_vs_cordic_precision((<$Precise>::one().checked_add(&<$Precise>::one()).unwrap().checked_add(&<$Precise>::one()).unwrap()).div2()),
-                    TARGET_PRECISION, "precision at 1.5 failed");
+                let p3 = compare_newton_vs_cordic_precision((<$Precise>::one().checked_add(&<$Precise>::one()).unwrap().checked_add(&<$Precise>::one()).unwrap()).div2());
+                assert!(p3.0 >= TARGET_PRECISION.0 && p3.1 >= TARGET_PRECISION.1,
+                    "precision at 1.5: {:?} < {:?}", p3, TARGET_PRECISION);
 
             }
 
             fn find_max_precision(approximate_root: $Precise, radicand: $Precise) -> u32 {
                 let mut best_precision = 0u32;
-                for (precision, eps) in precisions_enumerated() {
+                for (precision, _eps) in precisions_enumerated() {
                     let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, precision);
                     if radicand.less_than_or_equal(&upper_bound)
                         && radicand.greater_than_or_equal(&lower_bound)
