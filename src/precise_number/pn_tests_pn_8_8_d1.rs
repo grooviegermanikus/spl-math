@@ -1,21 +1,20 @@
 #[cfg(test)]
 mod tests_pn_256_128_d12 {
-    use num_traits::ToPrimitive;
     use crate::define_precise_number;
+    use num_traits::ToPrimitive;
 
     define_precise_number!(
-            TestPreciseNumber8,
-            u8,
-            u8,
-            10u8,
-            1e1f64,
-            0u8,
-            5u8,
-            1u8,
-            10u8,
-            |value| value.to_u8()
-        );
-
+        TestPreciseNumber8,
+        u8,
+        u8,
+        10u8,
+        1e1f64,
+        0u8,
+        5u8,
+        1u8,
+        10u8,
+        |value| value.to_u8()
+    );
 
     #[test]
     fn test_to_imprecise_rounding() {
@@ -35,7 +34,6 @@ mod tests_pn_256_128_d12 {
         assert_eq!(calc(4, 3), 1);
     }
 
-
     #[test]
     fn test_ceiling_all() {
         for value in 0..=246 {
@@ -52,5 +50,4 @@ mod tests_pn_256_128_d12 {
             assert!(a.ceiling().is_none(), "will overflow");
         }
     }
-    
 }

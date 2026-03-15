@@ -97,9 +97,7 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
-        let cordic_sqrt = number
-            .cordic_sqrt_approximation_fast()
-            .unwrap();
+        let cordic_sqrt = number.cordic_sqrt_approximation_fast().unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals
@@ -120,9 +118,7 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
-        let cordic_sqrt = number
-            .cordic_sqrt_approximation_fast()
-            .unwrap();
+        let cordic_sqrt = number.cordic_sqrt_approximation_fast().unwrap();
         assert!(
             cordic_sqrt
                 // precise to first 9 decimals

@@ -4,7 +4,6 @@ mod tests_pn_256_128_d12 {
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
 
-
     type InnerUint = U256;
 
     const ONE_CONST: U256 = U256([1000000000000, 0, 0, 0]);
@@ -25,7 +24,6 @@ mod tests_pn_256_128_d12 {
         MAXIMUM_SQRT_BASE,
         |value| u256_from_f64_bits(value)
     );
-
 
     fn check_pow_approximation(base: InnerUint, exponent: InnerUint, expected: InnerUint) {
         let precision = InnerUint::from(5_000_000); // correct to at least 3 decimal places

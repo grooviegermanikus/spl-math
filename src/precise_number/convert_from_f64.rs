@@ -91,9 +91,9 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
 mod tests_f64 {
     use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
+    use crate::uint::U256;
     use num_traits::ToPrimitive;
     use proptest::proptest;
-    use crate::uint::U256;
 
     define_precise_number!(
         TestPreciseNumber8,
