@@ -21,7 +21,7 @@ define_precise_number!(
     |value| u256_from_f64_bits(value)
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
-define_sqrt_tests!(PreciseNumber, u128, U256, U512, (11, 11));
+define_sqrt_tests!(PreciseNumber, u128, U256, U512, (18, 13));
 
 #[cfg(test)]
 mod tests {
@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn test_precision_constant() {
-        assert_eq!(format!("{}", PRECISION), "100");
+        assert_eq!(format!("{}", PRECISION), "10000000");
     }
 
     #[test]
