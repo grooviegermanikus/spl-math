@@ -133,7 +133,7 @@ mod tests {
         let bd = BigDecimal::from_str(&number.to_str_pretty()).unwrap();
         let precise_sqrt = bd.sqrt().unwrap();
 
-        let approximate_root_cordic = number.cordic_root_approximation_fast(40).unwrap();
+        let approximate_root_cordic = number.cordic_root_approximation_fast().unwrap();
         println!(
             "Approximate root c: {}",
             approximate_root_cordic.to_str_pretty()
@@ -183,7 +183,7 @@ mod tests {
 
     fn check_square_root(radicand: &PreciseNumber) {
         let approximate_root = radicand
-            .cordic_root_approximation_fast(PreciseNumber::NUM_BITS)
+            .cordic_root_approximation_fast()
             .unwrap();
         let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
         assert!(radicand.less_than_or_equal(&upper_bound));
@@ -258,7 +258,7 @@ mod tests {
                 value: InnerUint::from(i),
             };
             let approximate_root = radicand
-                .cordic_root_approximation_fast(PreciseNumber::NUM_BITS)
+                .cordic_root_approximation_fast()
                 .unwrap();
             let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
             assert!(radicand.less_than_or_equal(&upper_bound));
@@ -286,7 +286,7 @@ mod tests {
             let guess = a.checked_add(&PreciseNumber::one()).unwrap().checked_div(&two).unwrap();
             let generic_version = a.newtonian_root_approximation_generic(&two, guess, 100).unwrap();
             let newton2_version = a.newtonian_root_approximation_fast(guess, 100).unwrap();
-            let cordic2_version = a.cordic_root_approximation_fast(PreciseNumber::NUM_BITS).unwrap();
+            let cordic2_version = a.cordic_root_approximation_fast().unwrap();
 
             assert!(newton2_version.value.abs_diff(generic_version.value).as_u128() < 10,
                 "a={}, generic_version={}, newton2_version={}", a.value.as_u128(), generic_version.value.as_u128(), newton2_version.value.as_u128());
@@ -298,7 +298,7 @@ mod tests {
         #[test]
         fn test_cordic_optimized_vs_naive(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
-            let cordic_version = a.cordic_root_approximation_fast(PreciseNumber::NUM_BITS);
+            let cordic_version = a.cordic_root_approximation_fast();
             let cordic_naiv_version = a.cordic_root_approximation_naiv();
 
             assert_eq!(cordic_version, cordic_naiv_version);
