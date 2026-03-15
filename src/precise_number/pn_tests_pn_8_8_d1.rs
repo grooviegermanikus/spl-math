@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests_pn_256_128_d12 {
+mod tests_pn_8_8_d1 {
     use crate::define_precise_number;
     use num_traits::ToPrimitive;
 
