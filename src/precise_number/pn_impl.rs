@@ -86,17 +86,16 @@ macro_rules! define_precise_number {
             }
 
             /// Checks that two PreciseNumbers are equal within some tolerance
-            pub fn almost_eq(&self, rhs: &Self, precision: $FPInner) -> bool {
+            #[inline(always)]
+            fn almost_eq(&self, rhs: &Self, precision: $FPInner) -> bool {
                 let (difference, _) = self.unsigned_sub(rhs);
                 difference.value <= precision
             }
 
-            pub fn almost_eq_inner(lhs: $FPInner, rhs: $FPInner, precision: $FPInner) -> bool {
-                if lhs > rhs {
-                    return lhs - rhs <= precision;
-                } else {
-                    return rhs - lhs <= precision;
-                }
+            // caution: assumes that rhs is gt lhs
+            fn almost_eq_inner_monotonic(lhs: $FPInner, rhs: $FPInner, precision: $FPInner) -> bool {
+                debug_assert!(rhs >= lhs);
+                rhs - lhs <= precision
             }
 
             /// Checks that a number is less than another
@@ -470,7 +469,7 @@ macro_rules! define_precise_number {
                    pow2_inner >>= 1;
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
-                        if Self::almost_eq_inner(result_inner, next_result_inner, Self::PRECISION) {
+                        if Self::almost_eq_inner_monotonic(result_inner, next_result_inner, Self::PRECISION) {
                             result_inner = next_result_inner;
                             break;
                         } else {
