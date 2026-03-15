@@ -360,9 +360,9 @@ macro_rules! define_precise_number {
             /// Adoption of python example in https://en.wikipedia.org/wiki/Newton%27s_method#Code
             /// NOTE: this function is private because its accurate range and precision
             /// have not been established.
-            fn newtonian_root_approximation_generic(
+            fn newtonian_sqrt_approximation_generic(
                 &self,
-                root: &Self,
+                nth_root: &Self,
                 mut guess: Self,
                 // safety valve to avoid infinite loops
                 max_iterations: u32,
@@ -371,22 +371,22 @@ macro_rules! define_precise_number {
                 if *self == zero || *self == Self::one() {
                     return Some(*self);
                 }
-                if *root == zero {
+                if *nth_root == zero {
                     return None;
                 }
                 let one = Self::one();
-                let root_minus_one = root.checked_sub(&one)?;
-                let root_minus_one_whole = root_minus_one.to_imprecise()?;
+                let nth_root_minus_one = nth_root.checked_sub(&one)?;
+                let nth_root_minus_one_whole = nth_root_minus_one.to_imprecise()?;
                 let mut last_guess = guess.clone();
                 for _ in 0..max_iterations {
                     // x_k+1 = ((n - 1) * x_k + A / (x_k ^ (n - 1))) / n
-                    let first_term = root_minus_one.checked_mul(&guess)?;
-                    let power = guess.checked_pow(root_minus_one_whole.try_into().ok()?);
+                    let first_term = nth_root_minus_one.checked_mul(&guess)?;
+                    let power = guess.checked_pow(nth_root_minus_one_whole.try_into().ok()?);
                     let second_term = match power {
                         Some(num) => self.checked_div(&num)?,
                         None => Self::zero(),
                     };
-                    guess = first_term.checked_add(&second_term)?.checked_div(root)?;
+                    guess = first_term.checked_add(&second_term)?.checked_div(nth_root)?;
                     if last_guess.almost_eq(&guess, Self::PRECISION) {
                         break;
                     } else {
@@ -396,8 +396,8 @@ macro_rules! define_precise_number {
                 Some(guess)
             }
 
-            // optimized version for root==2
-            fn newtonian_root_approximation_fast(
+            // optimized version for sqrt (n==2)
+            fn newtonian_sqrt_approximation_fast(
                 &self,
                 mut guess: Self,
                 iterations: u32,
@@ -436,7 +436,7 @@ macro_rules! define_precise_number {
             }
 
             // optimized version
-            fn cordic_root_approximation_fast(
+            fn cordic_sqrt_approximation_fast(
                 &self,
             ) -> Option<Self> {
                 let x = *self;
@@ -485,7 +485,7 @@ macro_rules! define_precise_number {
 
 
             // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
-            fn cordic_root_approximation_naiv(
+            fn cordic_sqrt_approximation_naiv(
                 &self
             ) -> Option<Self> {
                 let x = *self;
@@ -567,7 +567,7 @@ macro_rules! define_precise_number {
                 // A good initial guess is the average of the interval that contains the
                 // input number.  For all numbers, that will be between 1 and the given number.
                 let guess = self.checked_add(&one)?.div2();
-                self.newtonian_root_approximation_fast(guess, Self::MAX_APPROXIMATION_ITERATIONS)
+                self.newtonian_sqrt_approximation_fast(guess, Self::MAX_APPROXIMATION_ITERATIONS)
             }
 
             /// Approximate the square root using CORDIC's method.
@@ -581,7 +581,7 @@ macro_rules! define_precise_number {
                 {
                     return None;
                 }
-                self.cordic_root_approximation_fast()
+                self.cordic_sqrt_approximation_fast()
             }
 
             #[cfg(feature = "from_f64")]

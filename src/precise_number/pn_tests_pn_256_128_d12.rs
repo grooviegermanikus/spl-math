@@ -127,7 +127,7 @@ mod tests_pn_256_128_d12 {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_sqrt_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -137,7 +137,7 @@ mod tests_pn_256_128_d12 {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_sqrt_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -148,7 +148,7 @@ mod tests_pn_256_128_d12 {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_sqrt_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -157,7 +157,7 @@ mod tests_pn_256_128_d12 {
         let test = PreciseNumber::new(101).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
+            .newtonian_sqrt_approximation_fast(guess, PreciseNumber::MAX_APPROXIMATION_ITERATIONS)
             .unwrap()
             .to_imprecise()
             .unwrap();
@@ -167,7 +167,7 @@ mod tests_pn_256_128_d12 {
         let nth_root = PreciseNumber::new(2).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation_generic(
+            .newtonian_sqrt_approximation_generic(
                 &nth_root,
                 guess,
                 PreciseNumber::MAX_APPROXIMATION_ITERATIONS,
@@ -182,7 +182,7 @@ mod tests_pn_256_128_d12 {
         let nth_root = PreciseNumber::new(5).unwrap();
         let guess = test.checked_div(&nth_root).unwrap();
         let root = test
-            .newtonian_root_approximation_generic(
+            .newtonian_sqrt_approximation_generic(
                 &nth_root,
                 guess,
                 PreciseNumber::MAX_APPROXIMATION_ITERATIONS,

@@ -98,7 +98,7 @@ mod tests {
             .checked_div(&(PreciseNumber::new(10u128.pow(22)).unwrap()))
             .unwrap();
         let cordic_sqrt = number
-            .cordic_root_approximation_fast()
+            .cordic_sqrt_approximation_fast()
             .unwrap();
         assert!(
             cordic_sqrt
@@ -121,7 +121,7 @@ mod tests {
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
         let cordic_sqrt = number
-            .cordic_root_approximation_fast()
+            .cordic_sqrt_approximation_fast()
             .unwrap();
         assert!(
             cordic_sqrt
