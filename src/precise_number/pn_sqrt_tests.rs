@@ -128,21 +128,21 @@ mod tests {
     #[test]
     fn test_bruteforce_precision() {
         let number = PreciseNumber::maximum_sqrt_base();
-        println!("Testing number: {}", number.to_str_pretty());
+        println!("Testing number: {}", number.pretty_string());
 
-        let bd = BigDecimal::from_str(&number.to_str_pretty()).unwrap();
+        let bd = BigDecimal::from_str(&number.pretty_string()).unwrap();
         let precise_sqrt = bd.sqrt().unwrap();
 
         let approximate_root_cordic = number.cordic_sqrt_approximation_fast().unwrap();
         println!(
             "Approximate root c: {}",
-            approximate_root_cordic.to_str_pretty()
+            approximate_root_cordic.pretty_string()
         );
 
         let approximate_root_newton = number.sqrt_newton().unwrap();
         println!(
             "Approximate root n: {}",
-            approximate_root_newton.to_str_pretty()
+            approximate_root_newton.pretty_string()
         );
 
         println!("Precise sqrt: {}", precise_sqrt);

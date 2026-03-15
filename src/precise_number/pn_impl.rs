@@ -601,7 +601,7 @@ macro_rules! define_precise_number {
 
             #[cfg(test)]
             // very hacky and slow implementation for testing purposes only
-            pub fn to_str_pretty(&self) -> String {
+            pub fn pretty_string(&self) -> String {
                 use bigdecimal_rs::BigDecimal;
                 use std::ops::Div;
                 use std::str::FromStr;
