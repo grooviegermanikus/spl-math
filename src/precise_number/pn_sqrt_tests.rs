@@ -260,7 +260,7 @@ mod tests {
             let approximate_root = radicand
                 .cordic_root_approximation_fast()
                 .unwrap();
-            let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 11);
+            let (lower_bound, upper_bound) = calc_square_root_bounds(&approximate_root, 10);
             assert!(radicand.less_than_or_equal(&upper_bound));
             assert!(radicand.greater_than_or_equal(&lower_bound));
         }
