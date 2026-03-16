@@ -649,16 +649,6 @@ macro_rules! define_precise_number {
                 Some(Self { value: result })
             }
 
-            /// Compute log10(x) for x >= 1 using log10(x) = log2(x) / log2(10).
-            /// Returns None for x < 1.
-            pub fn log10(&self) -> Option<Self> {
-                let log2_x = self.log2()?;
-                let ten_value = Self::FP_ONE.checked_mul(10u8.into())?;
-                let ten = Self { value: ten_value };
-                let log2_10 = ten.log2()?;
-                log2_x.checked_div(&log2_10)
-            }
-
             #[cfg(test)]
             // very hacky and slow implementation for testing purposes only
             pub fn pretty_string(&self) -> String {
@@ -748,6 +738,31 @@ macro_rules! define_muldiv {
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+        }
+    };
+}
+
+/// Defines log10() using a precomputed LOG10_OF_2 constant.
+#[macro_export]
+macro_rules! define_log10 {
+    ($Precise:ident, $FPInner:ty, $LOG10_OF_2:expr) => {
+        #[allow(dead_code)]
+        impl $Precise {
+            /// Precomputed log10(2) * FP_ONE constant, see test_precompute_log10_of_2
+            const LOG10_OF_2: $FPInner = $LOG10_OF_2;
+
+            /// Compute log10(x) for x >= 1 using log10(x) = log2(x) * log10(2).
+            /// Returns None for x < 1.
+            pub fn log10(&self) -> Option<Self> {
+                let log2_x = self.log2()?;
+                // log10(x) = log2(x) * log10(2) in inner arithmetic
+                let value = log2_x
+                    .value
+                    .checked_mul(Self::LOG10_OF_2)?
+                    .checked_add(Self::ROUNDING_CORRECTION)?
+                    .checked_div(Self::FP_ONE)?;
+                Some(Self { value })
             }
         }
     };

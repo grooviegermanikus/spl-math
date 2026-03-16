@@ -2,7 +2,7 @@
 /// backward-compatible with spl-math's PreciseNumber (12 decimal places)
 use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::{U256, U512};
-use crate::{define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests};
+use crate::{define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests};
 
 const ONE_CONST: U256 = U256([1000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000 / 2, 0, 0, 0]);
@@ -21,6 +21,7 @@ define_precise_number!(
     |value| u256_from_f64_bits(value)
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
+define_log10!(PreciseNumber, U256, U256([301029995664, 0, 0, 0]));
 define_sqrt_tests!(PreciseNumber, u128, U256, U512, (12, 11));
 define_log10_tests!(PreciseNumber, u128, U256, 11);
 
@@ -77,4 +78,13 @@ mod tests {
         let result = a.mul_div_floor(b, c).unwrap();
         assert_eq!(result, PreciseNumber::new(25).unwrap());
     }
+
+    #[test]
+    fn test_precompute_log10_of_2() {
+        // round(log10(2) * 10^12)
+        let log10_of_2 = 2.0f64.log10();
+        let computed = (log10_of_2 * 1e12).round() as u128;
+        assert_eq!(computed, PreciseNumber::LOG10_OF_2.as_u128());
+    }
+
 }
