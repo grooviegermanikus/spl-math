@@ -608,7 +608,9 @@ macro_rules! define_precise_number {
             ///    - Square the normalized value
             ///    - If result >= 2, record a 1-bit and halve
             ///    - Otherwise record a 0-bit
-            pub fn log2(&self) -> Option<Self> {
+            ///
+            /// (private as it is only intended for log10)
+            fn log2(&self) -> Option<Self> {
                 if self.value < Self::FP_ONE {
                     return None;
                 }
