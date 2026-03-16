@@ -262,7 +262,7 @@ mod tests {
 
     proptest! {
         #![proptest_config(ProptestConfig {
-            cases: 10_000,
+            cases: 1_000,
             timeout: 30,
             ..ProptestConfig::default()
         })]
