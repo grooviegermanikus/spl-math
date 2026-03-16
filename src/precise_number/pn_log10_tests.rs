@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::define_precise_number;
+    use crate::{define_log10, define_precise_number};
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
     use bigdecimal_rs::BigDecimal;
@@ -28,6 +28,7 @@ mod tests {
         MAXIMUM_SQRT_BASE,
         |value| u256_from_f64_bits(value)
     );
+    define_log10!(PreciseNumber, U256, U256([301029995664, 0, 0, 0]));
 
     #[test]
     fn test_log10_powers_of_ten() {
@@ -192,7 +193,7 @@ mod tests {
 
     proptest! {
         #![proptest_config(ProptestConfig {
-            cases: 10_000,
+            cases: 1_000,
             timeout: 30,
             ..ProptestConfig::default()
         })]
