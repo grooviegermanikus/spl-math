@@ -1,6 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
-//! Important: put this makro inside an unique module to avoid name clashes
+//! Important: put this macro inside a unique module to avoid name clashes
 
 #[macro_export]
 macro_rules! define_precise_number {
@@ -293,7 +293,7 @@ macro_rules! define_precise_number {
             ///
             /// where a = 1, n = power, x = precise_num
             /// NOTE: this function is private because its accurate range and precision
-            /// have not been estbalished.
+            /// have not been established.
             pub(crate) fn checked_pow_approximation(
                 &self,
                 exponent: &Self,
@@ -340,7 +340,7 @@ macro_rules! define_precise_number {
             /// Get the power of a number, where the exponent is expressed as a fraction
             /// (numerator / denominator)
             /// NOTE: this function is private because its accurate range and precision
-            /// have not been estbalished.
+            /// have not been established.
             #[allow(dead_code)]
             fn checked_pow_fraction(&self, exponent: &Self) -> Option<Self> {
                 assert!(self.value > Self::min_pow_base_excl());
@@ -493,7 +493,7 @@ macro_rules! define_precise_number {
             }
 
             // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
-            fn cordic_sqrt_approximation_naiv(&self) -> Option<Self> {
+            fn cordic_sqrt_approximation_naive(&self) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
@@ -517,7 +517,7 @@ macro_rules! define_precise_number {
                     result = pow2.div2();
                 }
 
-                // oroginal algo used NUM_BITS
+                // original algo used NUM_BITS
                 for _ in 0..Self::MAX_APPROXIMATION_ITERATIONS {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
@@ -594,6 +594,56 @@ macro_rules! define_precise_number {
 
             pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
+            }
+
+            /// Compute log2(x) for x >= 1 using a bit-by-bit (binary logarithm) algorithm.
+            /// Returns None for x < 1 (result would be negative and cannot be represented).
+            ///
+            /// Algorithm:
+            /// 1. Find integer part by normalizing x to [1, 2)
+            /// 2. Compute fractional part by repeated squaring:
+            ///    - Square the normalized value
+            ///    - If result >= 2, record a 1-bit and halve
+            ///    - Otherwise record a 0-bit
+            ///
+            /// (private as it is only intended for log10)
+            fn log2(&self) -> Option<Self> {
+                if self.value < Self::FP_ONE {
+                    return None;
+                }
+                if self.value == Self::FP_ONE {
+                    return Some(Self::zero());
+                }
+
+                let two_fp_one = Self::FP_ONE.checked_add(Self::FP_ONE)?;
+                let mut m = self.value;
+                let mut integer_part = Self::FP_ZERO;
+
+                // Normalize m to [FP_ONE, 2*FP_ONE), accumulating integer part
+                while m >= two_fp_one {
+                    m >>= 1;
+                    integer_part = integer_part.checked_add(Self::FP_ONE)?;
+                }
+
+                // Compute fractional part by repeated squaring
+                let mut frac = Self::FP_ZERO;
+                let mut bit = Self::FP_ONE >> 1;
+
+                for _ in 0..Self::NUM_BITS {
+                    if bit == Self::FP_ZERO {
+                        break;
+                    }
+                    // Square m in fixed-point: m = m * m / FP_ONE
+                    m = m.checked_mul(m)?.checked_div(Self::FP_ONE)?;
+                    if m >= two_fp_one {
+                        m >>= 1;
+                        frac = frac.checked_add(bit)?;
+                    }
+                    bit >>= 1;
+                }
+
+                let result = integer_part.checked_add(frac)?;
+                Some(Self { value: result })
             }
         }
     };
@@ -673,6 +723,50 @@ macro_rules! define_muldiv {
                     / Self::extend_precsion(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
+            }
+        }
+    };
+}
+
+/// Defines log10() using a precomputed LOG10_OF_2 constant.
+#[macro_export]
+macro_rules! define_log10 {
+    ($Precise:ident, $FPInner:ty, $LOG10_OF_2:expr) => {
+        #[allow(dead_code)]
+        impl $Precise {
+            /// Precomputed log10(2) * FP_ONE constant, see test_precompute_log10_of_2
+            const LOG10_OF_2: $FPInner = $LOG10_OF_2;
+
+            /// Compute log10(x) for x >= 1 using log10(x) = log2(x) * log10(2).
+            /// Returns None for x < 1.
+            pub fn log10(&self) -> Option<Self> {
+                let log2_x = self.log2()?;
+                // log10(x) = log2(x) * log10(2) in inner arithmetic
+                let value = log2_x
+                    .value
+                    .checked_mul(Self::LOG10_OF_2)?
+                    .checked_add(Self::ROUNDING_CORRECTION)?
+                    .checked_div(Self::FP_ONE)?;
+                Some(Self { value })
+            }
+
+            /// Compute log10(x) for any x > 0, returning the magnitude and sign.
+            /// Returns `(magnitude, negative)` where `negative` is true when 0 < x < 1.
+            /// Returns None for x == 0 (log10(0) is undefined).
+            ///
+            /// Uses the identity: log10(x) = -log10(1/x) for 0 < x < 1.
+            pub fn signed_log10(&self) -> Option<(Self, bool)> {
+                if self.value == Self::FP_ZERO {
+                    return None;
+                }
+                if self.value >= Self::FP_ONE {
+                    // x >= 1: log10 is non-negative
+                    Some((self.log10()?, false))
+                } else {
+                    // 0 < x < 1: log10(x) = -log10(1/x)
+                    let reciprocal = Self::one().checked_div(self)?;
+                    Some((reciprocal.log10()?, true))
+                }
             }
         }
     };
@@ -765,7 +859,7 @@ macro_rules! define_sqrt_tests {
                 (precision_newton, precision_cordic)
             }
 
-            // this accounts for the absolute error - in contract to relative error
+            // this accounts for the absolute error - in contrast to relative error
             fn calc_square_root_bounds(
                 approximate_root: &$Precise,
                 precision: u32,
@@ -803,6 +897,204 @@ macro_rules! define_sqrt_tests {
                     digits
                 );
                 result
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! define_log10_tests {
+    ($Precise:ident, $TOuter:ty, $FPInner:ty, $target_precision:expr) => {
+        #[cfg(test)]
+        mod log10_tests {
+            use super::$Precise;
+            #[allow(unused_imports)]
+            use super::*;
+
+            #[test]
+            fn test_log10_exact_powers() {
+                // log10(1) = 0
+                let one = <$Precise>::new(1 as $TOuter).unwrap();
+                assert_eq!(one.log10().unwrap(), <$Precise>::zero());
+
+                // log10(10) = 1
+                let ten = <$Precise>::new(10 as $TOuter).unwrap();
+                let result = ten.log10().unwrap();
+                assert!(
+                    result.almost_eq(&<$Precise>::one(), <$Precise>::PRECISION),
+                    "log10(10) = {} expected 1.0",
+                    pretty_string(&result)
+                );
+
+                // log10(100) = 2
+                let hundred = <$Precise>::new(100 as $TOuter).unwrap();
+                let expected_2 = <$Precise>::one().checked_add(&<$Precise>::one()).unwrap();
+                let result = hundred.log10().unwrap();
+                assert!(
+                    result.almost_eq(&expected_2, <$Precise>::PRECISION),
+                    "log10(100) = {} expected 2.0",
+                    pretty_string(&result)
+                );
+            }
+
+            #[test]
+            fn test_log10_returns_none_below_one() {
+                let zero = <$Precise>::zero();
+                assert!(zero.log10().is_none());
+
+                // 0.5
+                let one = <$Precise>::one();
+                let half = one.div2();
+                assert!(half.log10().is_none());
+            }
+
+            #[test]
+            fn test_signed_log10_zero_returns_none() {
+                let zero = <$Precise>::zero();
+                assert!(zero.signed_log10().is_none());
+            }
+
+            #[test]
+            fn test_signed_log10_one_is_zero() {
+                let one = <$Precise>::new(1 as $TOuter).unwrap();
+                let (result, negative) = one.signed_log10().unwrap();
+                assert!(!negative);
+                assert_eq!(result, <$Precise>::zero());
+            }
+
+            #[test]
+            fn test_signed_log10_above_one_matches_log10() {
+                // signed_log10 should agree with log10 for x >= 1
+                let ten = <$Precise>::new(10 as $TOuter).unwrap();
+                let (result, negative) = ten.signed_log10().unwrap();
+                assert!(!negative);
+                assert_eq!(result, ten.log10().unwrap());
+
+                let hundred = <$Precise>::new(100 as $TOuter).unwrap();
+                let (result, negative) = hundred.signed_log10().unwrap();
+                assert!(!negative);
+                assert_eq!(result, hundred.log10().unwrap());
+            }
+
+            #[test]
+            fn test_signed_log10_below_one_is_negative() {
+                // log10(0.5) ≈ -0.301..., should return (0.301..., true)
+                let half = <$Precise>::one().div2();
+                let (result, negative) = half.signed_log10().unwrap();
+                assert!(negative, "log10(0.5) should be negative");
+                assert!(
+                    result.value > <$Precise>::FP_ZERO,
+                    "magnitude should be > 0"
+                );
+            }
+
+            #[test]
+            fn test_signed_log10_tenth() {
+                // log10(0.1) = -1, so signed_log10 returns (1, true)
+                let tenth = <$Precise>::one().div10();
+                if tenth != <$Precise>::zero() {
+                    let (result, negative) = tenth.signed_log10().unwrap();
+                    assert!(negative, "log10(0.1) should be negative");
+                    assert!(
+                        result.almost_eq(&<$Precise>::one(), <$Precise>::PRECISION),
+                        "log10(0.1) magnitude = {} expected 1.0",
+                        pretty_string(&result)
+                    );
+                }
+            }
+
+            #[test]
+            fn test_log2_exact_powers() {
+                let one = <$Precise>::new(1 as $TOuter).unwrap();
+                assert_eq!(one.log2().unwrap(), <$Precise>::zero());
+
+                // log2(2) = 1
+                let two = <$Precise>::new(2 as $TOuter).unwrap();
+                let result = two.log2().unwrap();
+                assert!(
+                    result.almost_eq(&<$Precise>::one(), <$Precise>::PRECISION),
+                    "log2(2) = {} expected 1.0",
+                    pretty_string(&result)
+                );
+
+                // log2(4) = 2
+                let four = <$Precise>::new(4 as $TOuter).unwrap();
+                let expected_2 = <$Precise>::one().checked_add(&<$Precise>::one()).unwrap();
+                let result = four.log2().unwrap();
+                assert!(
+                    result.almost_eq(&expected_2, <$Precise>::PRECISION),
+                    "log2(4) = {} expected 2.0",
+                    pretty_string(&result)
+                );
+            }
+
+            #[test]
+            fn test_log10_precision_tuner() {
+                const TARGET_PRECISION: u32 = $target_precision;
+
+                let p1 = find_log10_precision(<$Precise>::new(2 as $TOuter).unwrap());
+                assert!(
+                    p1 >= TARGET_PRECISION,
+                    "precision at 2: {} < {}",
+                    p1,
+                    TARGET_PRECISION
+                );
+
+                let p2 = find_log10_precision(<$Precise>::new(1000 as $TOuter).unwrap());
+                assert!(
+                    p2 >= TARGET_PRECISION,
+                    "precision at 1000: {} < {}",
+                    p2,
+                    TARGET_PRECISION
+                );
+            }
+
+            fn find_log10_precision(x: $Precise) -> u32 {
+                use bigdecimal_rs::BigDecimal;
+                use std::str::FromStr;
+
+                let result = x.log10().unwrap();
+                let result_bd = BigDecimal::from_str(&pretty_string(&result)).unwrap();
+                let x_bd: BigDecimal = BigDecimal::from_str(&pretty_string(&x)).unwrap();
+                // use f64 log10 as reference (precise to ~15 digits)
+                let x_f64: f64 = x_bd.to_string().parse().unwrap();
+                let expected_bd = BigDecimal::from_str(&format!("{:.20}", x_f64.log10())).unwrap();
+
+                let mut best_precision = 0u32;
+                for (precision, _eps) in precisions_enumerated() {
+                    let eps_bd = BigDecimal::from_str(&format!("1e-{}", precision)).unwrap();
+                    let diff = (&result_bd - &expected_bd).abs();
+                    if diff <= eps_bd {
+                        best_precision = precision;
+                    } else {
+                        break;
+                    }
+                }
+                best_precision
+            }
+
+            fn precisions_enumerated() -> Vec<(u32, $FPInner)> {
+                let mut out = Vec::new();
+                let mut cur = $Precise::one();
+                let zero = <$Precise>::zero();
+                for precision in 0..1000 {
+                    out.push((precision, cur.value));
+                    cur = cur.div10();
+                    if cur == zero {
+                        break;
+                    }
+                }
+                out
+            }
+
+            fn pretty_string(pn: &PreciseNumber) -> String {
+                use bigdecimal_rs::BigDecimal;
+                use std::ops::Div;
+                use std::str::FromStr;
+                let bd = BigDecimal::from_str(&format!("{}", pn.value))
+                    .unwrap()
+                    .div(BigDecimal::from_str(&format!("{}", PreciseNumber::FP_ONE)).unwrap());
+                format!("{}", bd)
             }
         }
     };

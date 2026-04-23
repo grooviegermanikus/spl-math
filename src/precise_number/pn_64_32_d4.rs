@@ -1,11 +1,13 @@
 /// Decimal fix-point number with 12 decimal places backed by u64
 ///
-use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
+use crate::{
+    define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests,
+};
 use num_traits::ToPrimitive;
 
 const ONE_CONST: u64 = 10_000;
 const ROUNDING_CORRECTION: u64 = 10_000 / 2;
-const PRECISION: u64 = 3; // TODO
+const PRECISION: u64 = 3;
 const MAXIMUM_SQRT_BASE: u64 = u32::MAX as u64 * ONE_CONST;
 define_precise_number!(
     PreciseNumber,
@@ -20,7 +22,9 @@ define_precise_number!(
     |value| value.to_u64()
 );
 define_muldiv!(PreciseNumber, u32, u64, u128);
+define_log10!(PreciseNumber, u64, 3010u64);
 define_sqrt_tests!(PreciseNumber, u32, u64, u128, (4, 4));
+define_log10_tests!(PreciseNumber, u32, u64, 3);
 
 #[cfg(test)]
 mod tests {
@@ -54,13 +58,10 @@ mod tests {
 
     #[test]
     fn test_call_muldiv() {
-        let a = crate::precise_number::pn_128_64_d9::PreciseNumber::new(10).unwrap();
-        let b = crate::precise_number::pn_128_64_d9::PreciseNumber::new(5).unwrap();
-        let c = crate::precise_number::pn_128_64_d9::PreciseNumber::new(2).unwrap();
+        let a = PreciseNumber::new(10).unwrap();
+        let b = PreciseNumber::new(5).unwrap();
+        let c = PreciseNumber::new(2).unwrap();
         let result = a.mul_div_floor(b, c).unwrap();
-        assert_eq!(
-            result,
-            crate::precise_number::pn_128_64_d9::PreciseNumber::new(25).unwrap()
-        );
+        assert_eq!(result, PreciseNumber::new(25).unwrap());
     }
 }

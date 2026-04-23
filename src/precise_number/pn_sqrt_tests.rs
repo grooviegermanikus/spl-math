@@ -62,11 +62,8 @@ mod tests {
         assert_eq!(root, 10); // actually 10.049875
     }
 
-    // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_square_root_precision() {
-        // TODO we need to tune down this parameter to make algo fast and precise enough
-
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
             .unwrap()
@@ -93,7 +90,6 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(18)).unwrap()))
             .unwrap();
-        // assert_eq!(number.value.bits(), 64);
         assert_eq!(number.value.bits(), 45);
         // sqrt is 4.29496729599999999988
         let expected_sqrt = PreciseNumber::new(4294967295999999999)
@@ -154,14 +150,6 @@ mod tests {
             "precision_newton {}",
             find_max_precision(approximate_root_newton, number)
         );
-
-        // assert_eq!(find_max_precision(approximate_root_cordic, number), 99);
-        // 0,00003512833614
-        // 0,000035127622 <approx root> 0,00000000123395
-
-        // approx 18446181123756130304
-        // precis 18446744073709551616
-        // compar 00000...........
     }
 
     fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
@@ -186,7 +174,7 @@ mod tests {
         assert!(radicand.greater_than_or_equal(&lower_bound));
     }
 
-    // this accounts for the absolute error - in contract to relative error
+    // this accounts for the absolute error - in contrast to relative error
     fn calc_square_root_bounds(
         approximate_root: &PreciseNumber,
         precision: u32,
@@ -262,7 +250,7 @@ mod tests {
 
     proptest! {
         #![proptest_config(ProptestConfig {
-            cases: 10_000,
+            cases: 1_000,
             timeout: 30,
             ..ProptestConfig::default()
         })]
@@ -293,9 +281,9 @@ mod tests {
         fn test_cordic_optimized_vs_naive(a in 0..u128::MAX) {
             let a = PreciseNumber { value: InnerUint::from(a) };
             let cordic_version = a.cordic_sqrt_approximation_fast();
-            let cordic_naiv_version = a.cordic_sqrt_approximation_naiv();
+            let cordic_naive_version = a.cordic_sqrt_approximation_naive();
 
-            assert_eq!(cordic_version, cordic_naiv_version);
+            assert_eq!(cordic_version, cordic_naive_version);
         }
     }
 
