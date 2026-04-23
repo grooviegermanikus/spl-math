@@ -151,7 +151,6 @@ mod tests_f64 {
         assert_eq!(c.value, 0);
 
         assert!(TestPreciseNumber8::new_from_inner_f64(255.9f64).is_some());
-        // assert!(TestPreciseNumber8::new_from_inner_f64(256.0f64).is_err());
     }
 
     #[test]

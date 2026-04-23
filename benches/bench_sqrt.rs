@@ -61,10 +61,10 @@ fn calc_binary_system_sqrt(
 fn calc_binary_system_sqrt_naive(
     (a, b, c, d): (u128, u128, u128, u128),
 ) -> u128 {
-    let a = spl_math_evolved::approximations::sqrt_binary_system_naiv(a).unwrap();
-    let b = spl_math_evolved::approximations::sqrt_binary_system_naiv(b).unwrap();
-    let c = spl_math_evolved::approximations::sqrt_binary_system_naiv(c).unwrap();
-    let d = spl_math_evolved::approximations::sqrt_binary_system_naiv(d).unwrap();
+    let a = spl_math_evolved::approximations::sqrt_binary_system_naive(a).unwrap();
+    let b = spl_math_evolved::approximations::sqrt_binary_system_naive(b).unwrap();
+    let c = spl_math_evolved::approximations::sqrt_binary_system_naive(c).unwrap();
+    let d = spl_math_evolved::approximations::sqrt_binary_system_naive(d).unwrap();
 
     // perform (cheap) addition to prevent compiler optimizations
     a.checked_add(b)
@@ -101,7 +101,7 @@ fn bench_sqrt_binary_system(c: &mut Criterion) {
     });
 
     let mut testdata_iter = testdata.into_iter().cycle();
-    c.bench_function("bench_sqrt_binary_system_naiv", |b| {
+    c.bench_function("bench_sqrt_binary_system_naive", |b| {
         b.iter(|| {
             let root = calc_binary_system_sqrt_naive(testdata_iter.next().unwrap());
             Some(root)
@@ -145,7 +145,7 @@ fn bench_fast_cordic_sqrt(c: &mut Criterion) {
         })
         .collect_vec();
     let mut testdata_iter = testdata.into_iter().cycle();
-    c.bench_function("bench_fast_coric_sqrt", |b| {
+    c.bench_function("bench_fast_cordic_sqrt", |b| {
         b.iter(|| {
             let sum = calc_cordic_sqrt_roots(testdata_iter.next().unwrap());
             assert!(sum.value > U256::zero());
