@@ -2,7 +2,9 @@ use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::{U256, U512};
 /// Decimal fix-point number with 18 decimal places backed by U256
 /// 18 decimal places are recommended for most DeFi applications
-use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
+use crate::{
+    define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests,
+};
 
 const ONE_CONST: U256 = U256([1000000000000000000, 0, 0, 0]);
 const ROUNDING_CORRECTION: U256 = U256([1000000000000000000 / 2, 0, 0, 0]);
@@ -21,7 +23,9 @@ define_precise_number!(
     |value| u256_from_f64_bits(value)
 );
 define_muldiv!(PreciseNumber, u128, U256, U512);
+define_log10!(PreciseNumber, U256, U256([301029995663981195, 0, 0, 0]));
 define_sqrt_tests!(PreciseNumber, u128, U256, U512, (18, 13));
+define_log10_tests!(PreciseNumber, u128, U256, 11);
 
 #[cfg(test)]
 mod tests {
@@ -42,11 +46,6 @@ mod tests {
     #[test]
     fn test_precision_constant() {
         assert_eq!(format!("{}", PRECISION), "10000000");
-    }
-
-    #[test]
-    fn test_u256_maximum_sqrt_base_constant() {
-        // TODO
     }
 
     use crate::precise_number::pn_256_128_d18::PreciseNumber;
@@ -76,8 +75,6 @@ mod tests {
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_sqrt_cordic_precision() {
-        // TODO we need to tune down this parameter to make algo fast and precise enough
-
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
             .unwrap()

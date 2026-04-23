@@ -14,7 +14,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spl-math-todo = "TODO_version"
+spl-math = "version"
 ```
 
 ## Usage

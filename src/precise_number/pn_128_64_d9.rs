@@ -1,12 +1,14 @@
 use crate::uint::U256;
 /// Decimal fix-point number with 12 decimal places backed by u128
 ///
-use crate::{define_muldiv, define_precise_number, define_sqrt_tests};
+use crate::{
+    define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests,
+};
 use num_traits::ToPrimitive;
 
 const ONE_CONST: u128 = 1_000_000_000;
 const ROUNDING_CORRECTION: u128 = 1_000_000_000 / 2;
-const PRECISION: u128 = 10; // TODO
+const PRECISION: u128 = 10;
 const MAXIMUM_SQRT_BASE: u128 = u64::MAX as u128 * ONE_CONST;
 define_precise_number!(
     PreciseNumber,
@@ -21,7 +23,10 @@ define_precise_number!(
     |value| value.to_u128()
 );
 define_muldiv!(PreciseNumber, u64, u128, U256);
+// log10(10^9) = 9, so log10(1) = 0, log10(10^9) = 9, log10(10^18) = 18, so we can represent log10 of numbers up to 10^18 with 12 decimal places using u128
+define_log10!(PreciseNumber, u128, 301029996u128);
 define_sqrt_tests!(PreciseNumber, u64, u128, U256, (9, 9));
+define_log10_tests!(PreciseNumber, u64, u128, 8);
 
 #[cfg(test)]
 mod tests {
