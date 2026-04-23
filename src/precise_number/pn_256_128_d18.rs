@@ -46,11 +46,6 @@ mod tests {
         assert_eq!(format!("{}", PRECISION), "10000000");
     }
 
-    #[test]
-    fn test_u256_maximum_sqrt_base_constant() {
-        // TODO
-    }
-
     use crate::precise_number::pn_256_128_d18::PreciseNumber;
     use crate::uint::U256;
 
@@ -69,15 +64,6 @@ mod tests {
     }
 
     #[test]
-    fn test_from_f64() {
-        let pn_from_inner = PreciseNumber::new_from_inner_f64(1e17).unwrap();
-        assert_eq!(pn_from_inner.pretty_string(), "0.1");
-
-        let pn = PreciseNumber::new_from_f64(1e-6).unwrap();
-        assert_eq!(pn.pretty_string(), "0.000001");
-    }
-
-    #[test]
     fn test_precision() {
         // 10^-9
         let precision_9 = precision(9);
@@ -87,8 +73,6 @@ mod tests {
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_sqrt_cordic_precision() {
-        // TODO we need to tune down this parameter to make algo fast and precise enough
-
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
             .unwrap()

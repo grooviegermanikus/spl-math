@@ -43,7 +43,7 @@ pub fn sqrt_binary_system<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> 
 }
 
 // optimized version is about 20% faster
-pub(crate) fn sqrt_binary_system_naiv<T: PrimInt + CheckedShl + CheckedShr>(
+pub(crate) fn sqrt_binary_system_naive<T: PrimInt + CheckedShl + CheckedShr>(
     radicand: T,
 ) -> Option<T> {
     match radicand.cmp(&T::zero()) {
@@ -78,8 +78,8 @@ mod tests {
 
     fn check_square_root(radicand: u128) {
         let root_optimized = sqrt_binary_system(radicand).unwrap();
-        let root_naiv = sqrt_binary_system_naiv(radicand).unwrap();
-        assert_eq!(root_naiv, root_optimized, "compare optimized vs naiv");
+        let root_naive = sqrt_binary_system_naive(radicand).unwrap();
+        assert_eq!(root_naive, root_optimized, "compare optimized vs naive");
 
         let lower_bound = root_optimized.saturating_sub(1).checked_pow(2).unwrap();
         let upper_bound = root_optimized

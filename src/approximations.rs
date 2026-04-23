@@ -12,8 +12,7 @@ pub fn sqrt<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> Option<T> {
     super::sqrt_math::sqrt_binary_system(radicand)
 }
 
-// FIXME visibility
 #[inline]
-pub fn sqrt_binary_system_naiv<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> Option<T> {
-    super::sqrt_math::sqrt_binary_system_naiv(radicand)
+pub fn sqrt_binary_system_naive<T: PrimInt + CheckedShl + CheckedShr>(radicand: T) -> Option<T> {
+    super::sqrt_math::sqrt_binary_system_naive(radicand)
 }

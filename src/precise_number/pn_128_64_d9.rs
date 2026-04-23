@@ -6,7 +6,7 @@ use num_traits::ToPrimitive;
 
 const ONE_CONST: u128 = 1_000_000_000;
 const ROUNDING_CORRECTION: u128 = 1_000_000_000 / 2;
-const PRECISION: u128 = 10; // TODO
+const PRECISION: u128 = 10;
 const MAXIMUM_SQRT_BASE: u128 = u64::MAX as u128 * ONE_CONST;
 define_precise_number!(
     PreciseNumber,

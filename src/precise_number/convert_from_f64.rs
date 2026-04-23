@@ -151,7 +151,6 @@ mod tests_f64 {
         assert_eq!(c.value, 0);
 
         assert!(TestPreciseNumber8::new_from_inner_f64(255.9f64).is_some());
-        // assert!(TestPreciseNumber8::new_from_inner_f64(256.0f64).is_err());
     }
 
     #[test]
@@ -322,7 +321,7 @@ mod tests_f64 {
     proptest! {
 
         #[test]
-        fn test_truncated_prop(value: f64) { // TODO
+        fn test_truncated_prop(value: f64) {
 
             if (0.0..1.157_920_892_373_161_8e77).contains(&value) {
                 let original = u256_from_f64_bits(value).unwrap();
@@ -333,7 +332,7 @@ mod tests_f64 {
         }
 
         #[test]
-        fn test_u256_from_f64_prop(value: f64) { // TODO
+        fn test_u256_from_f64_prop(value: f64) {
 
             if (0.0..1.157_920_892_373_161_8e77).contains(&value) {
                 u256_from_f64_bits(value).unwrap();
