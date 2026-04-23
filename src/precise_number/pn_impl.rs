@@ -646,17 +646,6 @@ macro_rules! define_precise_number {
                 Some(Self { value: result })
             }
 
-            #[cfg(test)]
-            // very hacky and slow implementation for testing purposes only
-            pub fn pretty_string(&self) -> String {
-                use bigdecimal_rs::BigDecimal;
-                use std::ops::Div;
-                use std::str::FromStr;
-                let bd = BigDecimal::from_str(&format!("{}", self.value))
-                    .unwrap()
-                    .div(BigDecimal::from_str(&format!("{}", Self::FP_ONE)).unwrap());
-                format!("{}", bd)
-            }
         }
     };
 } // -- macro
@@ -760,6 +749,25 @@ macro_rules! define_log10 {
                     .checked_add(Self::ROUNDING_CORRECTION)?
                     .checked_div(Self::FP_ONE)?;
                 Some(Self { value })
+            }
+
+            /// Compute log10(x) for any x > 0, returning the magnitude and sign.
+            /// Returns `(magnitude, negative)` where `negative` is true when 0 < x < 1.
+            /// Returns None for x == 0 (log10(0) is undefined).
+            ///
+            /// Uses the identity: log10(x) = -log10(1/x) for 0 < x < 1.
+            pub fn signed_log10(&self) -> Option<(Self, bool)> {
+                if self.value == Self::FP_ZERO {
+                    return None;
+                }
+                if self.value >= Self::FP_ONE {
+                    // x >= 1: log10 is non-negative
+                    Some((self.log10()?, false))
+                } else {
+                    // 0 < x < 1: log10(x) = -log10(1/x)
+                    let reciprocal = Self::one().checked_div(self)?;
+                    Some((reciprocal.log10()?, true))
+                }
             }
         }
     };
@@ -916,7 +924,7 @@ macro_rules! define_log10_tests {
                 assert!(
                     result.almost_eq(&<$Precise>::one(), <$Precise>::PRECISION),
                     "log10(10) = {} expected 1.0",
-                    result.pretty_string()
+                    pretty_string(&result)
                 );
 
                 // log10(100) = 2
@@ -928,7 +936,7 @@ macro_rules! define_log10_tests {
                 assert!(
                     result.almost_eq(&expected_2, <$Precise>::PRECISION),
                     "log10(100) = {} expected 2.0",
-                    result.pretty_string()
+                    pretty_string(&result)
                 );
             }
 
@@ -944,6 +952,58 @@ macro_rules! define_log10_tests {
             }
 
             #[test]
+            fn test_signed_log10_zero_returns_none() {
+                let zero = <$Precise>::zero();
+                assert!(zero.signed_log10().is_none());
+            }
+
+            #[test]
+            fn test_signed_log10_one_is_zero() {
+                let one = <$Precise>::new(1 as $TOuter).unwrap();
+                let (result, negative) = one.signed_log10().unwrap();
+                assert!(!negative);
+                assert_eq!(result, <$Precise>::zero());
+            }
+
+            #[test]
+            fn test_signed_log10_above_one_matches_log10() {
+                // signed_log10 should agree with log10 for x >= 1
+                let ten = <$Precise>::new(10 as $TOuter).unwrap();
+                let (result, negative) = ten.signed_log10().unwrap();
+                assert!(!negative);
+                assert_eq!(result, ten.log10().unwrap());
+
+                let hundred = <$Precise>::new(100 as $TOuter).unwrap();
+                let (result, negative) = hundred.signed_log10().unwrap();
+                assert!(!negative);
+                assert_eq!(result, hundred.log10().unwrap());
+            }
+
+            #[test]
+            fn test_signed_log10_below_one_is_negative() {
+                // log10(0.5) ≈ -0.301..., should return (0.301..., true)
+                let half = <$Precise>::one().div2();
+                let (result, negative) = half.signed_log10().unwrap();
+                assert!(negative, "log10(0.5) should be negative");
+                assert!(result.value > <$Precise>::FP_ZERO, "magnitude should be > 0");
+            }
+
+            #[test]
+            fn test_signed_log10_tenth() {
+                // log10(0.1) = -1, so signed_log10 returns (1, true)
+                let tenth = <$Precise>::one().div10();
+                if tenth != <$Precise>::zero() {
+                    let (result, negative) = tenth.signed_log10().unwrap();
+                    assert!(negative, "log10(0.1) should be negative");
+                    assert!(
+                        result.almost_eq(&<$Precise>::one(), <$Precise>::PRECISION),
+                        "log10(0.1) magnitude = {} expected 1.0",
+                        pretty_string(&result)
+                    );
+                }
+            }
+
+            #[test]
             fn test_log2_exact_powers() {
                 let one = <$Precise>::new(1 as $TOuter).unwrap();
                 assert_eq!(one.log2().unwrap(), <$Precise>::zero());
@@ -954,7 +1014,7 @@ macro_rules! define_log10_tests {
                 assert!(
                     result.almost_eq(&<$Precise>::one(), <$Precise>::PRECISION),
                     "log2(2) = {} expected 1.0",
-                    result.pretty_string()
+                    pretty_string(&result)
                 );
 
                 // log2(4) = 2
@@ -966,7 +1026,7 @@ macro_rules! define_log10_tests {
                 assert!(
                     result.almost_eq(&expected_2, <$Precise>::PRECISION),
                     "log2(4) = {} expected 2.0",
-                    result.pretty_string()
+                    pretty_string(&result)
                 );
             }
 
@@ -997,9 +1057,9 @@ macro_rules! define_log10_tests {
 
                 let result = x.log10().unwrap();
                 let result_bd =
-                    BigDecimal::from_str(&result.pretty_string()).unwrap();
+                    BigDecimal::from_str(&pretty_string(&result)).unwrap();
                 let x_bd: BigDecimal =
-                    BigDecimal::from_str(&x.pretty_string()).unwrap();
+                    BigDecimal::from_str(&pretty_string(&x)).unwrap();
                 // use f64 log10 as reference (precise to ~15 digits)
                 let x_f64: f64 = x_bd.to_string().parse().unwrap();
                 let expected_bd =
@@ -1035,6 +1095,16 @@ macro_rules! define_log10_tests {
                     }
                 }
                 out
+            }
+
+            fn pretty_string(pn: &PreciseNumber) -> String {
+                use bigdecimal_rs::BigDecimal;
+                use std::ops::Div;
+                use std::str::FromStr;
+                let bd = BigDecimal::from_str(&format!("{}", pn.value))
+                    .unwrap()
+                    .div(BigDecimal::from_str(&format!("{}", PreciseNumber::FP_ONE)).unwrap());
+                format!("{}", bd)
             }
         }
     };
