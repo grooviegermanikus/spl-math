@@ -163,12 +163,12 @@ mod tests {
             .unwrap()
             .div(fx_one);
 
-        let diff = (BigDecimal::from_str(&format!("{:.20}", fx_log10)).unwrap() - pn_log10_bd)
+        
+        (BigDecimal::from_str(&format!("{:.20}", fx_log10)).unwrap() - pn_log10_bd)
             .abs()
             .to_string()
             .parse::<f64>()
-            .unwrap_or(1.0);
-        diff
+            .unwrap_or(1.0)
     }
 
     #[test]
@@ -268,12 +268,12 @@ mod tests {
             .div(fx_one);
         let pn_signed = if negative { -pn_log10_bd } else { pn_log10_bd };
 
-        let diff = (BigDecimal::from_str(&format!("{:.20}", fx_log10)).unwrap() - pn_signed)
+        
+        (BigDecimal::from_str(&format!("{:.20}", fx_log10)).unwrap() - pn_signed)
             .abs()
             .to_string()
             .parse::<f64>()
-            .unwrap_or(1.0);
-        diff
+            .unwrap_or(1.0)
     }
 
     #[test]
