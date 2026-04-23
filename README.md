@@ -22,7 +22,7 @@ spl-math = "version"
 Import and use in your Rust code:
 
 ```rust
-use spl_math_evolved::precise_number::PreciseNumber;
+use spl_math::precise_number::PreciseNumber;
 
 fn use_it() {
     let a = PreciseNumber::new(10u128).expect("valid number");

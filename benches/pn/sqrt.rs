@@ -1,5 +1,5 @@
 use criterion::Criterion;
-use spl_math_evolved::precise_number::PreciseNumber;
+use spl_math::precise_number::PreciseNumber;
 
 pub(crate) fn bench_sqrt(c: &mut Criterion) {
     let a = PreciseNumber::new(10u128).unwrap();
