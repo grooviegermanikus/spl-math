@@ -2,8 +2,8 @@ use bigdecimal_rs::BigDecimal;
 use criterion::Criterion;
 use fixed::types::U96F32;
 use itertools::Itertools;
-use spl_math_evolved::precise_number::PreciseNumber;
-use spl_math_evolved::uint::U256;
+use spl_math::precise_number::PreciseNumber;
+use spl_math::uint::U256;
 use std::ops::Sub;
 use std::str::FromStr;
 

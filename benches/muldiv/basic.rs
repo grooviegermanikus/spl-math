@@ -1,7 +1,7 @@
 use criterion::Criterion;
 use itertools::Itertools;
-use spl_math_evolved::precise_number::PreciseNumber;
-use spl_math_evolved::uint::U256;
+use spl_math::precise_number::PreciseNumber;
+use spl_math::uint::U256;
 
 pub(crate) fn bench_muldiv_nooverflow(c: &mut Criterion) {
     let testdata = (0..100_000u32)

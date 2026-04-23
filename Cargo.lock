@@ -714,8 +714,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "spl-math-evolved"
-version = "0.3.0"
+name = "spl-math"
+version = "0.4.0"
 dependencies = [
  "bigdecimal-rs",
  "criterion",

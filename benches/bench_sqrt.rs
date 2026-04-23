@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use itertools::Itertools;
-use spl_math_evolved::precise_number::PreciseNumber;
-use spl_math_evolved::uint::U256;
+use spl_math::precise_number::PreciseNumber;
+use spl_math::uint::U256;
 
 #[inline(never)]
 fn calc_newton_sqrt_roots(
@@ -41,10 +41,10 @@ fn calc_cordic_sqrt_roots(
 
 #[inline(never)]
 fn calc_binary_system_sqrt((a, b, c, d): (u128, u128, u128, u128)) -> u128 {
-    let a = spl_math_evolved::approximations::sqrt(a).unwrap();
-    let b = spl_math_evolved::approximations::sqrt(b).unwrap();
-    let c = spl_math_evolved::approximations::sqrt(c).unwrap();
-    let d = spl_math_evolved::approximations::sqrt(d).unwrap();
+    let a = spl_math::approximations::sqrt(a).unwrap();
+    let b = spl_math::approximations::sqrt(b).unwrap();
+    let c = spl_math::approximations::sqrt(c).unwrap();
+    let d = spl_math::approximations::sqrt(d).unwrap();
 
     // perform (cheap) addition to prevent compiler optimizations
     a.checked_add(b)
@@ -57,10 +57,10 @@ fn calc_binary_system_sqrt((a, b, c, d): (u128, u128, u128, u128)) -> u128 {
 
 #[inline(never)]
 fn calc_binary_system_sqrt_naive((a, b, c, d): (u128, u128, u128, u128)) -> u128 {
-    let a = spl_math_evolved::approximations::sqrt_binary_system_naive(a).unwrap();
-    let b = spl_math_evolved::approximations::sqrt_binary_system_naive(b).unwrap();
-    let c = spl_math_evolved::approximations::sqrt_binary_system_naive(c).unwrap();
-    let d = spl_math_evolved::approximations::sqrt_binary_system_naive(d).unwrap();
+    let a = spl_math::approximations::sqrt_binary_system_naive(a).unwrap();
+    let b = spl_math::approximations::sqrt_binary_system_naive(b).unwrap();
+    let c = spl_math::approximations::sqrt_binary_system_naive(c).unwrap();
+    let d = spl_math::approximations::sqrt_binary_system_naive(d).unwrap();
 
     // perform (cheap) addition to prevent compiler optimizations
     a.checked_add(b)
