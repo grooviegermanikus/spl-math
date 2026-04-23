@@ -1,6 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
-//! Important: put this makro inside an unique module to avoid name clashes
+//! Important: put this macro inside a unique module to avoid name clashes
 
 #[macro_export]
 macro_rules! define_precise_number {
@@ -293,7 +293,7 @@ macro_rules! define_precise_number {
             ///
             /// where a = 1, n = power, x = precise_num
             /// NOTE: this function is private because its accurate range and precision
-            /// have not been estbalished.
+            /// have not been established.
             pub(crate) fn checked_pow_approximation(
                 &self,
                 exponent: &Self,
@@ -340,7 +340,7 @@ macro_rules! define_precise_number {
             /// Get the power of a number, where the exponent is expressed as a fraction
             /// (numerator / denominator)
             /// NOTE: this function is private because its accurate range and precision
-            /// have not been estbalished.
+            /// have not been established.
             #[allow(dead_code)]
             fn checked_pow_fraction(&self, exponent: &Self) -> Option<Self> {
                 assert!(self.value > Self::min_pow_base_excl());
@@ -493,7 +493,7 @@ macro_rules! define_precise_number {
             }
 
             // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
-            fn cordic_sqrt_approximation_naiv(&self) -> Option<Self> {
+            fn cordic_sqrt_approximation_naive(&self) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
@@ -517,7 +517,7 @@ macro_rules! define_precise_number {
                     result = pow2.div2();
                 }
 
-                // oroginal algo used NUM_BITS
+                // original algo used NUM_BITS
                 for _ in 0..Self::MAX_APPROXIMATION_ITERATIONS {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
@@ -765,7 +765,7 @@ macro_rules! define_sqrt_tests {
                 (precision_newton, precision_cordic)
             }
 
-            // this accounts for the absolute error - in contract to relative error
+            // this accounts for the absolute error - in contrast to relative error
             fn calc_square_root_bounds(
                 approximate_root: &$Precise,
                 precision: u32,
