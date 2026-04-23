@@ -128,21 +128,21 @@ mod tests {
     #[test]
     fn test_bruteforce_precision() {
         let number = PreciseNumber::maximum_sqrt_base();
-        println!("Testing number: {}", number.pretty_string());
+        println!("Testing number: {}", pretty_string(&number));
 
-        let bd = BigDecimal::from_str(&number.pretty_string()).unwrap();
+        let bd = BigDecimal::from_str(&pretty_string(&number)).unwrap();
         let precise_sqrt = bd.sqrt().unwrap();
 
         let approximate_root_cordic = number.cordic_sqrt_approximation_fast().unwrap();
         println!(
             "Approximate root c: {}",
-            approximate_root_cordic.pretty_string()
+            pretty_string(&approximate_root_cordic)
         );
 
         let approximate_root_newton = number.sqrt_newton().unwrap();
         println!(
             "Approximate root n: {}",
-            approximate_root_newton.pretty_string()
+            pretty_string(&approximate_root_newton)
         );
 
         println!("Precise sqrt: {}", precise_sqrt);
@@ -323,5 +323,15 @@ mod tests {
             }
         }
         out
+    }
+
+    fn pretty_string(pn: &PreciseNumber) -> String {
+        use bigdecimal_rs::BigDecimal;
+        use std::ops::Div;
+        use std::str::FromStr;
+        let bd = BigDecimal::from_str(&format!("{}", pn.value))
+            .unwrap()
+            .div(BigDecimal::from_str(&format!("{}", PreciseNumber::FP_ONE)).unwrap());
+        format!("{}", bd)
     }
 }

@@ -469,7 +469,6 @@ macro_rules! define_precise_number {
                 };
 
                 for _i in 0..Self::MAX_APPROXIMATION_ITERATIONS {
-                    // println!("cordic iter {}: result_inner = {}", i, result_inner);
                     pow2_inner >>= 1;
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
@@ -554,9 +553,7 @@ macro_rules! define_precise_number {
                 self.sqrt_newton()
             }
 
-            /// Approximate the square root using Newton's method.  Based on testing,
-            /// this provides a precision of 11 digits for inputs between 0 and
-            /// u128::MAX
+            /// Approximate the square root using Newton's method.
             ///
             /// Complexity: O(M(m) * log m) bit-operations, where M(m) is the complexity of multiplying two m-bit integers.
             /// For large m, Newton with fast multiplication is asymptotically faster than Cordic.
@@ -599,17 +596,6 @@ macro_rules! define_precise_number {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
 
-            #[cfg(test)]
-            // very hacky and slow implementation for testing purposes only
-            pub fn pretty_string(&self) -> String {
-                use bigdecimal_rs::BigDecimal;
-                use std::ops::Div;
-                use std::str::FromStr;
-                let bd = BigDecimal::from_str(&format!("{}", self.value))
-                    .unwrap()
-                    .div(BigDecimal::from_str(&format!("{}", Self::FP_ONE)).unwrap());
-                format!("{}", bd)
-            }
         }
     };
 } // -- macro
