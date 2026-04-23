@@ -31,11 +31,13 @@ macro_rules! define_precise_number {
             /// the calculation ends.
             const PRECISION: $FPInner = $PRECISION;
 
+            /// Largest value for which sqrt is guaranteed to meet target precision
             const MAXIMUM_SQRT_BASE: $FPInner = $MAXIMUM_SQRT_BASE;
 
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
+            /// Total number of bits in the inner fixed-point type
             pub const NUM_BITS: u32 = size_of::<$FPInner>() as u32 * 8;
 
             pub const fn zero() -> Self {
@@ -585,13 +587,11 @@ macro_rules! define_precise_number {
                 self.cordic_sqrt_approximation_fast()
             }
 
-            #[cfg(feature = "from_f64")]
             pub fn new_from_f64(input_f64: f64) -> Option<Self> {
                 let scaled_value = input_f64 * Self::FP_ONE_F64;
                 Self::new_from_inner_f64(scaled_value)
             }
 
-            #[cfg(feature = "from_f64")]
             pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
