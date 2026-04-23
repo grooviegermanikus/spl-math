@@ -595,7 +595,6 @@ macro_rules! define_precise_number {
             pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
-
         }
     };
 } // -- macro
