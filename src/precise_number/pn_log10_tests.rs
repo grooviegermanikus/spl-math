@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::{define_log10, define_precise_number};
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
+    use crate::{define_log10, define_precise_number};
     use bigdecimal_rs::BigDecimal;
     use proptest::prelude::ProptestConfig;
     use proptest::proptest;
@@ -266,11 +266,7 @@ mod tests {
         let pn_log10_bd = BigDecimal::from_str(&format!("{}", magnitude.value.as_u128()))
             .unwrap()
             .div(fx_one);
-        let pn_signed = if negative {
-            -pn_log10_bd
-        } else {
-            pn_log10_bd
-        };
+        let pn_signed = if negative { -pn_log10_bd } else { pn_log10_bd };
 
         let diff = (BigDecimal::from_str(&format!("{:.20}", fx_log10)).unwrap() - pn_signed)
             .abs()

@@ -22,4 +22,3 @@ pub(crate) fn bench_log10(c: &mut Criterion) {
         b.iter(|| Some(a.log10()));
     });
 }
-
