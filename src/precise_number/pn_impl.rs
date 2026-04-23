@@ -1,6 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 //! Defines PreciseNumber, a U256 wrapper with float-like operations
-//! Important: put this makro inside an unique module to avoid name clashes
+//! Important: put this macro inside a unique module to avoid name clashes
 
 #[macro_export]
 macro_rules! define_precise_number {
@@ -31,11 +31,13 @@ macro_rules! define_precise_number {
             /// the calculation ends.
             const PRECISION: $FPInner = $PRECISION;
 
+            /// Largest value for which sqrt is guaranteed to meet target precision
             const MAXIMUM_SQRT_BASE: $FPInner = $MAXIMUM_SQRT_BASE;
 
             // workaround to be compatible with all types used in tests
             const SMALLEST_POSITIVE: u8 = 1;
 
+            /// Total number of bits in the inner fixed-point type
             pub const NUM_BITS: u32 = size_of::<$FPInner>() as u32 * 8;
 
             pub const fn zero() -> Self {
@@ -291,7 +293,7 @@ macro_rules! define_precise_number {
             ///
             /// where a = 1, n = power, x = precise_num
             /// NOTE: this function is private because its accurate range and precision
-            /// have not been estbalished.
+            /// have not been established.
             pub(crate) fn checked_pow_approximation(
                 &self,
                 exponent: &Self,
@@ -338,7 +340,7 @@ macro_rules! define_precise_number {
             /// Get the power of a number, where the exponent is expressed as a fraction
             /// (numerator / denominator)
             /// NOTE: this function is private because its accurate range and precision
-            /// have not been estbalished.
+            /// have not been established.
             #[allow(dead_code)]
             fn checked_pow_fraction(&self, exponent: &Self) -> Option<Self> {
                 assert!(self.value > Self::min_pow_base_excl());
@@ -469,7 +471,6 @@ macro_rules! define_precise_number {
                 };
 
                 for _i in 0..Self::MAX_APPROXIMATION_ITERATIONS {
-                    // println!("cordic iter {}: result_inner = {}", i, result_inner);
                     pow2_inner >>= 1;
                     let next_result_inner = result_inner.checked_add(pow2_inner)?;
                     if Self::pow2(next_result_inner)? <= x_shifted {
@@ -492,7 +493,7 @@ macro_rules! define_precise_number {
             }
 
             // port of this https://github.com/sebcrozet/cordic/blob/0cb0773e879721ad8c72cd36dcb7eb27bd2f83a4/cordic/src/lib.rs#L204
-            fn cordic_sqrt_approximation_naiv(&self) -> Option<Self> {
+            fn cordic_sqrt_approximation_naive(&self) -> Option<Self> {
                 let x = *self;
                 if x == Self::zero() || x == Self::one() {
                     return Some(x);
@@ -516,7 +517,7 @@ macro_rules! define_precise_number {
                     result = pow2.div2();
                 }
 
-                // oroginal algo used NUM_BITS
+                // original algo used NUM_BITS
                 for _ in 0..Self::MAX_APPROXIMATION_ITERATIONS {
                     pow2 = pow2.div2();
                     let next_result = result.checked_add(&pow2)?;
@@ -554,9 +555,7 @@ macro_rules! define_precise_number {
                 self.sqrt_newton()
             }
 
-            /// Approximate the square root using Newton's method.  Based on testing,
-            /// this provides a precision of 11 digits for inputs between 0 and
-            /// u128::MAX
+            /// Approximate the square root using Newton's method.
             ///
             /// Complexity: O(M(m) * log m) bit-operations, where M(m) is the complexity of multiplying two m-bit integers.
             /// For large m, Newton with fast multiplication is asymptotically faster than Cordic.
@@ -588,13 +587,11 @@ macro_rules! define_precise_number {
                 self.cordic_sqrt_approximation_fast()
             }
 
-            #[cfg(feature = "from_f64")]
             pub fn new_from_f64(input_f64: f64) -> Option<Self> {
                 let scaled_value = input_f64 * Self::FP_ONE_F64;
                 Self::new_from_inner_f64(scaled_value)
             }
 
-            #[cfg(feature = "from_f64")]
             pub fn new_from_inner_f64(inner_value: f64) -> Option<Self> {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
@@ -855,7 +852,7 @@ macro_rules! define_sqrt_tests {
                 (precision_newton, precision_cordic)
             }
 
-            // this accounts for the absolute error - in contract to relative error
+            // this accounts for the absolute error - in contrast to relative error
             fn calc_square_root_bounds(
                 approximate_root: &$Precise,
                 precision: u32,

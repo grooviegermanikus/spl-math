@@ -8,8 +8,7 @@ license = "Apache-2.0"
 edition = "2021"
 
 [features]
-default = ["from_f64"]
-from_f64 = []
+default = []
 
 [[bench]]
 name = "bench_sqrt"
