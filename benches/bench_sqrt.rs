@@ -40,16 +40,62 @@ fn calc_cordic_sqrt_roots(
 }
 
 #[inline(never)]
-fn bench_sqrt_binary_system(c: &mut Criterion) {
-    const SAMPLES: u128 = 1_000_000_000_000;
+fn calc_binary_system_sqrt(
+    (a, b, c, d): (u128, u128, u128, u128),
+) -> u128 {
+    let a = spl_math_evolved::approximations::sqrt(a).unwrap();
+    let b = spl_math_evolved::approximations::sqrt(b).unwrap();
+    let c = spl_math_evolved::approximations::sqrt(c).unwrap();
+    let d = spl_math_evolved::approximations::sqrt(d).unwrap();
 
-    let testdata = (0..SAMPLES).step_by(1_000_000).collect_vec();
+    // perform (cheap) addition to prevent compiler optimizations
+    a.checked_add(b)
+        .unwrap()
+        .checked_add(c)
+        .unwrap()
+        .checked_add(d)
+        .unwrap()
+}
+
+#[inline(never)]
+fn calc_binary_system_sqrt_naive(
+    (a, b, c, d): (u128, u128, u128, u128),
+) -> u128 {
+    let a = spl_math_evolved::approximations::sqrt_binary_system_naiv(a).unwrap();
+    let b = spl_math_evolved::approximations::sqrt_binary_system_naiv(b).unwrap();
+    let c = spl_math_evolved::approximations::sqrt_binary_system_naiv(c).unwrap();
+    let d = spl_math_evolved::approximations::sqrt_binary_system_naiv(d).unwrap();
+
+    // perform (cheap) addition to prevent compiler optimizations
+    a.checked_add(b)
+        .unwrap()
+        .checked_add(c)
+        .unwrap()
+        .checked_add(d)
+        .unwrap()
+}
+
+
+
+#[inline(never)]
+fn bench_sqrt_binary_system(c: &mut Criterion) {
+    const SAMPLES: u128 = 1_000_000;
+    let testdata = (0..SAMPLES)
+        .step_by(13)
+        .map(|i| {
+            let a = 10u128 + i;
+            let b = 50_000_000_000_000u128 + i;
+            let c = 50_000_000_000_000_000_000_000u128 + i;
+            let d = 110_359_921_541_836_653_504_517_256_210_928_999_005u128 - i;
+            (a, b, c, d)
+        })
+        .collect_vec();
 
     let mut testdata_iter = testdata.clone().into_iter().cycle();
 
     c.bench_function("bench_sqrt_binary_system", |b| {
         b.iter(|| {
-            let root = spl_math_evolved::approximations::sqrt(testdata_iter.next().unwrap());
+            let root = calc_binary_system_sqrt(testdata_iter.next().unwrap());
             Some(root)
         });
     });
@@ -57,9 +103,7 @@ fn bench_sqrt_binary_system(c: &mut Criterion) {
     let mut testdata_iter = testdata.into_iter().cycle();
     c.bench_function("bench_sqrt_binary_system_naiv", |b| {
         b.iter(|| {
-            let root = spl_math_evolved::approximations::sqrt_binary_system_naiv(
-                testdata_iter.next().unwrap(),
-            );
+            let root = calc_binary_system_sqrt_naive(testdata_iter.next().unwrap());
             Some(root)
         });
     });

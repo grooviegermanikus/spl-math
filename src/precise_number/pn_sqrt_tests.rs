@@ -65,7 +65,6 @@ mod tests {
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_square_root_precision() {
-        // TODO we need to tune down this parameter to make algo fast and precise enough
 
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
