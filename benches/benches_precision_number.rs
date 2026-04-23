@@ -20,10 +20,7 @@ criterion_group!(benches_pow, pn::pow::bench_pow,);
 
 criterion_group!(benches_sqrt, pn::sqrt::bench_sqrt,);
 
-criterion_group!(
-    benches_log10,
-    pn::log10::bench_log10,
-);
+criterion_group!(benches_log10, pn::log10::bench_log10,);
 
 criterion_group!(
     benches_muldiv,

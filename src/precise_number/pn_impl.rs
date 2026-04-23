@@ -645,7 +645,6 @@ macro_rules! define_precise_number {
                 let result = integer_part.checked_add(frac)?;
                 Some(Self { value: result })
             }
-
         }
     };
 } // -- macro
@@ -908,9 +907,9 @@ macro_rules! define_log10_tests {
     ($Precise:ident, $TOuter:ty, $FPInner:ty, $target_precision:expr) => {
         #[cfg(test)]
         mod log10_tests {
+            use super::$Precise;
             #[allow(unused_imports)]
             use super::*;
-            use super::$Precise;
 
             #[test]
             fn test_log10_exact_powers() {
@@ -929,9 +928,7 @@ macro_rules! define_log10_tests {
 
                 // log10(100) = 2
                 let hundred = <$Precise>::new(100 as $TOuter).unwrap();
-                let expected_2 = <$Precise>::one()
-                    .checked_add(&<$Precise>::one())
-                    .unwrap();
+                let expected_2 = <$Precise>::one().checked_add(&<$Precise>::one()).unwrap();
                 let result = hundred.log10().unwrap();
                 assert!(
                     result.almost_eq(&expected_2, <$Precise>::PRECISION),
@@ -985,7 +982,10 @@ macro_rules! define_log10_tests {
                 let half = <$Precise>::one().div2();
                 let (result, negative) = half.signed_log10().unwrap();
                 assert!(negative, "log10(0.5) should be negative");
-                assert!(result.value > <$Precise>::FP_ZERO, "magnitude should be > 0");
+                assert!(
+                    result.value > <$Precise>::FP_ZERO,
+                    "magnitude should be > 0"
+                );
             }
 
             #[test]
@@ -1019,9 +1019,7 @@ macro_rules! define_log10_tests {
 
                 // log2(4) = 2
                 let four = <$Precise>::new(4 as $TOuter).unwrap();
-                let expected_2 = <$Precise>::one()
-                    .checked_add(&<$Precise>::one())
-                    .unwrap();
+                let expected_2 = <$Precise>::one().checked_add(&<$Precise>::one()).unwrap();
                 let result = four.log2().unwrap();
                 assert!(
                     result.almost_eq(&expected_2, <$Precise>::PRECISION),
@@ -1056,23 +1054,15 @@ macro_rules! define_log10_tests {
                 use std::str::FromStr;
 
                 let result = x.log10().unwrap();
-                let result_bd =
-                    BigDecimal::from_str(&pretty_string(&result)).unwrap();
-                let x_bd: BigDecimal =
-                    BigDecimal::from_str(&pretty_string(&x)).unwrap();
+                let result_bd = BigDecimal::from_str(&pretty_string(&result)).unwrap();
+                let x_bd: BigDecimal = BigDecimal::from_str(&pretty_string(&x)).unwrap();
                 // use f64 log10 as reference (precise to ~15 digits)
                 let x_f64: f64 = x_bd.to_string().parse().unwrap();
-                let expected_bd =
-                    BigDecimal::from_str(&format!("{:.20}", x_f64.log10()))
-                        .unwrap();
+                let expected_bd = BigDecimal::from_str(&format!("{:.20}", x_f64.log10())).unwrap();
 
                 let mut best_precision = 0u32;
                 for (precision, _eps) in precisions_enumerated() {
-                    let eps_bd = BigDecimal::from_str(&format!(
-                        "1e-{}",
-                        precision
-                    ))
-                    .unwrap();
+                    let eps_bd = BigDecimal::from_str(&format!("1e-{}", precision)).unwrap();
                     let diff = (&result_bd - &expected_bd).abs();
                     if diff <= eps_bd {
                         best_precision = precision;
