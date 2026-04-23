@@ -71,7 +71,6 @@ mod tests {
     // adopted from token-bonding-curve -> dfs_precise_number.rs
     #[test]
     fn test_sqrt_cordic_precision() {
-
         // number below 1 (with uneven number of bits) 1.23456789e-9
         let number = PreciseNumber::new(123456789)
             .unwrap()

@@ -40,9 +40,7 @@ fn calc_cordic_sqrt_roots(
 }
 
 #[inline(never)]
-fn calc_binary_system_sqrt(
-    (a, b, c, d): (u128, u128, u128, u128),
-) -> u128 {
+fn calc_binary_system_sqrt((a, b, c, d): (u128, u128, u128, u128)) -> u128 {
     let a = spl_math_evolved::approximations::sqrt(a).unwrap();
     let b = spl_math_evolved::approximations::sqrt(b).unwrap();
     let c = spl_math_evolved::approximations::sqrt(c).unwrap();
@@ -58,9 +56,7 @@ fn calc_binary_system_sqrt(
 }
 
 #[inline(never)]
-fn calc_binary_system_sqrt_naive(
-    (a, b, c, d): (u128, u128, u128, u128),
-) -> u128 {
+fn calc_binary_system_sqrt_naive((a, b, c, d): (u128, u128, u128, u128)) -> u128 {
     let a = spl_math_evolved::approximations::sqrt_binary_system_naive(a).unwrap();
     let b = spl_math_evolved::approximations::sqrt_binary_system_naive(b).unwrap();
     let c = spl_math_evolved::approximations::sqrt_binary_system_naive(c).unwrap();
@@ -74,8 +70,6 @@ fn calc_binary_system_sqrt_naive(
         .checked_add(d)
         .unwrap()
 }
-
-
 
 #[inline(never)]
 fn bench_sqrt_binary_system(c: &mut Criterion) {

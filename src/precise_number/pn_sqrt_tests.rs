@@ -150,7 +150,6 @@ mod tests {
             "precision_newton {}",
             find_max_precision(approximate_root_newton, number)
         );
-
     }
 
     fn find_max_precision(approximate_root: PreciseNumber, radicand: PreciseNumber) -> u32 {
