@@ -1,0 +1,147 @@
+name: Publish Rust Crate
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish-to-crates:
+        description: 'Publish to crates.io'
+        required: true
+        default: true
+        type: boolean
+      create-github-release:
+        description: 'Create GitHub release'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: rust-publish
+  cancel-in-progress: false
+
+jobs:
+  guard-allowed-branch:
+    name: Guard allowed source branch for release publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard allowed source branch for release publish
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/main) ;;
+            *)
+              echo "::error::Publish Rust Crate must be run from main. Current ref: $GITHUB_REF"
+              exit 1
+              ;;
+          esac
+
+  test:
+    name: Run release tests
+    needs: guard-allowed-branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --locked
+
+  publish:
+    name: Publish spl-math crate
+    runs-on: ubuntu-latest
+    needs: [guard-allowed-branch, test]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Build crate
+        run: cargo build
+
+      - name: Publish crate
+        id: cargo_publish
+        uses: solana-developers/github-actions/cargo-publish@e2cd34eb09f996b48be7f6daeb8f455094dd6d53
+        with:
+          package: spl-math
+          check-version-available: ${{ inputs.publish-to-crates }}
+          dry-run: ${{ !inputs.publish-to-crates }}
+          skip-existing: 'true'
+
+      - name: Check if prerelease
+        id: prerelease
+        run: |
+          if [[ "${{ steps.cargo_publish.outputs.version }}" == *"-"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: ${{ inputs.publish-to-crates || inputs.create-github-release }}
+        run: |
+          TAG="v${{ steps.cargo_publish.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping"
+          else
+            git tag "$TAG"
+            echo "Created tag $TAG"
+          fi
+          git push origin "$TAG" 2>/dev/null || echo "Tag already pushed"
+
+      - name: Create GitHub Release
+        if: ${{ inputs.create-github-release }}
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tagName = `v${{ steps.cargo_publish.outputs.version }}`;
+            const releaseName = `spl-math v${{ steps.cargo_publish.outputs.version }}`;
+            const isPrerelease = '${{ steps.prerelease.outputs.is_prerelease }}' === 'true';
+
+            try {
+              await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tagName,
+              });
+              console.log(`Release ${tagName} already exists, skipping`);
+              return;
+            } catch (e) {
+              if (e.status !== 404) throw e;
+            }
+
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              name: releaseName,
+              body: `Release of spl-math v${{ steps.cargo_publish.outputs.version }}\n\n**crates.io:** https://crates.io/crates/spl-math/${{ steps.cargo_publish.outputs.version }}`,
+              draft: false,
+              prerelease: isPrerelease,
+            });
+
+      - name: Publish summary
+        run: |
+          echo "## spl-math Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: \`${{ steps.cargo_publish.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag**: \`v${{ steps.cargo_publish.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.cargo_publish.outputs.published }}" == "true" ]; then
+            echo "Published to crates.io: https://crates.io/crates/spl-math/${{ steps.cargo_publish.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.cargo_publish.outputs.already-published }}" == "true" ]; then
+            echo "Skipped crates.io publish; version already exists" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Skipped crates.io publish" >> $GITHUB_STEP_SUMMARY
+          fi

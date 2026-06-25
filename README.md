@@ -60,6 +60,10 @@ Use quick mode to run benchmark only until the significance level has been reach
 cargo bench --bench benches_precision_number -- --quick
 ```
 
+## Acknowledgments
+
+Thanks to [grooviegermanikus](https://github.com/grooviegermanikus) for the initial design and implementation of this library.
+
 ## License
 
 This project is open-source under the MIT license.
