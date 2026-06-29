@@ -1,4 +1,4 @@
-/// Decimal fix-point number with 12 decimal places backed by U256
+/// Decimal fixed-point number with 12 decimal places backed by U256
 /// backward-compatible with spl-math's PreciseNumber (12 decimal places)
 use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::{U256, U512};

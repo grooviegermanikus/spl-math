@@ -45,7 +45,7 @@ pub(crate) fn u256_from_f64_bits(value: f64) -> Option<U256> {
     if bit_range_start >= 0 {
         // highest bit (inclusive)
         let _bit_range_end = bit_range_start as usize + 52usize;
-        // note that bit_range_end might exceed 256 bits which is okey if the high bits are zero
+        // note that bit_range_end might exceed 256 bits which is okay if the high bits are zero
 
         let first_word = (bit_range_start as usize) / 64;
         let second_word = first_word + 1;
@@ -274,7 +274,7 @@ mod tests_f64 {
     fn test_u256_from_f64_block3() {
         // 2^256 => 1.15e77
         // U256 is little-endian
-        // not that the mantissa is only 52 bits and fits in the highest block
+        // note that the mantissa is only 52 bits and fits in the highest block
         assert_eq!(
             u256_from_f64_bits(1.15e77).unwrap().0,
             [0, 0, 0, 18320556978023200768]

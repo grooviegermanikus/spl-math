@@ -1,5 +1,5 @@
 use crate::uint::U256;
-/// Decimal fix-point number with 12 decimal places backed by u128
+/// Decimal fixed-point number with 9 decimal places backed by u128
 ///
 use crate::{
     define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests,

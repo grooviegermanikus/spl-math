@@ -656,7 +656,7 @@ macro_rules! define_muldiv {
         #[allow(dead_code)]
         impl $Precise {
             #[inline(always)]
-            fn extend_precsion(val: $FPInner) -> $FPInnerDoublePrecision {
+            fn extend_precision(val: $FPInner) -> $FPInnerDoublePrecision {
                 <$FPInnerDoublePrecision>::from(val)
             }
 
@@ -675,8 +675,9 @@ macro_rules! define_muldiv {
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
-                        / Self::extend_precsion(denom.value);
+                    let r = (Self::extend_precision(self.value)
+                        * Self::extend_precision(num.value))
+                        / Self::extend_precision(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
                 }
@@ -686,8 +687,8 @@ macro_rules! define_muldiv {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
-                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
-                    / Self::extend_precsion(denom.value);
+                let r = (Self::extend_precision(self.value) * Self::extend_precision(num.value))
+                    / Self::extend_precision(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
             }
@@ -706,8 +707,9 @@ macro_rules! define_muldiv {
                     let r = dividend / denom.value;
                     Some($Precise { value: r })
                 } else {
-                    let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value))
-                        / Self::extend_precsion(denom.value);
+                    let r = (Self::extend_precision(self.value)
+                        * Self::extend_precision(num.value))
+                        / Self::extend_precision(denom.value);
 
                     Self::trunc_precision(r).map(|v| $Precise { value: v })
                 }
@@ -718,9 +720,9 @@ macro_rules! define_muldiv {
                 if denom.value == Self::FP_ZERO {
                     return None;
                 }
-                let r = (Self::extend_precsion(self.value) * Self::extend_precsion(num.value)
-                    + (Self::extend_precsion(denom.value) - 1))
-                    / Self::extend_precsion(denom.value);
+                let r = (Self::extend_precision(self.value) * Self::extend_precision(num.value)
+                    + (Self::extend_precision(denom.value) - 1))
+                    / Self::extend_precision(denom.value);
 
                 Self::trunc_precision(r).map(|v| $Precise { value: v })
             }
@@ -884,7 +886,7 @@ macro_rules! define_sqrt_tests {
             }
 
             // returns 10**(-digits) in InnerUint
-            // for testing only, neither fast not beautiful
+            // for testing only, neither fast nor beautiful
             fn precision_in_inner(digits: u32) -> $FPInner {
                 let mut result = ONE_CONST;
                 let ten = <$FPInner>::from(10u8);

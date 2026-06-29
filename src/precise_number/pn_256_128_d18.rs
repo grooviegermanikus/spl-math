@@ -1,6 +1,6 @@
 use crate::precise_number::convert_from_f64::u256_from_f64_bits;
 use crate::uint::{U256, U512};
-/// Decimal fix-point number with 18 decimal places backed by U256
+/// Decimal fixed-point number with 18 decimal places backed by U256
 /// 18 decimal places are recommended for most DeFi applications
 use crate::{
     define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests,
@@ -54,7 +54,7 @@ mod tests {
     type InnerUint = U256;
 
     // returns 10**(-digits) in InnerUint
-    // for testing only, neither fast not beautiful
+    // for testing only, neither fast nor beautiful
     fn precision(digits: u8) -> InnerUint {
         let ten = InnerUint::from(10);
         let mut result = ONE_CONST;

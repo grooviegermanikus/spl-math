@@ -288,7 +288,7 @@ mod tests {
     }
 
     // returns 10**(-digits) in InnerUint
-    // for testing only, neither fast not beautiful
+    // for testing only, neither fast nor beautiful
     pub fn precision_in_inner(digits: u32) -> InnerUint {
         let ten = InnerUint::from(10);
         let mut result = ONE_CONST;

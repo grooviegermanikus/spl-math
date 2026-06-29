@@ -1,4 +1,4 @@
-/// Decimal fix-point number with 12 decimal places backed by u64
+/// Decimal fixed-point number with 4 decimal places backed by u64
 ///
 use crate::{
     define_log10, define_log10_tests, define_muldiv, define_precise_number, define_sqrt_tests,
