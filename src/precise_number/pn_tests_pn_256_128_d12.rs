@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests_pn_256_128_d12 {
-    use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
+    use crate::{define_precise_number, define_precise_number_oracles};
 
     type InnerUint = U256;
 
@@ -24,6 +24,7 @@ mod tests_pn_256_128_d12 {
         MAXIMUM_SQRT_BASE,
         |value| u256_from_f64_bits(value)
     );
+    define_precise_number_oracles!(PreciseNumber, U256);
 
     fn check_pow_approximation(base: InnerUint, exponent: InnerUint, expected: InnerUint) {
         let precision = InnerUint::from(5_000_000); // correct to at least 3 decimal places

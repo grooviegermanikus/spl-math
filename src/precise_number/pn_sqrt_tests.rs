@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::define_precise_number;
     use crate::precise_number::convert_from_f64::u256_from_f64_bits;
     use crate::uint::U256;
+    use crate::{define_precise_number, define_precise_number_oracles};
     use bigdecimal_rs::BigDecimal;
     use num_traits::ToPrimitive;
     use proptest::prelude::ProptestConfig;
@@ -29,6 +29,7 @@ mod tests {
         MAXIMUM_SQRT_BASE,
         |value| u256_from_f64_bits(value)
     );
+    define_precise_number_oracles!(PreciseNumber, U256);
 
     #[test]
     fn test_square_root_min_max() {

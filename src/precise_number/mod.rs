@@ -4,6 +4,9 @@ mod pn_256_128_d12;
 mod pn_256_128_d18;
 mod pn_64_32_d4;
 mod pn_impl;
+#[cfg(test)]
+mod test_oracles;
+
 mod pn_log10_tests;
 mod pn_muldiv_tests;
 mod pn_sqrt_tests;

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{define_muldiv, define_precise_number};
+    use crate::{define_muldiv, define_muldiv_oracles, define_precise_number};
     use num_traits::ToPrimitive;
     use proptest::prelude::*;
     use proptest::test_runner::TestCaseResult;
@@ -19,6 +19,7 @@ mod tests {
     );
 
     define_muldiv!(TestPreciseNumber8, u8, u8, u16);
+    define_muldiv_oracles!(TestPreciseNumber8);
 
     #[test]
     fn test_call_muldiv_floor() {
