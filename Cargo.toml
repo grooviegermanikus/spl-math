@@ -28,7 +28,7 @@ proptest = { version = "1.8", features = ["timeout"] }
 quickcheck = "1"
 quickcheck_macros = "1"
 libm = "0.2.11"
-criterion = "0.6.0"
+criterion = "0.8.2"
 itertools = "0.14"
 bigdecimal-rs = "0.2.1"
 fixed = "1.29"
