@@ -71,7 +71,7 @@ jobs:
 
       - name: Publish crate
         id: cargo_publish
-        uses: solana-developers/github-actions/cargo-publish@e2cd34eb09f996b48be7f6daeb8f455094dd6d53
+        uses: solana-developers/github-actions/cargo-publish@00b7ad762822095e32f1ff9a7f21f371ade6a8b2
         with:
           package: spl-math
           check-version-available: ${{ inputs.publish-to-crates }}
