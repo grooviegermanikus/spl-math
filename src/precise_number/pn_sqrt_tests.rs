@@ -65,10 +65,10 @@ mod tests {
 
     #[test]
     fn test_square_root_precision() {
-        // number below 1 (with uneven number of bits) 1.23456789e-9
-        let number = PreciseNumber::new(123456789)
+        // number below 1 (with uneven number of bits) 1.234e-9
+        let number = PreciseNumber::new(1234)
             .unwrap()
-            .checked_div(&(PreciseNumber::new(10u128.pow(17)).unwrap()))
+            .checked_div(&(PreciseNumber::new(10u128.pow(12)).unwrap()))
             .unwrap();
         assert_eq!(number.value.as_u128(), 1234u128);
         // sqrt(1234e-12) = 3,512833614e-5

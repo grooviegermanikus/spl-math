@@ -207,6 +207,47 @@ mod tests_pn_256_128_d12 {
     }
 
     #[test]
+    fn test_checked_div_exact_ratios() {
+        let half = PreciseNumber::new(1)
+            .unwrap()
+            .checked_div(&PreciseNumber::new(2).unwrap())
+            .unwrap();
+        assert_eq!(half.checked_div(&half).unwrap(), PreciseNumber::one());
+
+        let one_tenth = PreciseNumber::new(1)
+            .unwrap()
+            .checked_div(&PreciseNumber::new(10).unwrap())
+            .unwrap();
+        assert_eq!(
+            one_tenth.checked_div(&one_tenth).unwrap(),
+            PreciseNumber::one()
+        );
+        assert_eq!(
+            PreciseNumber::one().checked_div(&one_tenth).unwrap(),
+            PreciseNumber::new(10).unwrap()
+        );
+
+        let min_unit = PreciseNumber { value: U256::one() };
+        assert_eq!(
+            min_unit.checked_div(&min_unit).unwrap(),
+            PreciseNumber::one()
+        );
+    }
+
+    #[test]
+    fn test_checked_div_inner_rounds_to_nearest() {
+        let one = PreciseNumber::one();
+        let third = one.checked_div_inner(&U256::from(3u8)).unwrap();
+        assert_eq!(third.value, U256::from(333_333_333_333u128));
+
+        let two_thirds = PreciseNumber::new(2)
+            .unwrap()
+            .checked_div_inner(&U256::from(3u8))
+            .unwrap();
+        assert_eq!(two_thirds.value, U256::from(666_666_666_667u128));
+    }
+
+    #[test]
     fn test_checked_mul() {
         let number_one = PreciseNumber::new(0).unwrap();
         let number_two = PreciseNumber::new(0).unwrap();

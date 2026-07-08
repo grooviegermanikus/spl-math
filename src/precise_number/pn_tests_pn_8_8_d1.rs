@@ -28,9 +28,9 @@ mod tests_pn_8_8_d1 {
             c.to_imprecise().unwrap()
         }
 
-        // rounding mode HALF_DOWN
-        assert_eq!(calc(11, 2), 5);
-        assert_eq!(calc(5, 2), 2);
+        // rounding mode HALF_UP
+        assert_eq!(calc(11, 2), 6);
+        assert_eq!(calc(5, 2), 3);
         assert_eq!(calc(4, 3), 1);
     }
 

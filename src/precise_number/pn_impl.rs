@@ -127,22 +127,22 @@ macro_rules! define_precise_number {
                 Some(Self { value })
             }
 
-            /// Performs a checked division on two precise numbers
+            /// Performs a checked division on two precise numbers,
+            /// rounding to nearest
             pub fn checked_div(&self, rhs: &Self) -> Option<Self> {
                 if *rhs == Self::zero() {
                     return None;
                 }
+                let correction = rhs.value.checked_div(2u8.into())?;
                 match self.value.checked_mul(Self::FP_ONE) {
                     Some(v) => {
-                        let value = v
-                            .checked_add(Self::ROUNDING_CORRECTION)?
-                            .checked_div(rhs.value)?;
+                        let value = v.checked_add(correction)?.checked_div(rhs.value)?;
                         Some(Self { value })
                     }
                     None => {
                         let value = self
                             .value
-                            .checked_add(Self::ROUNDING_CORRECTION)?
+                            .checked_add(correction)?
                             .checked_div(rhs.value)?
                             .checked_mul(Self::FP_ONE)?;
                         Some(Self { value })
@@ -150,14 +150,15 @@ macro_rules! define_precise_number {
                 }
             }
 
-            /// divide PreciseNumber by inner type
+            /// divide PreciseNumber by inner type, rounding to nearest
             pub fn checked_div_inner(&self, rhs: &$FPInner) -> Option<Self> {
                 if *rhs == $FP_ZERO {
                     return None;
                 }
 
+                let correction = rhs.checked_div(2u8.into())?;
                 self.value
-                    .checked_add(Self::ROUNDING_CORRECTION)?
+                    .checked_add(correction)?
                     .checked_div(*rhs)
                     .map(|value| Self { value })
             }
