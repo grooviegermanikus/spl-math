@@ -111,8 +111,8 @@ mod tests {
             .unwrap();
         assert_eq!(
             half.checked_div(&half).unwrap().value,
-            U256::from(1_000_000_000_001u128),
-            "0.5 / 0.5 shouldf be exact but is biased upward"
+            PreciseNumber::FP_ONE,
+            "0.5 / 0.5 should be exact"
         );
 
         let one_tenth = PreciseNumber::new(1)
@@ -121,7 +121,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             one_tenth.checked_div(&one_tenth).unwrap().value,
-            U256::from(1_000_000_000_005u128),
+            PreciseNumber::FP_ONE,
             "0.1 / 0.1 should equal 1.0"
         );
 
@@ -129,22 +129,22 @@ mod tests {
         assert_eq!(minimum_unit.value, U256::from(1u8));
         assert_eq!(
             minimum_unit.checked_div(&minimum_unit).unwrap().value,
-            U256::from(1_500_000_000_000u128),
-            "the minimum positive unit is inflated to 1.5"
+            PreciseNumber::FP_ONE,
+            "the minimum positive unit must not inflated"
         );
 
         assert_eq!(
             PreciseNumber::one().checked_div(&one_tenth).unwrap().value,
-            U256::from(10_000_000_000_005u128),
+            U256::from(10_000_000_000_000u128),
             "reciprocals below one inherit the same upward bias"
         );
 
         let (signed_log10_tenth, negative) = one_tenth.signed_log10().unwrap();
-        assert!(negative, "log10(0.1) should be negative");
+        assert!(negative, "log10(0.1) must be negative");
         assert_eq!(
             signed_log10_tenth.value,
-            U256::from(999_999_999_998u128),
-            "signed_log10(0.1) misses the exact decade because it consumes the biased reciprocal"
+            PreciseNumber::FP_ONE,
+            "signed_log10(0.1) misses"
         );
     }
 

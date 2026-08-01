@@ -142,22 +142,25 @@ macro_rules! define_precise_number {
                 Some(Self { value })
             }
 
-            /// Performs a checked division on two precise numbers
+            /// Performs a checked division on two precise numbers with rounding
             pub fn checked_div(&self, rhs: &Self) -> Option<Self> {
                 if *rhs == Self::zero() {
                     return None;
                 }
                 match self.value.checked_mul(Self::FP_ONE) {
                     Some(v) => {
+                        // TOOD use shr
+                        let correction = rhs.value.checked_div(2u8.into())?;
                         let value = v
-                            .checked_add(Self::ROUNDING_CORRECTION)?
+                            .checked_add(correction)?
                             .checked_div(rhs.value)?;
                         Some(Self { value })
                     }
                     None => {
+                        let correction = rhs.value.checked_div(2u8.into())?;
                         let value = self
                             .value
-                            .checked_add(Self::ROUNDING_CORRECTION)?
+                            .checked_add(correction)?
                             .checked_div(rhs.value)?
                             .checked_mul(Self::FP_ONE)?;
                         Some(Self { value })
