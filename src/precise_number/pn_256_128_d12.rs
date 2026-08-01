@@ -31,6 +31,47 @@ define_log10_tests!(PreciseNumber, u128, U256, 11);
 mod tests {
     use super::*;
 
+
+    /// `checked_div` keeps the full fixed-point precision, so rounding only
+    /// happens on the last representable digit (1e-12). These are the edge
+    /// cases around that digit: the quotient goes to the nearer neighbour and
+    /// an exact half is broken downwards.
+    #[test]
+    fn test_roundmode_half_down() {
+        // type InnerUint = U256;
+        // pub const ONE: u128 = 1_000_000_000_000;
+        const ONE: u128 = 1_000_000_000_000;
+        // operate on raw fixed-point values so the tie sits on the last digit
+        fn div(dividend: u128, divisor: u128) -> u128 {
+            let dividend = PreciseNumber {
+                value: U256::from(dividend),
+            };
+            let divisor = PreciseNumber {
+                value: U256::from(divisor),
+            };
+            dividend.checked_div(&divisor).unwrap().value.as_u128()
+        }
+
+        // 1.0 / 4096 = 0.000244140625 is exactly representable, nothing to round
+        assert_eq!(div(ONE, 4096 * ONE), 244_140_625);
+
+        // 1.0 / 8192 = 0.0001220703125 falls exactly between two representable
+        // values (122070312.5e-12), the tie must round down
+        assert_eq!(div(ONE, 8192 * ONE), 122_070_312);
+        // one ulp of dividend above that tie rounds up ...
+        assert_eq!(div(ONE + 1, 8192 * ONE), 122_070_313);
+        // ... and one ulp below it rounds down
+        assert_eq!(div(ONE - 1, 8192 * ONE), 122_070_312);
+
+        // remainders away from the tie go to the nearer neighbour
+        assert_eq!(div(ONE, 3 * ONE), 333_333_333_333); // 0.333... down
+        assert_eq!(div(2 * ONE, 3 * ONE), 666_666_666_667); // 0.666... up
+
+        // a divisor below 1.0 must not inflate the quotient:
+        // 1e-12 / 0.4 = 2.5e-12, again a tie that rounds down
+        assert_eq!(div(1, 4 * ONE / 10), 2);
+    }
+
     #[test]
     fn test_u256_max_outer_to_precise() {
         let a = PreciseNumber::new(u128::MAX).unwrap();
