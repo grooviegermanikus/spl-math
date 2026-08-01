@@ -142,14 +142,13 @@ macro_rules! define_precise_number {
                 Some(Self { value })
             }
 
-            /// Performs a checked division on two precise numbers with rounding HALF_DOWN
+            /// Performs a checked division on two precise numbers
             pub fn checked_div(&self, rhs: &Self) -> Option<Self> {
                 if *rhs == Self::zero() {
                     return None;
                 }
-                // adding (rhs-1)/2 before the floor division rounds to nearest
-                // and breaks exact .5 ties downwards
-                let correction = rhs.value.checked_sub(1u8.into())?.checked_div(2u8.into())?;
+                // break exact .5 ties downwards
+                let correction = Self::div2_inner(rhs.value.checked_sub(1u8.into())?);
                 match self.value.checked_mul(Self::FP_ONE) {
                     Some(v) => {
                         let value = v
@@ -180,10 +179,17 @@ macro_rules! define_precise_number {
                     .map(|value| Self { value })
             }
 
+            #[inline(always)]
             pub(crate) fn div2(&self) -> Self {
+                Self {
+                    value: Self::div2_inner(self.value),
+                }
+            }
+
+            #[inline(always)]
+            pub(crate) fn div2_inner(value: $FPInner) -> $FPInner {
                 use std::ops::Shr;
-                let value = self.value.shr(1);
-                Self { value }
+                value.shr(1)
             }
 
             pub(crate) fn div10(&self) -> Self {
