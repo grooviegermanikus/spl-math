@@ -69,9 +69,10 @@ mod tests {
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(17)).unwrap()))
             .unwrap();
-        assert_eq!(number.value.as_u128(), 1234u128);
-        // sqrt(1234e-12) = 3,512833614e-5
-        let expected_sqrt = PreciseNumber::new(3_512_833_614)
+        // 1234.56789e-12 rounds to 1235e-12
+        assert_eq!(number.value.as_u128(), 1235u128);
+        // sqrt(1235e-12) = 3,514256678e-5
+        let expected_sqrt = PreciseNumber::new(3_514_256_678)
             .unwrap()
             .checked_div(&(PreciseNumber::new(10u128.pow(14)).unwrap()))
             .unwrap();
