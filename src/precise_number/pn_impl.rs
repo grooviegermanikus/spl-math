@@ -599,20 +599,6 @@ macro_rules! define_precise_number {
                 Self::CONVERT_FROM_F64(inner_value).map(|value| Self { value })
             }
 
-            /// Number of fractional bits used by the binary fixed-point mantissa in log2().
-            /// Bounded by NUM_BITS so that squaring a mantissa (< 2^(FRAC_BITS+1)) cannot
-            /// overflow, and kept just wide enough above the decimal scale that the
-            /// accumulated squaring error stays far below one decimal ulp.
-            fn log2_frac_bits() -> u32 {
-                let mut fp_bits = 0u32;
-                let mut t = Self::FP_ONE;
-                while t > Self::FP_ZERO {
-                    t >>= 1;
-                    fp_bits += 1;
-                }
-                core::cmp::min((Self::NUM_BITS - 2) / 2, fp_bits + 16)
-            }
-
             /// Compute log2(x) for x >= 1 using a bit-by-bit (binary logarithm) algorithm.
             /// Returns None for x < 1 (result would be negative and cannot be represented).
             ///
@@ -623,12 +609,6 @@ macro_rules! define_precise_number {
             ///    - If result >= 2, record a 1-bit and halve
             ///    - Otherwise record a 0-bit
             ///
-            /// The mantissa is held in *binary* fixed-point (FRAC_BITS fractional bits)
-            /// rather than the decimal fixed-point scale: squaring is then an exact
-            /// multiply plus a shift instead of a truncating division by FP_ONE, which
-            /// otherwise loses up to one decimal ulp per iteration and biases the result
-            /// (and log10 with it) downwards.
-            ///
             /// (private as it is only intended for log10)
             fn log2(&self) -> Option<Self> {
                 if self.value < Self::FP_ONE {
@@ -638,56 +618,34 @@ macro_rules! define_precise_number {
                     return Some(Self::zero());
                 }
 
-                let one: $FPInner = 1u8.into();
-                let two: $FPInner = 2u8.into();
-                let frac_bits = Self::log2_frac_bits();
-                let one_bin = one << frac_bits;
-                let two_bin = one_bin << 1;
-
-                // Normalize: find k and integer_part with FP_ONE << k <= value < FP_ONE << (k+1)
-                let mut k = 0u32;
-                let mut pow = Self::FP_ONE;
+                let two_fp_one = Self::FP_ONE.checked_add(Self::FP_ONE)?;
+                let mut m = self.value;
                 let mut integer_part = Self::FP_ZERO;
-                while let Some(next) = pow.checked_mul(two) {
-                    if next > self.value {
-                        break;
-                    }
-                    pow = next;
-                    k += 1;
+
+                // Normalize m to [FP_ONE, 2*FP_ONE), accumulating integer part
+                while m >= two_fp_one {
+                    m >>= 1;
                     integer_part = integer_part.checked_add(Self::FP_ONE)?;
                 }
 
-                // Convert the mantissa value/2^k into binary fixed-point.  The shift is
-                // split between numerator and denominator so neither overflows: `pow` has
-                // k trailing zero bits, so shifting it right by `shift_down` is exact.
-                let shift_down = core::cmp::min(k, frac_bits);
-                let shift_up = frac_bits - shift_down;
-                let mut m = self
-                    .value
-                    .checked_mul(one << shift_up)?
-                    .checked_div(pow >> shift_down)?;
-
                 // Compute fractional part by repeated squaring
                 let mut frac = Self::FP_ZERO;
-                let mut bit = one_bin >> 1;
+                let mut bit = Self::FP_ONE >> 1;
 
-                while bit > Self::FP_ZERO {
-                    // Square m in binary fixed-point: m = m * m / 2^FRAC_BITS
-                    m = m.checked_mul(m)? >> frac_bits;
-                    if m >= two_bin {
+                for _ in 0..Self::NUM_BITS {
+                    if bit == Self::FP_ZERO {
+                        break;
+                    }
+                    // Square m in fixed-point: m = m * m / FP_ONE
+                    m = m.checked_mul(m)?.checked_div(Self::FP_ONE)?;
+                    if m >= two_fp_one {
                         m >>= 1;
                         frac = frac.checked_add(bit)?;
                     }
                     bit >>= 1;
                 }
 
-                // Back to decimal fixed-point, rounding to nearest
-                let frac_decimal = frac
-                    .checked_mul(Self::FP_ONE)?
-                    .checked_add(one_bin >> 1)?
-                    >> frac_bits;
-
-                let result = integer_part.checked_add(frac_decimal)?;
+                let result = integer_part.checked_add(frac)?;
                 Some(Self { value: result })
             }
         }
