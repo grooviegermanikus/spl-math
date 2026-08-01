@@ -31,7 +31,6 @@ define_log10_tests!(PreciseNumber, u128, U256, 11);
 mod tests {
     use super::*;
 
-
     /// `checked_div` keeps the full fixed-point precision, so rounding only
     /// happens on the last representable digit (1e-12). These are the edge
     /// cases around that digit: the quotient goes to the nearer neighbour and
@@ -179,9 +178,7 @@ mod tests {
             U256::from(10_000_000_000_000u128),
             "reciprocals below one inherit the same upward bias"
         );
-
     }
-
 
     /**
      * Part of SPLM-11 findings: the log2 is imprecise due to the upward bias of `checked_div` for sub-unit ratios, which is consumed by `signed_log10` and other higher-level functions.
@@ -202,5 +199,4 @@ mod tests {
             "signed_log10(0.1) misses the exact decade because it consumes the biased reciprocal"
         );
     }
-
 }

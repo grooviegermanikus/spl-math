@@ -151,9 +151,7 @@ macro_rules! define_precise_number {
                 let correction = Self::div2_inner(rhs.value.checked_sub(1u8.into())?);
                 match self.value.checked_mul(Self::FP_ONE) {
                     Some(v) => {
-                        let value = v
-                            .checked_add(correction)?
-                            .checked_div(rhs.value)?;
+                        let value = v.checked_add(correction)?.checked_div(rhs.value)?;
                         Some(Self { value })
                     }
                     None => {
