@@ -8,6 +8,14 @@ license = "MIT"
 keywords = ["solana", "math", "fixed-point", "arithmetic", "precision"]
 edition = "2021"
 
+# `math-example` is deliberately NOT a workspace member. Its solana-program 3.x
+# dependency tree requires rustc 1.89, while this crate pins 1.86 to stay
+# buildable with agave's toolchain (see rust-toolchain.toml). Excluding it keeps
+# the two resolutions -- and the two lockfiles -- independent. It builds from its
+# own directory, where its nested rust-toolchain.toml applies.
+[workspace]
+exclude = ["math-example"]
+
 [features]
 default = []
 

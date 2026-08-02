@@ -26,3 +26,11 @@ test:
 # Run benchmarks
 bench:
     cargo bench
+
+# Check the math-example program (excluded from the workspace, uses its own toolchain)
+example-check:
+    cd math-example && cargo clippy --all-targets --locked -- -D warnings
+
+# Run the math-example on-chain tests against the pinned platform-tools (see math-example/README.md)
+example-test-sbf:
+    cd math-example && cargo test-sbf-pinned

@@ -49,6 +49,23 @@ Run all tests:
 cargo test
 ```
 
+### The `math-example` program
+
+`math-example/` holds an on-chain Solana program that exercises this library, used to
+measure compute-unit costs. It is **not** a workspace member: its `solana-program` 3.x
+dependency tree requires rustc 1.89, while this crate pins 1.86 to stay buildable with
+agave's toolchain. It therefore keeps its own `Cargo.lock` and `rust-toolchain.toml`, and
+builds from its own directory:
+
+```bash
+cd math-example
+cargo clippy --all-targets   # host-target check, no platform-tools needed
+cargo test-sbf-pinned        # on-chain tests + compute-unit assertions
+```
+
+See [math-example/README.md](math-example/README.md) — the compute-unit assertions are
+only reproducible against a pinned platform-tools version.
+
 ## Run benchmark
 
 ```bash

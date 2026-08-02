@@ -1,0 +1,5 @@
+[alias]
+# Pin the SBF compiler: compute-unit counts in tests/instruction_count.rs
+# are only reproducible on a fixed platform-tools version. See README.
+test-sbf-pinned = ["test-sbf", "--tools-version", "v1.52"]
+build-sbf-pinned = ["build-sbf", "--tools-version", "v1.52"]

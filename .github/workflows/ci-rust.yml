@@ -80,3 +80,41 @@ jobs:
 
       - name: Build and test
         run: ./ci/cargo-build-test.sh
+
+  math-example:
+    name: Check math-example program
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set env vars
+        run: |
+          source ci/read-cargo-variable.sh
+          echo "EXAMPLE_RUST=$(readCargoVariable channel math-example/rust-toolchain.toml)" >> $GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.EXAMPLE_RUST }}
+          components: clippy
+
+      - uses: actions/cache@v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            math-example/target
+          key: cargo-math-example-${{ hashFiles('math-example/Cargo.lock') }}
+          restore-keys: |
+            cargo-math-example-
+
+      # math-example is excluded from the workspace on purpose -- its solana-program
+      # 3.x tree needs rustc 1.89 while the library pins 1.86. Run from its own
+      # directory so its nested rust-toolchain.toml and lockfile apply.
+      #
+      # Host-target check only: it catches breaking changes to the spl-math API.
+      # The on-chain build and the compute-unit assertions in
+      # tests/instruction_count.rs need platform-tools and stay a local step
+      # (`just example-test-sbf`).
+      - name: Run clippy
+        working-directory: math-example
+        run: cargo clippy --all-targets --locked -- --deny=warnings
