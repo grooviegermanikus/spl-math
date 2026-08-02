@@ -248,6 +248,13 @@ mod tests_pn_256_128_d12 {
     }
 
     #[test]
+    fn test_div2_inner() {
+        assert_eq!(PreciseNumber::div2_inner(U256::zero()), U256::zero());
+        assert_eq!(PreciseNumber::div2_inner(U256::one()), U256::zero());
+        assert_eq!(PreciseNumber::div2_inner(U256::MAX), U256::MAX / 2);
+    }
+
+    #[test]
     fn test_checked_mul() {
         let number_one = PreciseNumber::new(0).unwrap();
         let number_two = PreciseNumber::new(0).unwrap();

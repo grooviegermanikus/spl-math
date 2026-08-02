@@ -133,7 +133,7 @@ macro_rules! define_precise_number {
                 if *rhs == Self::zero() {
                     return None;
                 }
-                let correction = rhs.value.checked_div(2u8.into())?;
+                let correction = Self::div2_inner(rhs.value);
                 match self.value.checked_mul(Self::FP_ONE) {
                     Some(v) => {
                         let value = v.checked_add(correction)?.checked_div(rhs.value)?;
@@ -156,17 +156,24 @@ macro_rules! define_precise_number {
                     return None;
                 }
 
-                let correction = rhs.checked_div(2u8.into())?;
+                let correction = Self::div2_inner(*rhs);
                 self.value
                     .checked_add(correction)?
                     .checked_div(*rhs)
                     .map(|value| Self { value })
             }
 
+            #[inline(always)]
             pub(crate) fn div2(&self) -> Self {
+                Self {
+                    value: Self::div2_inner(self.value),
+                }
+            }
+
+            #[inline(always)]
+            pub(crate) fn div2_inner(value: $FPInner) -> $FPInner {
                 use std::ops::Shr;
-                let value = self.value.shr(1);
-                Self { value }
+                value.shr(1)
             }
 
             pub(crate) fn div10(&self) -> Self {
